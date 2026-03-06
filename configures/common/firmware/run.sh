@@ -9,9 +9,6 @@ LOG_FILE="${SCRIPT_NAME%.*}.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 # -------------------------- Constants Definition --------------------------
-# Get the machine's IP
-SERVER_IP=$(hostname -I | awk '{ print $1 }')
-declare -r SERVER_IP
 
 # Get the current directory
 declare -r BASE_DIR=$(pwd)
@@ -94,9 +91,10 @@ start_docker_services() {
         log "ERROR" "Docker Compose服务启动失败"
         return 1
     fi
+    . .env
     log "INFO" "Docker Compose服务启动完成"
     log "INFO" "系统启动完成"
-    log "INFO" "请登录到诸葛神码后端管理页面 [http://${SERVER_IP}:39080/costrict-admin/] (默认账号: admin, 密码: admin)"
+    log "INFO" "请登录到诸葛神码后端管理页面 [http://${COSTRICT_HOST}:${PORT_APISIX_ENTRY}/costrict-admin/] (默认账号: admin, 密码: admin)"
     return 0
 }
 

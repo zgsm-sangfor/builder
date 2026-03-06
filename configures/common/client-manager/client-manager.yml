@@ -6,7 +6,7 @@ services:
       - TZ=Asia/Shanghai
     volumes:
       - ./config.yaml:/config/config.yaml:ro
-      - /root/.costrict/data/client-manager/data:/data
+      - ${COSTRICT_DATA_DIR}/data/client-manager/data:/data
     networks:
       - shenma
     healthcheck:

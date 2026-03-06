@@ -44,6 +44,6 @@ services:
     ports:
       - "${PORT_ES}:9200"
     volumes:
-      - /root/.costrict/data/es/data:/usr/share/elasticsearch/data
+      - ${COSTRICT_DATA_DIR}/data/es/data:/usr/share/elasticsearch/data
     networks:
       - shenma

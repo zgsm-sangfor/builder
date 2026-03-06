@@ -1,8 +1,4 @@
 #!/bin/bash
-
-# 确保smc命令在PATH中
-export PATH="$PATH:/root/.costrict/bin"
-
 #
 # 包管理系统的目录结构：
 #
@@ -14,37 +10,73 @@ export PATH="$PATH:/root/.costrict/bin"
 #   |            +-platforms.json: 某个包支持哪些平台(OS&芯片架构)
 #   +-packages.json: 系统有哪些包可以下载
 #
+# 怎么在.env中定义build-packages.sh可上传的环境？如下：
+# 
+# declare -a ENV_NAMES=("test" "prod" "qianliu")
+# # 各环境的主机配置（对应ENV_NAMES的顺序）
+# declare -a ENV_HOSTS=("$test_host" "$prod_host" "$qianliu_host")
+# # 各环境的端口配置（对应ENV_NAMES的顺序）
+# declare -a ENV_PORTS=("$test_port" "$prod_port" "$qianliu_port")
+# # 各环境的路径配置（对应ENV_NAMES的顺序）
+# declare -a ENV_PATHS=("$test_path" "$prod_path" "$qianliu_path")
+#
+# 确保smc命令在PATH中
+export PATH="$PATH:/root/.costrict/bin"
+
+source ./.env
 
 usage() {
-    echo "Usage: build-packages.sh [-p PACKAGE] [--packages PACKAGES] [--type TYPE] [--key KEY_FILE] [--def] [--clean] [--build] [--pack] [--index] [--upload] [--upload-packages] [--auto-version]"
+    echo "Usage: build-packages.sh [-p PACKAGE] [--packages PACKAGES] [--type TYPE] [--key KEY_FILE] [ACTIONS]"
     echo "Options:"
     echo "  -p, --package        Package name (optional, if not specified, will process all packages)"
-    echo "  --packages <list>    Package list (space-separated, e.g., \"pkg1 pkg2 pkg3\")"
+    echo "  --packages <list>    Package list (comma-separated, e.g., \"pkg1,pkg2,pkg3\")"
     echo "  --type <type>        Package type filter (e.g., exec, conf, zip)"
     echo "  --key <key>          Private key file (default: costrict-private.pem)"
+    echo "  -h, --help           Help information"
+    echo "Actions:"
     echo "  --clean              Need clean first"
     echo "  --build              Need build packages"
     echo "  --pack               Need pack packages"
     echo "  --index              Need index packages"
-    echo "  --upload             Need upload packages"
     echo "  --def                Execute default steps (build, pack, index)"
-    echo "  --upload-packages    Need upload packages.json"
-    echo "  --upload-to <env>    Upload package to <env>, env: def, all, prod, test, qianliu"
-    echo "  --auto-version       Auto increment version number when building package"
-    echo "  -h, --help           Help information"
+    echo "  --upload <env>       Upload package to <env> (comma-separated env list)"
+    echo "                       Supported envs: names from .env ENV_NAMES array (${ENV_NAMES[*]})"
+    echo "                       Keywords: def (${ENV_NAMES[0]}), all (${ENV_NAMES[*]})"
+    echo "                       Examples: \"--upload test,prod\", \"--upload def\", \"--upload all\", \"--upload test,all\""
+    echo "  --upload-packages <env>  Upload packages.json to <env> (comma-separated env list)"
+    echo "                       Same env support as --upload option above"
     exit 1
 }
 
 enable_upload() {
-    case "$1" in
-        def) NEED_UPLOAD=true; UPLOAD_PROD=true; UPLOAD_TEST=true; UPLOAD_QIANLIU=false;;
-        all) NEED_UPLOAD=true; UPLOAD_PROD=true; UPLOAD_TEST=true; UPLOAD_QIANLIU=true;;
-        prod) NEED_UPLOAD=true; UPLOAD_PROD=true;;
-        test) NEED_UPLOAD=true; UPLOAD_TEST=true;;
-        qianliu) NEED_UPLOAD=true; UPLOAD_QIANLIU=true;;
-        *) usage;;
-    esac
+    NEED_UPLOAD=true
+    local input="$1"
+    
+    # 支持逗号分隔的多个环境
+    IFS=',' read -ra env_list <<< "$input"
+    
+    UPLOAD_TARGETS=()
+    for env_item in "${env_list[@]}"; do
+        # 去除前后空格
+        env_item=$(echo "$env_item" | xargs)
+        
+        case "$env_item" in
+            def)
+                # def 指向ENV_NAMES的第一个环境
+                UPLOAD_TARGETS+=("${ENV_NAMES[0]}")
+                ;;
+            all)
+                # all 指向ENV_NAMES中的所有环境
+                UPLOAD_TARGETS+=("${ENV_NAMES[@]}")
+                ;;
+            *)
+                # 其他环境名称直接存储
+                UPLOAD_TARGETS+=("$env_item")
+                ;;
+        esac
+    done
 }
+
 # 默认私钥文件
 KEY_FILE="costrict-private.pem"
 
@@ -55,15 +87,12 @@ NEED_PACK=false
 NEED_INDEX=false
 NEED_UPLOAD=false
 NEED_UPLOAD_PACKAGES=false
-UPLOAD_PROD=false
-UPLOAD_TEST=false
-UPLOAD_QIANLIU=false
+UPLOAD_TARGETS=()
 PACKAGE_TYPE=""
 PACKAGES=""
-AUTO_VERSION=false
 
 # Parse command line options
-args=$(getopt -o hp:K: --long help,package:,packages:,kind:,type:,key:,clean,build,pack,index,def,upload,upload-packages,upload-to:,auto-version -n 'build-packages.sh' -- "$@")
+args=$(getopt -o hp:K: --long help,package:,packages:,kind:,type:,key:,clean,build,pack,index,def,upload:,upload-packages: -n 'build-packages.sh' -- "$@")
 [ $? -ne 0 ] && usage
 
 eval set -- "$args"
@@ -79,10 +108,8 @@ while true; do
         --pack) NEED_PACK=true; shift;;
         --index) NEED_INDEX=true; shift;;
         --def) NEED_BUILD=true; NEED_PACK=true; NEED_INDEX=true; shift;;
-        --upload) enable_upload "def"; shift;;
-        --upload-packages) NEED_UPLOAD_PACKAGES=true; shift;;
-        --upload-to) enable_upload "$2"; shift 2;;
-        --auto-version) AUTO_VERSION=true; shift;;
+        --upload) enable_upload "$2"; shift 2;;
+        --upload-packages) enable_upload "$2"; NEED_UPLOAD_PACKAGES=true; shift 2;;
         -h|--help) usage; exit 0;;
         --) shift; break;;
         *) usage;;
@@ -311,12 +338,6 @@ build_package() {
         package_platforms='[{"os":"common","arch":"common"}]'
     fi
 
-    # 如果启用了auto-version选项，则自动递增版本号
-    if [ "$AUTO_VERSION" = true ]; then
-        package_version=$(increment_version "$package" "$package_version")
-        echo "Auto incrementing version for package: $package, New version: $package_version"
-    fi
-
     echo "=============================================="
     echo "Building package: $package, version: $package_version, path: $package_path, type: $package_type"
     echo "=============================================="
@@ -353,28 +374,6 @@ build_packages() {
     done
     
     echo "All packages built successfully!"
-}
-
-increment_version() {
-    local package_name="$1"
-    local current_version="$2"
-
-    # 自动递增 patch 版本号
-    local MAJOR=$(echo "$current_version" | cut -d'.' -f1)
-    local MINOR=$(echo "$current_version" | cut -d'.' -f2)
-    local PATCH=$(echo "$current_version" | cut -d'.' -f3)
-    local NEW_PATCH=$((PATCH + 1))
-    local NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
- 
-    # 使用 jq 更新版本号
-    jq "(.builds[] | select(.name == \"$package_name\") | .version) |= \"$NEW_VERSION\"" "packages.json" > "packages.json.tmp"
-
-    if [ $? -ne 0 ]; then
-        rm -f "packages.json.tmp"
-        exit 1
-    fi
-    mv "packages.json.tmp" "packages.json"
-    echo "$NEW_VERSION"
 }
 
 # Function to get package type from packages.json
@@ -599,28 +598,36 @@ upload_package_clouds() {
     local source_dir=$1
     local package=$2
 
-    source ./.env
+    # 遍历UPLOAD_TARGETS数组中的每个环境名称
+    for env_name in "${UPLOAD_TARGETS[@]}"; do
+        # 验证环境名称是否在ENV_NAMES中
+        local valid_env=false
+        local env_index=-1
+        local i=0
+        for valid_name in "${ENV_NAMES[@]}"; do
+            if [ "$env_name" = "$valid_name" ]; then
+                valid_env=true
+                env_index=$i
+                break
+            fi
+            ((i++))
+        done
 
-    if [ "$UPLOAD_TEST" = true ]; then
-        echo "=============================================="
-        echo "Upload package $package to ${test_host}..."
-        echo "=============================================="
-        upload_package "${source_dir}" "${package}" "${test_host}" "${test_port}" "${test_path}"
-    fi
+        if [ "$valid_env" = false ]; then
+            echo "Error: Invalid environment name '$env_name'. Available environments: ${ENV_NAMES[*]}"
+            exit 1
+        fi
 
-    if [ "$UPLOAD_PROD" = true ]; then
-        echo "=============================================="
-        echo "Upload package $package to ${prod_host}..."
-        echo "=============================================="
-        upload_package "${source_dir}" "${package}" "${prod_host}" "${prod_port}" "${prod_path}"
-    fi
+        # 根据索引从数组中获取配置
+        local host="${ENV_HOSTS[$env_index]}"
+        local port="${ENV_PORTS[$env_index]}"
+        local path="${ENV_PATHS[$env_index]}"
 
-    if [ "$UPLOAD_QIANLIU" = true ]; then
         echo "=============================================="
-        echo "Upload package $package to ${qianliu_host}..."
+        echo "Upload package $package to ${env_name} (${host}:${port}${path})..."
         echo "=============================================="
-        upload_package "${source_dir}" "${package}" "${qianliu_host}" "${qianliu_port}" "${qianliu_path}"
-    fi
+        upload_package "${source_dir}" "${package}" "${host}" "${port}" "${path}"
+    done
 }
 
 process_package() {
@@ -674,10 +681,10 @@ process_package() {
 process_packages() {
     local packages=$1
     
-    # 解析包列表（支持空格分隔的包名）
+    # 解析包列表（支持逗号分隔的包名）
     local package_list=()
     if [ -n "$packages" ]; then
-        IFS=' ' read -ra package_list <<< "$packages"
+        IFS=',' read -ra package_list <<< "$packages"
     fi
     
     # 如果包列表为空，从packages.json读取所有包

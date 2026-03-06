@@ -44,10 +44,10 @@ services:
       service: oneapi
 
   # 基础服务
-  cotun:
+  cotund:
     extends:
-      file: ./cotun/cotun.yml
-      service: cotun
+      file: ./cotund/cotund.yml
+      service: cotund
 
   codebase-querier:
     extends:

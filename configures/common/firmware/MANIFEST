@@ -41,7 +41,7 @@ init.sh
 run.sh
 backup.sh
 restore.sh
-costrict.env
+costrict.env.in
 MANIFEST
 
 # API 网关管理脚本

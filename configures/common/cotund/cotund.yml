@@ -1,5 +1,5 @@
 services:
-  cotun:
+  cotund:
     image: ${IMAGE_COTUN}
     restart: always
     command: ["--reverse", "--port", "8080", "--authfile", "/cotun/users.json"]

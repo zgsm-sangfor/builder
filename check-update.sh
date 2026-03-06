@@ -1,19 +1,20 @@
 #!/bin/bash
 
-# check-update.sh - 检测packages.json中模块的版本和内容变化
+# check-update.sh - 检测packages.json中包的版本和内容变化，更新包版本
 #
 # 功能：
 # - 遍历packages.json中的builds数组
-# - 计算模块path所指目录的CHECKSUM和文件数
+# - 计算包path所指目录的CHECKSUM和文件数
 # - 比较当前版本和checksum与latest.json中的记录
 # - 根据变化情况输出提示或更新latest.json
-# --auto-version: 当checksum变化时自动递增版本号
+# --update: 当checksum变化时自动更新版本号(递增包的patch版本号)
 
 set -e
 
 # 默认参数值
-AUTO_VERSION=false
+UPDATE_VERSION=false
 VERBOSE=false
+PACKAGES=""
 
 # 配置文件路径
 PACKAGES_JSON="packages.json"
@@ -21,9 +22,10 @@ LATEST_JSON="latest.json"
 
 # 打印帮助信息的函数
 print_usage() {
-    echo "Usage: check-update.sh [-a|--auto-version] [-h|--help] [-v|--verbose]"
+    echo "Usage: check-update.sh [-u|--update] [-p|--packages PACKAGE1,PACKAGE2,...] [-h|--help] [-v|--verbose]"
     echo "Options:"
-    echo "  -a, --auto-version    Auto increment version when checksum changes"
+    echo "  -u, --update          Update package version when checksum changes"
+    echo "  -p, --packages        Only check specified packages (comma-separated list)"
     echo "  -v, --verbose         Show checksum calculation details for each file"
     echo "  -h, --help            Show this help message"
 }
@@ -33,6 +35,7 @@ log() {
     local message=$2
     echo -e "[${level}] ${message}" >&2
 }
+
 prompt() {
     local message=$1
     echo -e "${message}" >&2
@@ -111,7 +114,7 @@ calculate_go_directory_checksum() {
     calculate_checksum_from_file_list "${file_list[@]}"
 }
 
-# 计算conf类型模块的CHECKSUM（跨所有平台）
+# 计算conf类型包的CHECKSUM（跨所有平台）
 # 输出格式：第一行checksum，第二行文件数
 calculate_conf_package_checksum() {
     local path="$1"
@@ -140,7 +143,7 @@ calculate_conf_package_checksum() {
     calculate_checksum_from_file_list "${file_list[@]}"
 }
 
-# 计算zip类型模块的CHECKSUM（跨所有平台）
+# 计算zip类型包的CHECKSUM（跨所有平台）
 # 输出格式：第一行checksum，第二行文件数
 calculate_zip_package_checksum() {
     local path="$1"
@@ -173,8 +176,8 @@ calculate_zip_package_checksum() {
     calculate_checksum_from_file_list "${file_list[@]}"
 }
 
-# 递增版本号的函数（参考build-packages.sh）
-increment_version() {
+# 递增包的patch版本号
+increment_patch_version() {
     local package_name="$1"
     local current_version="$2"
 
@@ -212,11 +215,34 @@ main() {
     prompt "Found $package_count packages"
     prompt ""
     
-    # 遍历每个模块
+    # 遍历每个包
     local i
     local modified_packages=()
+    
+    # 如果指定了packages选项，则将逗号分隔的字符串转换为数组
+    local target_packages=()
+    if [ -n "$PACKAGES" ]; then
+        # 将逗号分隔的字符串转换为数组
+        IFS=',' read -ra target_packages <<< "$PACKAGES"
+        log "INFO" "Checking only specified packages: ${target_packages[*]}"
+    fi
+    
     for ((i=0; i<package_count; i++)); do
         local package_name=$(echo "$packages_json" | jq -r ".builds[$i].name")
+        
+        # 如果指定了packages选项，检查当前包是否在目标列表中
+        if [ ${#target_packages[@]} -gt 0 ]; then
+            local found=false
+            for target in "${target_packages[@]}"; do
+                if [ "$package_name" = "$target" ]; then
+                    found=true
+                    break
+                fi
+            done
+            if [ "$found" = false ]; then
+                continue
+            fi
+        fi
         local package_version=$(echo "$packages_json" | jq -r ".builds[$i].version")
         local package_path=$(echo "$packages_json" | jq -r ".builds[$i].path")
         local package_type=$(echo "$packages_json" | jq -r ".builds[$i].type")
@@ -238,7 +264,7 @@ main() {
             continue
         fi
         
-        # 根据模块类型计算CHECKSUM和文件数
+        # 根据包类型计算CHECKSUM和文件数
         local new_checksum=""
         local new_file_count=0
         
@@ -281,7 +307,7 @@ main() {
         local old_version=$(jq -r ".\"$package_name\".version // \"null\"" "$LATEST_JSON")
         local old_checksum=$(jq -r ".\"$package_name\".checksum // \"null\"" "$LATEST_JSON")
         
-        log "INFO" "Package '$package_name': files=$new_file_count"
+        prompt "Package '$package_name': files=$new_file_count"
         
         # 比较
         if [ "$old_version" = "null" ]; then
@@ -297,10 +323,10 @@ main() {
                 log "INFO" "No changes for package '$package_name'"
             else
                 # 版本号未变但CHECKSUM变了
-                if [ "$AUTO_VERSION" = true ]; then
+                if [ "$UPDATE_VERSION" = true ]; then
                     # 启用自动版本递增
-                    local new_version=$(increment_version "$package_name" "$package_version")
-                    log "MODIFIED" "Auto-incremented version for '$package_name': $package_version -> $new_version"
+                    local new_version=$(increment_patch_version "$package_name" "$package_version")
+                    log "MODIFIED" "Update version for '$package_name': $package_version -> $new_version"
                     
                     # 更新latest.json
                     jq ".\"$package_name\" = {\"version\": \"$new_version\", \"checksum\": \"$new_checksum\", \"file_count\": $new_file_count}" "$LATEST_JSON" > "$LATEST_JSON.tmp"
@@ -339,21 +365,22 @@ main() {
     fi
     prompt "=============================================="
     
-    # 输出所有发生变化的模块名到标准输出（以空格分隔）
+    # 输出所有发生变化的包名到标准输出（以逗号分隔）
     if [ ${#modified_packages[@]} -gt 0 ]; then
-        echo "${modified_packages[*]}"
+        IFS=',' echo "${modified_packages[*]}"
     fi
 }
 
 # Parse command line options
-args=$(getopt -o ahv --long help,auto-version,verbose -n 'check-update.sh' -- "$@")
+args=$(getopt -o uhp:v --long help,update,packages:,verbose -n 'check-update.sh' -- "$@")
 [ $? -ne 0 ] && print_usage && exit 1
 
 eval set -- "$args"
 
 while true; do
     case "$1" in
-        -a|--auto-version) AUTO_VERSION=true; shift;;
+        -u|--update) UPDATE_VERSION=true; shift;;
+        -p|--packages) PACKAGES="$2"; shift 2;;
         -v|--verbose) VERBOSE=true; shift;;
         -h|--help) print_usage; exit 0;;
         --) shift; break;;

@@ -74,9 +74,9 @@
       "allowed_versions": ">=1.0.0"
     },
     {
-      "component_name": "cotun",
+      "component_name": "cotund",
       "display_name": "CoTun",
-      "description": "代码转换和隧道服务",
+      "description": "隧道服务",
       "allowed_versions": ">=1.0.0"
     },
     {
@@ -200,10 +200,10 @@
       "log_file": "/var/log/oneapi.log"
     },
     {
-      "service_name": "cotun",
-      "component_name": "cotun",
+      "service_name": "cotund",
+      "component_name": "cotund",
       "health_url": "http://localhost:8090/healthz",
-      "log_file": "/var/log/cotun.log"
+      "log_file": "/var/log/cotund.log"
     },
     {
       "service_name": "codebase-querier",

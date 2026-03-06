@@ -22,17 +22,16 @@ DH_ADDR="docker.io/zgsm"
 #-------------------------------------------------------------------------------
 # 登录神码内部应用所使用的账号密码
 #-------------------------------------------------------------------------------
-PASSWORD_APISIX_DASHBOARD="sf2025~SHENMA"
-PASSWORD_ETCD="sf2025~SHENMA"
-PASSWORD_REDIS="sf2025~SHENMA"
-PASSWORD_POSTGRES="sf2025~SHENMA"
-PASSWORD_ELASTIC="4c6y4g6Z09T2w33pYRNKE3LG"
-PASSWORD_COTUN="sf2025~SHENMA"
+PASSWORD_APISIX_DASHBOARD="B5g6v?D0<yR6"
+PASSWORD_ETCD="t@5OC$qf>{:)"
+PASSWORD_REDIS="OKc4#NMhJzGi"
+PASSWORD_POSTGRES="Ri(.UQtDjd[P"
+PASSWORD_ELASTIC="lD1P2HQMiPSK9q019NYY0MgV"
 #---------------------------------------------------------
 # apisix设置
 #---------------------------------------------------------
-APIKEY_APISIX_ADMIN="edd1c9f034335f136f87ad84b625c8f1"
-APIKEY_APISIX_VIEWER="4054f730f8e344346cd3f287985e76a2"
+APIKEY_APISIX_ADMIN="980pE3ColdKl33Fqd86xjL2maVPwcpCH"
+APIKEY_APISIX_VIEWER="HwZaABI5GNCgi1H57FYqSBDXGlZWBnFw"
 
 #-------------------------------------------------------------------------------
 # 认证设置(oidc-auth/casdoor)

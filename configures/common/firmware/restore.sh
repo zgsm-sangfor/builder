@@ -8,7 +8,7 @@
 # 使用方法：
 #   ./restore.sh [OPTIONS]
 #   或
-#   bash restore.sh --input /path/to/backup --backend /path/to/backend --costrict /path/to/costrict
+#   bash restore.sh --input /path/to/backup --backend /path/to/backend --data /path/to/data
 #
 # 支持的选项：
 #   --input       备份数据来源目录，该目录由backup.sh脚本生成
@@ -16,7 +16,7 @@
 #                 此参数为必需参数，无默认值
 #   --backend     backend所在目录，即启动costrict backend的docker compose环境目录
 #                 默认值: /usr/local/costrict
-#   --costrict    costrict软件的工作目录，即从cloud下载安装组件的位置，
+#   --data        costrict的数据目录，即从cloud下载安装组件的位置，
 #                 也是costrict-admin保存数据的位置
 #                 默认值: /root/.costrict
 #
@@ -24,30 +24,30 @@
 #   步骤1. 环境检查：调用check.sh确认必要的组件和环境都正常
 #   步骤2. 加载Docker镜像：调用$backend/scripts/load-images.sh加载镜像
 #   步骤3. 恢复backend目录：将$input/backend下的内容拷贝到$backend目录
-#   步骤4. 恢复costrict目录：将$input/costrict下的内容拷贝到$costrict目录
+#   步骤4. 恢复data目录：将$input/data下的内容拷贝到$data目录
 #   步骤5. 注册服务：source加载$backend/init.sh，运行register_services注册costrict-admin服务
 #   步骤6. 启动服务：运行$backend/run.sh start，启动docker compose服务
 #
 # 备份目录结构要求：
 #   $input/
-#   ├── backend/          # 后端docker compose环境备份
-#   ├── costrict/         # costrict工作目录备份
-#   └── images/           # Docker镜像备份（tar文件）
+#   ├── backend/      # 后端docker compose环境备份
+#   ├── data/         # costrict数据目录备份
+#   └── images/       # Docker镜像备份（tar文件）
 #
 # 示例：
 #   # 恢复到默认路径
 #   ./restore.sh --input /mnt/backup/costrict_backup_2024
 #
 #   # 恢复到指定路径
-#   ./restore.sh --input /backup/latest --backend /opt/costrict --costrict /data/costrict
+#   ./restore.sh --input /backup/latest --backend /opt/costrict --data /data/costrict
 #
 #   # 恢复到不同的服务器
-#   ./restore.sh --input /tmp/backup --backend /usr/local/costrict_new --costrict /root/.costrict_new
+#   ./restore.sh --input /tmp/backup --backend /usr/local/costrict_new --data /data/costrict_new
 #
 # 注意事项：
 #   - 本脚本需要root权限执行，因为涉及服务管理和系统目录操作
 #   - 确保输入目录是由backup.sh生成的完整备份
-#   - 恢复前请确保目标目录（backend和costrict）为空，否则恢复将失败
+#   - 恢复前请确保目标目录（backend和data）为空，否则恢复将失败
 #   - 建议在恢复前先备份当前环境，以防需要回滚
 #   - 恢复后需要验证服务是否正常启动
 #   - 版本兼容性：备份和恢复的costrict版本应该一致，否则可能出现兼容性问题
@@ -79,7 +79,7 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 # -------------------------- Constants Definition --------------------------
 declare -r SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 declare -r DEFAULT_BACKEND_DIR="/usr/local/costrict"
-declare -r DEFAULT_COSTRICT_DIR="/root/.costrict"
+declare -r DEFAULT_DATA_DIR="/root/.costrict"
 declare -r DEFAULT_INPUT_DIR=""
 
 # -------------------------- Function Definitions --------------------------
@@ -106,7 +106,7 @@ show_usage() {
 选项:
     --input <path>     备份数据来源目录（必需），由backup.sh脚本生成
     --backend <path>   backend所在目录，默认为 /usr/local/costrict
-    --costrict <path>  costrict工作目录，默认为 /root/.costrict
+    --data <path>      costrict数据目录，默认为 /root/.costrict
     -h, --help         显示帮助信息
 
 示例:
@@ -123,7 +123,7 @@ EOF
 parse_arguments() {
     # 默认值
     BACKEND_DIR="$DEFAULT_BACKEND_DIR"
-    COSTRICT_DIR="$DEFAULT_COSTRICT_DIR"
+    DATA_DIR="$DEFAULT_DATA_DIR"
     INPUT_DIR="$DEFAULT_INPUT_DIR"
     
     # 解析参数
@@ -137,8 +137,8 @@ parse_arguments() {
                 BACKEND_DIR="$2"
                 shift 2
                 ;;
-            --costrict)
-                COSTRICT_DIR="$2"
+            --data)
+                DATA_DIR="$2"
                 shift 2
                 ;;
             -h|--help)
@@ -161,7 +161,7 @@ parse_arguments() {
     
     log "INFO" "输入目录: $INPUT_DIR"
     log "INFO" "Backend目录: $BACKEND_DIR"
-    log "INFO" "Costrict目录: $COSTRICT_DIR"
+    log "INFO" "Costrict数据目录: $DATA_DIR"
 }
 
 check_root_permission() {
@@ -185,8 +185,8 @@ check_input_directory() {
         missing_items+=("缺少: \$INPUT_DIR/backend")
     fi
     
-    if [[ ! -d "$INPUT_DIR/costrict" ]]; then
-        missing_items+=("缺少: \$INPUT_DIR/costrict")
+    if [[ ! -d "$INPUT_DIR/data" ]]; then
+        missing_items+=("缺少: \$INPUT_DIR/data")
     fi
     
     if [[ ! -d "$INPUT_DIR/images" ]]; then
@@ -325,29 +325,29 @@ restore_backend_directory() {
     fi
 }
 
-restore_costrict_directory() {
-    log "INFO" "恢复costrict目录..."
-    log "INFO" "备份源: $INPUT_DIR/costrict"
-    log "INFO" "目标目录: $COSTRICT_DIR"
+restore_data_directory() {
+    log "INFO" "恢复costrict数据目录..."
+    log "INFO" "备份源: $INPUT_DIR/data"
+    log "INFO" "目标目录: $DATA_DIR"
     
     # 检查目标目录是否为空
-    if [[ -d "$COSTRICT_DIR" ]]; then
-        local file_count=$(find "$COSTRICT_DIR" -mindepth 1 | wc -l)
+    if [[ -d "$DATA_DIR" ]]; then
+        local file_count=$(find "$DATA_DIR" -mindepth 1 | wc -l)
         if [[ "$file_count" -ne 0 ]]; then
-            log "ERROR" "目标目录不为空，请手动清理：$COSTRICT_DIR"
+            log "ERROR" "目标目录不为空，请手动清理：$DATA_DIR"
             return 1
         fi
     fi
     
     # 确保目标目录存在
-    mkdir -p "$COSTRICT_DIR"
+    mkdir -p "$DATA_DIR"
     
     # 复制备份内容
-    if cp -rp "$INPUT_DIR/costrict"/* "$COSTRICT_DIR/"; then
-        log "INFO" "costrict目录恢复完成"
+    if cp -rp "$INPUT_DIR/data"/* "$DATA_DIR/"; then
+        log "INFO" "costrict数据目录恢复完成"
         return 0
     else
-        log "ERROR" "costrict目录恢复失败"
+        log "ERROR" "costrict数据目录恢复失败"
         return 1
     fi
 }
@@ -461,7 +461,7 @@ show_restore_summary() {
     log "INFO" "======================================"
     log "INFO" "恢复来源: $INPUT_DIR"
     log "INFO" "Backend目录: $BACKEND_DIR"
-    log "INFO" "Costrict目录: $COSTRICT_DIR"
+    log "INFO" "Costrict数据目录: $DATA_DIR"
     log "INFO" ""
     log "INFO" "后续操作:"
     log "INFO" "  1. 检查服务状态: cd $BACKEND_DIR; bash run.sh status"
@@ -513,7 +513,7 @@ main() {
     # 执行恢复
     load_docker_images
     restore_backend_directory
-    restore_costrict_directory
+    restore_data_directory
 
     # 检查安装后的环境和依赖
     if ! check_environment; then

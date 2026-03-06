@@ -5,7 +5,7 @@ services:
     environment:
       TZ: "Asia/Shanghai"
     volumes:
-      - /root/.costrict/data/redis/data:/data
+      - ${COSTRICT_DATA_DIR}/data/redis/data:/data
     ports:
       - "${PORT_REDIS}:6379"
     networks:

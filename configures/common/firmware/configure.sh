@@ -1,6 +1,6 @@
 #!/bin/sh
 
-source costrict.env
+. ./costrict.env
 
 #---------------------------------------------------------
 # apisix设置，无需修改
@@ -16,7 +16,6 @@ TYPE="Content-Type: application/json"
 # VSCODE扩展连接诸葛神码后端时使用的入口URL地址
 # 一般会利用DNS及应用发布设备将该地址映射到 http://${COSTRICT_HOST}:${PORT_APISIX_ENTRY}
 SERVER_IP=$(hostname -I | awk '{ print $1 }')
-declare -r SERVER_IP
 # 判断 COSTRICT_HOST 是否已定义，若未定义则设一个默认值
 if [ -z "${COSTRICT_HOST:-}" ]; then
     COSTRICT_HOST="${SERVER_IP}"
