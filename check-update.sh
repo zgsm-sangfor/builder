@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# check-update.sh - 检测packages.json中包的版本和内容变化，更新包版本
+# check-update.sh - 检测builds目录中包的版本和内容变化，更新包版本
 #
 # 功能：
-# - 遍历packages.json中的builds数组
+# - 遍历builds目录中的JSON配置文件
 # - 计算包path所指目录的CHECKSUM和文件数
 # - 比较当前版本和checksum与latest.json中的记录
 # - 根据变化情况输出提示或更新latest.json
@@ -17,7 +17,7 @@ VERBOSE=false
 PACKAGES=""
 
 # 配置文件路径
-PACKAGES_JSON="packages.json"
+BUILDS_DIR="builds"
 LATEST_JSON="latest.json"
 
 # 打印帮助信息的函数
@@ -180,6 +180,7 @@ calculate_zip_package_checksum() {
 increment_patch_version() {
     local package_name="$1"
     local current_version="$2"
+    local package_config_file="$BUILDS_DIR/${package_name}.json"
 
     # 自动递增 patch 版本号
     local MAJOR=$(echo "$current_version" | cut -d'.' -f1)
@@ -188,15 +189,15 @@ increment_patch_version() {
     local NEW_PATCH=$((PATCH + 1))
     local NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
 
-    # 使用 jq 更新packages.json中的版本号
-    jq "(.builds[] | select(.name == \"$package_name\") | .version) |= \"$NEW_VERSION\"" "$PACKAGES_JSON" > "$PACKAGES_JSON.tmp"
+    # 使用 jq 更新builds目录中对应JSON文件的版本号
+    jq "(.version) |= \"$NEW_VERSION\"" "$package_config_file" > "$package_config_file.tmp"
 
     if [ $? -ne 0 ]; then
-        rm -f "$PACKAGES_JSON.tmp"
-        log "ERROR" "Failed to update package version in packages.json"
+        rm -f "$package_config_file.tmp"
+        log "ERROR" "Failed to update package version in $package_config_file"
         exit 1
     fi
-    mv "$PACKAGES_JSON.tmp" "$PACKAGES_JSON"
+    mv "$package_config_file.tmp" "$package_config_file"
     
     echo "$NEW_VERSION"
 }
@@ -204,19 +205,22 @@ increment_patch_version() {
 # 主函数
 main() {
     prompt "=============================================="
-    prompt "Checking package updates from $PACKAGES_JSON"
+    prompt "Checking package updates from $BUILDS_DIR"
     prompt "=============================================="
     prompt ""
     
-    # 使用jq解析JSON
-    local packages_json=$(cat "$PACKAGES_JSON")
-    local package_count=$(echo "$packages_json" | jq '.builds | length')
+    # 遍历 builds 目录中的所有 JSON 文件
+    local package_count=0
+    for json_file in "$BUILDS_DIR"/*.json; do
+        if [ -f "$json_file" ]; then
+            package_count=$((package_count + 1))
+        fi
+    done
     
     prompt "Found $package_count packages"
     prompt ""
     
     # 遍历每个包
-    local i
     local modified_packages=()
     
     # 如果指定了packages选项，则将逗号分隔的字符串转换为数组
@@ -227,9 +231,11 @@ main() {
         log "INFO" "Checking only specified packages: ${target_packages[*]}"
     fi
     
-    for ((i=0; i<package_count; i++)); do
-        local package_name=$(echo "$packages_json" | jq -r ".builds[$i].name")
+    for json_file in "$BUILDS_DIR"/*.json; do
+        [ -f "$json_file" ] || continue
         
+        local package_name=$(basename "$json_file" .json)
+
         # 如果指定了packages选项，检查当前包是否在目标列表中
         if [ ${#target_packages[@]} -gt 0 ]; then
             local found=false
@@ -243,22 +249,24 @@ main() {
                 continue
             fi
         fi
-        local package_version=$(echo "$packages_json" | jq -r ".builds[$i].version")
-        local package_path=$(echo "$packages_json" | jq -r ".builds[$i].path")
-        local package_type=$(echo "$packages_json" | jq -r ".builds[$i].type")
-        local package_target=$(echo "$packages_json" | jq -r ".builds[$i].target")
+        
+        # 从builds目录的JSON文件中读取包信息
+        local package_version=$(jq -r ".version // empty" "$json_file")
+        local package_path=$(jq -r ".path // empty" "$json_file")
+        local package_type=$(jq -r ".type // empty" "$json_file")
+        local package_target=$(jq -r ".target // empty" "$json_file")
         
         prompt "Processing package: $package_name"
         
         # 检查version字段是否存在
-        if [ -z "$package_version" ] || [ "$package_version" = "null" ]; then
+        if [ -z "$package_version" ] || [ "$package_version" = "null" ] || [ "$package_version" = "" ]; then
             log "WARN" "No version found for package '$package_name', skipping..."
             prompt ""
             continue
         fi
         
         # 检查path字段是否存在
-        if [ -z "$package_path" ] || [ "$package_path" = "null" ]; then
+        if [ -z "$package_path" ] || [ "$package_path" = "null" ] || [ "$package_path" = "" ]; then
             log "WARN" "No path found for package '$package_name', skipping..."
             prompt ""
             continue
@@ -270,7 +278,7 @@ main() {
         
         if [ "$package_type" = "conf" ]; then
             # conf类型：path、target跨所有平台查找文件
-            if [ -z "$package_target" ] || [ "$package_target" = "null" ]; then
+            if [ -z "$package_target" ] || [ "$package_target" = "null" ] || [ "$package_target" = "" ]; then
                 log "WARN" "No target found for conf package '$package_name', skipping..."
                 prompt ""
                 continue
@@ -298,7 +306,7 @@ main() {
         fi
         
         if [ -z "$new_checksum" ]; then
-            log "ERROR" "Failed to calculate checksum for package '$package_name' at path '$full_path'"
+            log "ERROR" "Failed to calculate checksum for package '$package_name' at path '$package_path'"
             prompt ""
             continue
         fi
@@ -367,7 +375,7 @@ main() {
     
     # 输出所有发生变化的包名到标准输出（以逗号分隔）
     if [ ${#modified_packages[@]} -gt 0 ]; then
-        IFS=',' echo "${modified_packages[*]}"
+        (IFS=','; echo "${modified_packages[*]}")
     fi
 }
 
@@ -388,9 +396,15 @@ while true; do
     esac
 done
 
-# 检查packages.json是否存在
-if [ ! -f "$PACKAGES_JSON" ]; then
-    log "ERROR" "$PACKAGES_JSON not found!"
+# 检查builds目录是否存在
+if [ ! -d "$BUILDS_DIR" ]; then
+    log "ERROR" "$BUILDS_DIR directory not found!"
+    exit 1
+fi
+
+# 检查builds目录中是否有JSON文件
+if [ -z "$(ls -A "$BUILDS_DIR"/*.json 2>/dev/null)" ]; then
+    log "ERROR" "No JSON files found in $BUILDS_DIR directory!"
     exit 1
 fi
 

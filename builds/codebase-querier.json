@@ -1,0 +1,7 @@
+﻿{
+    "name":  "codebase-querier",
+    "type":  "zip",
+    "path":  "./configures",
+    "version":  "1.0.4",
+    "description":  "Code context query service"
+}

@@ -1,0 +1,9 @@
+﻿{
+    "name":  "completion-config",
+    "type":  "conf",
+    "path":  "./configures",
+    "target":  "completion-agent.json",
+    "filename":  "config/completion-agent.json",
+    "version":  "1.0.6",
+    "description":  "Completion-Agent configure file"
+}

@@ -1,0 +1,9 @@
+﻿{
+    "name":  "costrict-config",
+    "type":  "conf",
+    "path":  "./configures",
+    "target":  "costrict.json",
+    "filename":  "config/costrict.json",
+    "version":  "1.1.4",
+    "description":  "Costrict configure file"
+}

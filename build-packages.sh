@@ -10,7 +10,7 @@
 #   |            +-platforms.json: 某个包支持哪些平台(OS&芯片架构)
 #   +-packages.json: 系统有哪些包可以下载
 #
-# 怎么在.env中定义build-packages.sh可上传的环境？如下：
+# 怎么在.env中定义build-packages-v2.sh可上传的环境？如下：
 # 
 # declare -a ENV_NAMES=("test" "prod" "qianliu")
 # # 各环境的主机配置（对应ENV_NAMES的顺序）
@@ -90,6 +90,7 @@ NEED_UPLOAD_PACKAGES=false
 UPLOAD_TARGETS=()
 PACKAGE_TYPE=""
 PACKAGES=""
+PACKAGE=""
 
 # Parse command line options
 args=$(getopt -o hp:K: --long help,package:,packages:,kind:,type:,key:,clean,build,pack,index,def,upload:,upload-packages: -n 'build-packages.sh' -- "$@")
@@ -99,7 +100,7 @@ eval set -- "$args"
 
 while true; do
     case "$1" in
-        -p|--package) package="$2"; shift 2;;
+        -p|--package) PACKAGE="$2"; shift 2;;
         --packages) PACKAGES="$2"; shift 2;;
         --type) PACKAGE_TYPE="$2"; shift 2;;
         --key) KEY_FILE="$2"; shift 2;;
@@ -178,10 +179,10 @@ build_conf() {
     local current_dir=$(pwd)
     # 解析platforms数组
     local platform_count=$(echo "$platforms_json" | jq 'length')
-    # Get target from packages.json
-    local target=$(jq -r ".builds[] | select(.name == \"${package_name}\") | .target" packages.json)
-    if [ -z "$target" ] || [ "$target" = "null" ]; then
-        echo "Error: 'target' not found for package '${package_name}' in packages.json!"
+    # Get target from builds directory JSON file
+    local target=$(jq -r ".target // empty" "builds/${package_name}.json")
+    if [ -z "$target" ] || [ "$target" = "null" ] || [ "$target" = "" ]; then
+        echo "Error: 'target' not found for package '${package_name}' in builds/${package_name}.json!"
         exit 1
     fi
     
@@ -302,14 +303,21 @@ build_zip() {
 
 build_package() {
     local package="$1"
+    local package_config_file="builds/${package}.json"
     
-    # 从packages.json中获取指定包的版本号和路径
-    local package_version=$(jq -r ".builds[] | select(.name == \"${package}\") | .version" packages.json)
-    local package_path=$(jq -r ".builds[] | select(.name == \"${package}\") | .path" packages.json)
-    local package_type=$(jq -r ".builds[] | select(.name == \"${package}\") | .type" packages.json)
-    local package_platforms=$(jq -r ".builds[] | select(.name == \"${package}\") | .platforms" packages.json)
+    # 检查包配置文件是否存在
+    if [ ! -f "$package_config_file" ]; then
+        echo "Error: Package configuration file $package_config_file does not exist!"
+        exit 1
+    fi
+    
+    # 从builds目录的对应JSON文件中获取指定包的版本号和路径
+    local package_version=$(jq -r ".version // empty" "$package_config_file")
+    local package_path=$(jq -r ".path // empty" "$package_config_file")
+    local package_type=$(jq -r ".type // empty" "$package_config_file")
+    local package_platforms=$(jq -r ".platforms // empty" "$package_config_file")
 
-    if [ -z "$package_path" ] || [ "$package_path" = "null" ]; then
+    if [ -z "$package_path" ] || [ "$package_path" = "null" ] || [ "$package_path" = "" ]; then
         echo "Skipping build step for ${package}..."
         return
     fi
@@ -323,13 +331,13 @@ build_package() {
         exit 1
     fi
     
-    if [ -z "$package_version" ] || [ "$package_version" = "null" ]; then
-        echo "Error: Version not found for package '${package}' in packages.json!"
+    if [ -z "$package_version" ] || [ "$package_version" = "null" ] || [ "$package_version" = "" ]; then
+        echo "Error: Version not found for package '${package}' in ${package_config_file}!"
         exit 1
     fi
 
-    if [ -z "$package_type" ] || [ "$package_type" = "null" ]; then
-        echo "Error: 'type' not found for package '${package}' in packages.json!"
+    if [ -z "$package_type" ] || [ "$package_type" = "null" ] || [ "$package_type" = "" ]; then
+        echo "Error: 'type' not found for package '${package}' in ${package_config_file}!"
         exit 1
     fi
     
@@ -350,50 +358,38 @@ build_package() {
     fi
 }
 
-# Function to build multiple packages
-build_packages() {
-    local version="$1"
-
-    # 从package-versions.json读取包信息
-    echo "Reading package information from packages.json..."
-    
-    # 使用jq解析JSON
-    local packages_json=$(cat packages.json)
-    local package_count=$(echo "$packages_json" | jq '.builds | length')
-    
-    echo "Found $package_count packages to build"
-    echo ""
-
-    # 遍历每个包
-    local i
-    for ((i=0; i<package_count; i++)); do
-        local package_name=$(echo "$packages_json" | jq -r ".builds[$i].name")
-
-        build_package "${package_name}"
-        echo ""
-    done
-    
-    echo "All packages built successfully!"
-}
-
-# Function to get package type from packages.json
+# Function to get package type from builds directory JSON file
 get_package_type() {
     local package_name=$1
+    local package_config_file="builds/${package_name}.json"
 
-    local package_type=$(jq -r ".builds[] | select(.name == \"${package_name}\") | .type // empty" packages.json)
-    if [ -z "$package_type" ] || [ "$package_type" = "null" ]; then
+    # 检查包配置文件是否存在
+    if [ ! -f "$package_config_file" ]; then
+        echo "exec"
+        return
+    fi
+
+    local package_type=$(jq -r ".type // empty" "$package_config_file")
+    if [ -z "$package_type" ] || [ "$package_type" = "null" ] || [ "$package_type" = "" ]; then
         echo "exec"
     else
         echo "$package_type"
     fi
 }
 
-# Function to get package description from packages.json
+# Function to get package description from builds directory JSON file
 get_package_description() {
     local package_name=$1
+    local package_config_file="builds/${package_name}.json"
 
-    local package_description=$(jq -r ".builds[] | select(.name == \"${package_name}\") | .description // empty" packages.json)
-    if [ -z "$package_description" ] || [ "$package_description" = "null" ]; then
+    # 检查包配置文件是否存在
+    if [ ! -f "$package_config_file" ]; then
+        echo "No description information"
+        return
+    fi
+
+    local package_description=$(jq -r ".description // empty" "$package_config_file")
+    if [ -z "$package_description" ] || [ "$package_description" = "null" ] || [ "$package_description" = "" ]; then
         echo "No description information"
     else
         echo "$package_description"
@@ -402,9 +398,16 @@ get_package_description() {
 
 get_package_filename() {
     local package_name=$1
+    local package_config_file="builds/${package_name}.json"
 
-    local package_filename=$(jq -r ".builds[] | select(.name == \"${package_name}\") | .filename // empty" packages.json)
-    if [ -z "$package_filename" ] || [ "$package_filename" = "null" ]; then
+    # 检查包配置文件是否存在
+    if [ ! -f "$package_config_file" ]; then
+        echo ""
+        return
+    fi
+
+    local package_filename=$(jq -r ".filename // empty" "$package_config_file")
+    if [ -z "$package_filename" ] || [ "$package_filename" = "null" ] || [ "$package_filename" = "" ]; then
         echo ""
     else
         echo "$package_filename"
@@ -474,16 +477,23 @@ index_packages() {
 # Function to clean up old version directories for a package
 cleanup_old_versions() {
     local package_name="$1"
-        
-    # 从package-versions.json中获取指定包的版本号
-    local target_version=$(jq -r ".builds[] | select(.name == \"${package_name}\") | .version" packages.json)
-    local target_path=$(jq -r ".builds[] | select(.name == \"${package_name}\") | .path" packages.json)
+    local package_config_file="builds/${package_name}.json"
     
-    if [ -z "$target_version" ] || [ "$target_version" = "null" ]; then
+    # 检查包配置文件是否存在
+    if [ ! -f "$package_config_file" ]; then
+        echo "Warning: Package configuration file $package_config_file does not exist, skipping clean for ${package_name}..."
+        return 0
+    fi
+    
+    # 从builds目录的JSON文件中获取指定包的版本号
+    local target_version=$(jq -r ".version // empty" "$package_config_file")
+    local target_path=$(jq -r ".path // empty" "$package_config_file")
+    
+    if [ -z "$target_version" ] || [ "$target_version" = "null" ] || [ "$target_version" = "" ]; then
         echo "Skipping clean step for package '${package_name}'..."
        return 0
     fi
-    if [ -z "$target_path" ] || [ "$target_path" = "null" ]; then
+    if [ -z "$target_path" ] || [ "$target_path" = "null" ] || [ "$target_path" = "" ]; then
         echo "Skipping clean step for package '${package_name}'..."
        return 0
     fi
@@ -537,31 +547,31 @@ cleanup_old_versions() {
 
 # Function to clean up old versions for all packages
 cleanup_all_old_versions() {
-    # 从package-versions.json读取包信息
-    echo "Reading package information from packages.json for clean..."
+    # 从builds目录读取包信息
+    echo "Reading package information from builds directory for clean..."
     
-    # 使用jq解析JSON
-    local packages_json=$(cat packages.json)
-    local package_count=$(echo "$packages_json" | jq '.builds | length')
+    # 遍历builds目录中的所有JSON文件
+    local package_count=0
+    for json_file in builds/*.json; do
+        if [ -f "$json_file" ]; then
+            package_name=$(basename "$json_file" .json)
+            
+            echo "=============================================="
+            echo "Cleaning up package: $package_name"
+            echo "=============================================="
+            cleanup_old_versions "$package_name"
+            if [ $? -ne 0 ]; then
+                echo "Cleanup failed for package: $package_name"
+                exit 1
+            fi
+            echo ""
+            
+            ((package_count++))
+        fi
+    done
     
     echo "Found $package_count packages to clean"
     echo ""
-    
-    # 遍历每个包
-    local i
-    for ((i=0; i<package_count; i++)); do
-        local package_name=$(echo "$packages_json" | jq -r ".builds[$i].name")
-        
-        echo "=============================================="
-        echo "Cleaning up package: $package_name"
-        echo "=============================================="
-        cleanup_old_versions "$package_name"
-        if [ $? -ne 0 ]; then
-            echo "Cleanup failed for package: $package_name"
-            exit 1
-        fi
-        echo ""
-    done
     
     echo "All packages clean completed!"
 }
@@ -632,6 +642,12 @@ upload_package_clouds() {
 
 process_package() {
     local package_name=$1
+    # 检查包配置文件是否存在
+    if [ ! -f "builds/${package_name}.json" ]; then
+        echo "Error: Package configuration file 'builds/${package_name}.json' does not exist!"
+        exit 1
+    fi
+    
     # 处理指定包
     mkdir -p "packages/${package_name}"
 
@@ -672,7 +688,7 @@ process_package() {
     fi
 
     if [ "$NEED_UPLOAD" = true ]; then
-        echo "Uploading package: $package_name"
+        echo "Uploading package: ${package_name}"
         upload_package_clouds "packages" "${package_name}"
     fi
 }
@@ -687,14 +703,14 @@ process_packages() {
         IFS=',' read -ra package_list <<< "$packages"
     fi
     
-    # 如果包列表为空，从packages.json读取所有包
+    # 如果包列表为空，从builds目录读取所有JSON文件
     if [ ${#package_list[@]} -eq 0 ]; then
-        echo "No packages specified, reading from packages.json..."
-        local packages_json=$(cat packages.json)
-        local package_count=$(echo "$packages_json" | jq '.builds | length')
-        
-        for ((i=0; i<package_count; i++)); do
-            package_list+=("$(echo "$packages_json" | jq -r ".builds[$i].name")")
+        echo "No packages specified, reading from builds directory..."
+        for json_file in builds/*.json; do
+            if [ -f "$json_file" ]; then
+                package_name=$(basename "$json_file" .json)
+                package_list+=("$package_name")
+            fi
         done
     fi
     
@@ -725,45 +741,48 @@ process_type() {
     echo "Processing packages of type: $target_type"
     echo ""
     
-    # 使用jq解析JSON
-    local packages_json=$(cat packages.json)
-    local package_count=$(echo "$packages_json" | jq '.builds | length')
-    
+    # 遍历builds目录中的所有JSON文件
     local processed_count=0
-    local i
-    for ((i=0; i<package_count; i++)); do
-        local package_name=$(echo "$packages_json" | jq -r ".builds[$i].name")
-        local package_type=$(echo "$packages_json" | jq -r ".builds[$i].type // empty")
-        
-        if [ "$package_type" = "$target_type" ]; then
-            echo "=============================================="
-            echo "Processing package: $package_name (type: $package_type)"
-            echo "=============================================="
-            process_package "$package_name"
-            echo ""
-            ((processed_count++))
+    for json_file in builds/*.json; do
+        if [ -f "$json_file" ]; then
+            local package_name=$(basename "$json_file" .json)
+            local package_type=$(jq -r ".type // empty" "$json_file")
+            
+            if [ "$package_type" = "$target_type" ]; then
+                echo "=============================================="
+                echo "Processing package: $package_name (type: $package_type)"
+                echo "=============================================="
+                process_package "$package_name"
+                echo ""
+                ((processed_count++))
+            fi
         fi
     done
     
     echo "Processed $processed_count package(s) of type '$target_type'"
 }
 
-if [ "$NEED_CLEAN" = true ] || [ "$NEED_BUILD" = true ] || [ "$NEED_PACK" = true ]; then
-    # 检查jq工具是否可用
-    if ! command -v jq >/dev/null 2>&1; then
-        echo "Error: jq command not found! Please install jq to parse JSON files."
-        echo "Installation instructions:"
-        echo "  Ubuntu/Debian: sudo apt-get install jq"
-        echo "  CentOS/RHEL: sudo yum install jq"
-        echo "  macOS: brew install jq"
-        echo "  Windows: Download from https://stedolan.github.io/jq/download/"
-        exit 1
-    fi
-    # 检查是否有模块定义文件packages.json
-    if [ ! -f "packages.json" ]; then
-        echo "Error: packages.json file not found!"
-        exit 1
-    fi
+# 检查jq工具是否可用
+if ! command -v jq >/dev/null 2>&1; then
+    echo "Error: jq command not found! Please install jq to parse JSON files."
+    echo "Installation instructions:"
+    echo "  Ubuntu/Debian: sudo apt-get install jq"
+    echo "  CentOS/RHEL: sudo yum install jq"
+    echo "  macOS: brew install jq"
+    echo "  Windows: Download from https://stedolan.github.io/jq/download/"
+    exit 1
+fi
+
+# 检查builds目录是否存在
+if [ ! -d "builds" ]; then
+    echo "Error: builds directory not found!"
+    exit 1
+fi
+
+# 检查builds目录中是否有JSON文件
+if [ -z "$(ls -A builds/*.json 2>/dev/null)" ]; then
+    echo "Error: No JSON files found in builds directory!"
+    exit 1
 fi
 
 if [ "$NEED_UPLOAD_PACKAGES" = true ]; then
@@ -778,11 +797,11 @@ if [ -n "$PACKAGE_TYPE" ]; then
 elif [ -n "$PACKAGES" ]; then
     # 处理指定的包列表
     process_packages "$PACKAGES"
-elif [ -z "$package" ]; then
+elif [ -z "$PACKAGE" ]; then
     # 处理所有包
     process_packages ""
 else
-    process_package "$package"
+    process_package "$PACKAGE"
 fi
 
 echo "Build completed."

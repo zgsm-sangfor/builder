@@ -1,0 +1,9 @@
+﻿{
+    "name":  "tokenizer-config",
+    "type":  "conf",
+    "path":  "./configures",
+    "target":  "tokenizer.json",
+    "filename":  "config/tokenizer.json",
+    "version":  "1.0.0",
+    "description":  "The definition file used by the Tokenizer"
+}

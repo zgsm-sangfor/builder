@@ -173,7 +173,7 @@ check_docker_status() {
     
     # 逐行处理容器信息，跳过第一行（表头）
     while IFS= read -r line; do
-        ((line_count++))
+        line_count=$((line_count + 1))
         # 跳过第一行表头
         [[ $line_count -eq 1 ]] && continue
         
@@ -182,14 +182,14 @@ check_docker_status() {
         
         #根据状态标识分类统计
         if [[ "$line" == *"(health: starting)"* ]]; then
-            ((starting_count++))
+            starting_count=$((starting_count + 1))
         elif [[ "$line" == *"(healthy)"* ]]; then
-            ((healthy_count++))
+            healthy_count=$((healthy_count + 1))
         elif [[ "$line" == *"(unhealthy)"* ]]; then
-            ((unhealthy_count++))
+            unhealthy_count=$((unhealthy_count + 1))
         else
             # 无状态标识的容器
-            ((no_status_count++))
+            no_status_count=$((no_status_count + 1))
         fi
     done <<< "$ps_output"
     

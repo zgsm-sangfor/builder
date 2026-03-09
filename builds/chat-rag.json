@@ -1,0 +1,7 @@
+﻿{
+    "name":  "chat-rag",
+    "type":  "zip",
+    "path":  "./configures",
+    "version":  "1.0.4",
+    "description":  "CHAT service with RAG enhancement capabilities"
+}

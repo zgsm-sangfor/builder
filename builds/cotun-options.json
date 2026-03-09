@@ -1,0 +1,9 @@
+﻿{
+    "name":  "cotun-options",
+    "type":  "conf",
+    "path":  "./configures",
+    "target":  "cotun-options.json",
+    "filename":  "config/cotun-options.json",
+    "version":  "1.0.0",
+    "description":  "Cotun option file"
+}

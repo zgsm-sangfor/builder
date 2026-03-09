@@ -1,0 +1,9 @@
+﻿{
+    "name":  "hidden-scores-config",
+    "type":  "conf",
+    "path":  "./configures",
+    "target":  "hidden-scores.json",
+    "filename":  "config/hidden-scores.json",
+    "version":  "1.0.0",
+    "description":  "The Configuration for hidden-scores filter"
+}

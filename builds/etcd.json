@@ -1,0 +1,7 @@
+﻿{
+    "name":  "etcd",
+    "type":  "zip",
+    "path":  "./configures",
+    "version":  "1.0.4",
+    "description":  "A key-value database provided for use by services such as APISIX"
+}

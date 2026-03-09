@@ -1,0 +1,7 @@
+﻿{
+    "name":  "postgres",
+    "type":  "zip",
+    "path":  "./configures",
+    "version":  "1.0.4",
+    "description":  "A universal database for storing critical user data"
+}

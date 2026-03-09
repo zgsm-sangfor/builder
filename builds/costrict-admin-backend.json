@@ -1,0 +1,7 @@
+﻿{
+    "name":  "costrict-admin-backend",
+    "type":  "zip",
+    "path":  "./configures",
+    "version":  "1.0.46",
+    "description":  "The back-end docker-service of costrict"
+}

@@ -1,0 +1,9 @@
+﻿{
+    "name":  "system",
+    "type":  "conf",
+    "path":  "./configures",
+    "target":  "system-spec.json",
+    "filename":  "share/system-spec.json",
+    "version":  "1.1.5",
+    "description":  "Client Subsystem Definition File"
+}

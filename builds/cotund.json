@@ -1,0 +1,7 @@
+﻿{
+    "name":  "cotund",
+    "type":  "zip",
+    "path":  "./configures",
+    "version":  "1.0.0",
+    "description":  "Management service for the collaborative tunnel between the client and the server"
+}

@@ -8,5 +8,7 @@ packages
 !start-local-site.sh
 !configures/
 !configures/**
+!builds/
+!builds/**
 !site/
 !site/**

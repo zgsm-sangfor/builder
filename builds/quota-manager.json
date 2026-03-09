@@ -1,0 +1,7 @@
+﻿{
+    "name":  "quota-manager",
+    "type":  "zip",
+    "path":  "./configures",
+    "version":  "1.0.3",
+    "description":  "LLM Quota Management Service"
+}

@@ -1,0 +1,7 @@
+﻿{
+    "name":  "costrict-admin-frontend",
+    "type":  "zip",
+    "path":  "./configures",
+    "version":  "1.0.36",
+    "description":  "The front-end page of the costrict-admin service"
+}
