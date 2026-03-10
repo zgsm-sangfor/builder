@@ -4,26 +4,26 @@
     "path":  "../costrict-keeper",
     "version":  "1.1.33",
     "platforms":  [
-                      {
-                          "os":  "windows",
-                          "arch":  "amd64"
-                      },
-                      {
-                          "os":  "linux",
-                          "arch":  "amd64"
-                      },
-                      {
-                          "os":  "linux",
-                          "arch":  "arm64"
-                      },
-                      {
-                          "os":  "darwin",
-                          "arch":  "amd64"
-                      },
-                      {
-                          "os":  "darwin",
-                          "arch":  "arm64"
-                      }
-                  ],
+        {
+            "os":  "windows",
+            "arch":  "amd64"
+        },
+        {
+            "os":  "linux",
+            "arch":  "amd64"
+        },
+        {
+            "os":  "linux",
+            "arch":  "arm64"
+        },
+        {
+            "os":  "darwin",
+            "arch":  "amd64"
+        },
+        {
+            "os":  "darwin",
+            "arch":  "arm64"
+        }
+    ],
     "description":  "Costrict client process management service"
 }

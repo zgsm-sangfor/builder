@@ -1,17 +1,17 @@
-﻿{
-    "name":  "costrict-admin",
-    "type":  "exec",
-    "path":  "../costrict-admin/backend",
-    "platforms":  [
-                      {
-                          "os":  "windows",
-                          "arch":  "amd64"
-                      },
-                      {
-                          "os":  "linux",
-                          "arch":  "amd64"
-                      }
-                  ],
-    "version":  "1.0.48",
-    "description":  "The back-end management of costrict"
+{
+  "name": "costrict-admin",
+  "type": "exec",
+  "path": "../costrict-admin/backend",
+  "platforms": [
+    {
+      "os": "windows",
+      "arch": "amd64"
+    },
+    {
+      "os": "linux",
+      "arch": "amd64"
+    }
+  ],
+  "version": "1.0.43",
+  "description": "The back-end management of costrict"
 }

@@ -1,0 +1,9 @@
+{
+  "name": "client-manager",
+  "repo": "zgsm",
+  "version": "1.0.43",
+  "path": "../../services/client-manager",
+  "command": "docker build --build-arg VERSION={{ .version }} . -t {{ .repo }}/{{ .name }}:{{ .version }}",
+  "tag": "{{ .version }}",
+  "description": ""
+}

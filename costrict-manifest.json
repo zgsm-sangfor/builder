@@ -1,0 +1,98 @@
+{
+  "leadings": [
+    {
+      "component_name": "costrict-admin",
+      "display_name": "后端管理工具",
+      "description": "后端管理工具，提供各种后端管理实用工具"
+    }, 
+    {
+      "component_name": "firmware",
+      "display_name": "后端系统底座",
+      "description": "后端系统运行需要的底座"
+    }, 
+    {
+      "component_name": "backend",
+      "display_name": "后端服务集",
+      "description": "后端业务逻辑和数据处理服务集合"
+    }, 
+    {
+      "component_name": "frontend",
+      "display_name": "前端应用集",
+      "description": "支撑用户界面和前端交互逻辑的前端服务集合"
+    }
+  ],
+  "components": [
+    {
+      "name": "costrict-admin"
+    },
+    {
+      "name": "firmware"
+    },
+    {
+      "name": "backend"
+    },
+    {
+      "name": "frontend"
+    },
+    {
+      "name": "costrict-admin-backend"
+    },
+    {
+      "name": "costrict-admin-frontend"
+    },
+    {
+      "name": "casdoor"
+    },
+    {
+      "name": "oneapi"
+    },
+    {
+      "name": "etcd"
+    },
+    {
+      "name": "redis"
+    },
+    {
+      "name": "postgres"
+    },
+    {
+      "name": "apisix"
+    },
+    {
+      "name": "portal"
+    },
+    {
+      "name": "cotund"
+    },
+    {
+      "name": "codebase-querier"
+    },
+    {
+      "name": "codebase-embedder"
+    },
+    {
+      "name": "chat-rag"
+    },
+    {
+      "name": "codereview"
+    },
+    {
+      "name": "credit-manager"
+    },
+    {
+      "name": "code-completion"
+    },
+    {
+      "name": "monitoring"
+    },
+    {
+      "name": "quota-manager"
+    },
+    {
+      "name": "client-manager"
+    },
+    {
+      "name": "weaviate"
+    }
+  ]
+}

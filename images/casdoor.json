@@ -1,0 +1,9 @@
+{
+  "name": "casdoor",
+  "repo": "zgsm",
+  "version": "1.0.5",
+  "path": "../../zgsm-ai/casdoor",
+  "command": "docker build --build-arg VERSION={{ .version }} . -t {{ .repo }}/{{ .name }}:{{ .version }}",
+  "tag": "{{ .version }}",
+  "description": "User Authentication Management System"
+}

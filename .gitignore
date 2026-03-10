@@ -2,13 +2,20 @@
 *
 packages
 # 但包含以下特定文件和目录
+!build-costrict.sh
 !build-packages.sh
+!build-images.sh
 !check-update.sh
-!packages.json
+!update-manifest.sh
 !start-local-site.sh
+!packages.json
+!costrict-manifest.json
+!README.md
 !configures/
 !configures/**
 !builds/
 !builds/**
+!images/
+!images/**
 !site/
 !site/**

@@ -1,0 +1,9 @@
+{
+  "name": "chat-rag",
+  "repo": "zgsm",
+  "version": "1.0.4",
+  "path": "../../zgsm-ai/chat-rag",
+  "command": "docker build --build-arg VERSION={{ .version }} . -t {{ .repo }}/{{ .name }}:{{ .version }}",
+  "tag": "{{ .version }}",
+  "description": "CHAT service with RAG enhancement capabilities"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "codebase-embedder",
+  "repo": "zgsm",
+  "version": "1.0.5",
+  "path": "../../zgsm-ai/codebase-embedder",
+  "command": "docker build --build-arg VERSION={{ .version }} . -t {{ .repo }}/{{ .name }}:{{ .version }}",
+  "tag": "v{{ .version }}",
+  "description": "A service used to construct embeddable code vectors"
+}

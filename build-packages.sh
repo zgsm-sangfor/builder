@@ -10,7 +10,7 @@
 #   |            +-platforms.json: 某个包支持哪些平台(OS&芯片架构)
 #   +-packages.json: 系统有哪些包可以下载
 #
-# 怎么在.env中定义build-packages-v2.sh可上传的环境？如下：
+# 怎么在.env中定义build-packages.sh可上传的环境？如下：
 # 
 # declare -a ENV_NAMES=("test" "prod" "qianliu")
 # # 各环境的主机配置（对应ENV_NAMES的顺序）

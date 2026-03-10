@@ -1,0 +1,9 @@
+{
+  "name": "cotun",
+  "repo": "zgsm",
+  "version": "1.3.11",
+  "path": "../../services/cotun",
+  "command": "docker build --build-arg VERSION={{ .version }} . -t {{ .repo }}/{{ .name }}:{{ .version }}",
+  "tag": "{{ .version }}",
+  "description": "Stream transfer tools"
+}
