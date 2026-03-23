@@ -434,7 +434,7 @@ main() {
     log "INFO" "启动Docker Compose服务..."
     if ! docker-compose -f docker-compose.yml up -d; then
         log "ERROR" "Docker Compose服务启动失败"
-        return 1
+        exit 1
     fi
     log "INFO" "Docker Compose服务启动完成"
     

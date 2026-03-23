@@ -6,6 +6,7 @@ services:
       TZ: "Asia/Shanghai"
     volumes:
       - ./data:/var/www
+      - ${COSTRICT_DATA_DIR}/repos:/var/www/costrict
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
       - shenma
