@@ -15,16 +15,16 @@
   - [📁 项目结构](#-项目结构)
   - [📦 包类型说明](#-包类型说明)
   - [🔧 打包工具详解](#-打包工具详解)
-    - [1. build-images.sh - Docker 镜像构建](#1-build-imagessh---docker-镜像构建)
-    - [2. build-packages.sh - 部署包构建](#2-build-packagessh---部署包构建)
-    - [3. build-costrict.sh - 完整构建](#3-build-costrictsh---完整构建)
-    - [4. check-update.sh - 更新检测](#4-check-updatesh---更新检测)
-    - [5. update-manifest.sh - 发布清单更新](#5-update-manifestsh---发布清单更新)
-    - [6. start-local-site.sh - 本地测试站点](#6-start-local-sitesh---本地测试站点)
+    - [1. build-depends - Docker 镜像构建](#1-build-depends---docker-镜像构建)
+    - [2. build-packages - 部署包构建](#2-build-packages---部署包构建)
+    - [3. build-costrict - 完整构建](#3-build-costrict---完整构建)
+    - [4. check-update - 更新检测](#4-check-update---更新检测)
+    - [5. update-manifest - 发布清单更新](#5-update-manifest---发布清单更新)
+    - [6. start-local-site - 本地测试站点](#6-start-local-site---本地测试站点)
   - [📄 配置文件说明](#-配置文件说明)
     - [环境配置 (.env)](#环境配置-env)
-    - [镜像配置 (images/\*.json)](#镜像配置-imagesjson)
-    - [部署包配置 (builds/\*.json)](#部署包配置-buildsjson)
+    - [构建依赖的配置 (depends)](#构建依赖的配置-depends)
+    - [部署包配置 (components)](#部署包配置-components)
   - [📌 常见用例](#-常见用例)
     - [场景 1: 发布新版本](#场景-1-发布新版本)
     - [场景 2: 仅更新某个服务的配置](#场景-2-仅更新某个服务的配置)
@@ -74,8 +74,8 @@
 
 ```bash
 # 步骤1: 构建 Docker 镜像（可选推送）
-./build-images.sh --build
-./build-images.sh --build --push
+./build-depends.sh --build
+./build-depends.sh --build --push
 
 # 步骤2: 检查更新并自动递增版本
 ./check-update.sh --update --packages backend,frontend
@@ -94,7 +94,7 @@
 
 ```
 builder/
-├── build-images.sh          # Docker 镜像构建脚本
+├── build-depends.sh          # Docker 镜像构建脚本
 ├── build-packages.sh        # 部署包构建脚本
 ├── build-costrict.sh        # 完整构建脚本（自动化流程）
 ├── check-update.sh          # 更新检测脚本
@@ -103,12 +103,12 @@ builder/
 ├── costrict-manifest.json   # CoStrict 组件清单模板
 ├── latest.json              # 包版本和 checksum 记录
 │
-├── images/                  # Docker 镜像配置目录
+├── depends/                  # Docker 镜像配置目录
 │   ├── casdoor.json
 │   ├── chat-rag.json
 │   └── ...
 │
-├── builds/                  # 部署包配置目录
+├── components/                  # 部署包配置目录
 │   ├── backend.json         # 后端部署包配置
 │   ├── frontend.json        # 前端部署包配置
 │   ├── costrict.json        # 完整系统配置
@@ -145,13 +145,13 @@ builder/
 
 ## 🔧 打包工具详解
 
-### 1. build-images.sh - Docker 镜像构建
+### 1. build-depends - Docker 镜像构建
 
-**功能**：读取 `images/{package}.json` 配置，构建 Docker 镜像并推送到仓库
+**功能**：读取 `depends/{package}.json` 配置，构建 Docker 镜像并推送到仓库
 
 **用法**：
 ```bash
-./build-images.sh [OPTIONS] [ACTIONS]
+./build-depends.sh [OPTIONS] [ACTIONS]
 ```
 
 **选项**：
@@ -177,25 +177,25 @@ builder/
 **示例**：
 ```bash
 # 构建单个模块的镜像
-./build-images.sh --package casdoor --build
+./build-depends.sh --package casdoor --build
 
 # 构建并推送到默认环境
-./build-images.sh --package casdoor --build --push --upload def
+./build-depends.sh --package casdoor --build --push --upload def
 
 # 构建多个模块并推送到多个环境
-./build-images.sh --packages "casdoor,chat-rag" --build --upload test,prod
+./build-depends.sh --packages "casdoor,chat-rag" --build --upload test,prod
 
 # 处理所有镜像
-./build-images.sh --build --upload all
+./build-depends.sh --build --upload all
 ```
 
-**配置文件**：[`images/*.json`](images/)
+**配置文件**：[`depends/*.json`](depends/)
 
 ---
 
-### 2. build-packages.sh - 部署包构建
+### 2. build-packages - 部署包构建
 
-**功能**：读取 `builds/{package}.json` 配置，构建 zip/exec/conf 类型包
+**功能**：读取 `components/{package}.json` 配置，构建 zip/exec/conf 类型包
 
 **用法**：
 ```bash
@@ -224,7 +224,7 @@ builder/
 
 **环境说明**：
 - 环境由 `.env` 中的 `ENV_NAMES` 数组定义
-- 支持与 build-images.sh 相同的环境关键字（def, all, 具体环境名）
+- 支持与 build-depends.sh 相同的环境关键字（def, all, 具体环境名）
 
 **示例**：
 ```bash
@@ -247,11 +247,11 @@ builder/
 ./build-packages.sh --package backend --def --key /path/to/private.pem
 ```
 
-**配置文件**：[`builds/*.json`](builds/)
+**配置文件**：[`components/*.json`](components/)
 
 ---
 
-### 3. build-costrict.sh - 完整构建
+### 3. build-costrict - 完整构建
 
 **功能**：一键完成 CoStrict 完整版本的构建发布
 
@@ -263,13 +263,13 @@ builder/
 **选项**：
 | 选项 | 说明 |
 |------|------|
-| `--push [env]` | 推送镜像到指定环境（会传递给 build-images.sh）。构建镜像始终执行，此选项只控制是否推送。如果 env 为空或 'def'，推送到 docker hub；否则推送到指定环境（如 'test,prod' 或 'all'）|
+| `--push [env]` | 推送镜像到指定环境（会传递给 build-depends.sh）。构建镜像始终执行，此选项只控制是否推送。如果 env 为空或 'def'，推送到 docker hub；否则推送到指定环境（如 'test,prod' 或 'all'）|
 | `--upload <ENV>` | 指定包上传的环境（会传递给 build-packages.sh）|
 | `--help, -h` | 显示帮助信息 |
 
 **执行流程**：
 1. 读取 `costrict-manifest.json` 获取组件列表
-2. 调用 `build-images.sh` 构建镜像（可选推送）
+2. 调用 `build-depends.sh` 构建镜像（可选推送）
 3. 调用 `check-update.sh` 检测更新的模块
 4. 调用 `update-manifest.sh` 更新 `manifest.json`
 5. 调用 `build-packages.sh` 构建并上传
@@ -294,9 +294,9 @@ builder/
 
 ---
 
-### 4. check-update.sh - 更新检测
+### 4. check-update - 更新检测
 
-**功能**：检测 builds 目录中包的版本和内容变化
+**功能**：检测 components 目录中包的版本和内容变化
 
 **用法**：
 ```bash
@@ -312,7 +312,7 @@ builder/
 | `-h, --help` | 帮助信息 |
 
 **工作原理**：
-- 遍历 `builds/` 目录中的 JSON 配置文件
+- 遍历 `components/` 目录中的 JSON 配置文件
 - 计算包 `path` 所指目录的 CHECKSUM 和文件数
 - 比较当前版本和 checksum 与 `latest.json` 中的记录
 - 使用 `--update` 时自动递增包的 patch 版本号
@@ -331,7 +331,7 @@ builder/
 
 ---
 
-### 5. update-manifest.sh - 发布清单更新
+### 5. update-manifest - 发布清单更新
 
 **功能**：以 `costrict-manifest.json` 为模板，补全组件版本信息
 
@@ -346,12 +346,12 @@ builder/
 
 **工作原理**：
 - 读取 `costrict-manifest.json` 获取组件列表
-- 从 `builds/{name}.json` 读取各组件版本
+- 从 `components/{name}.json` 读取各组件版本
 - 生成完整的 manifest.json
 
 ---
 
-### 6. start-local-site.sh - 本地测试站点
+### 6. start-local-site - 本地测试站点
 
 **功能**：启动本地 nginx 容器，构建可供下载包的测试站点
 
@@ -385,7 +385,7 @@ declare -a ENV_PORTS=(...)
 declare -a ENV_PATHS=(...)
 ```
 
-### 镜像配置 (images/*.json)
+### 构建依赖的配置 (depends)
 
 ```json
 {
@@ -410,7 +410,7 @@ declare -a ENV_PATHS=(...)
 | tag | | 镜像标签（默认为 version） |
 | description | | 镜像描述 |
 
-### 部署包配置 (builds/*.json)
+### 部署包配置 (components)
 
 ```json
 {
@@ -454,10 +454,10 @@ vim configures/common/casdoor/casdoor.yml
 
 ```bash
 # 构建单个镜像
-./build-images.sh --package casdoor --build --upload prod
+./build-depends.sh --package casdoor --build --upload prod
 
 # 构建所有镜像
-./build-images.sh --build --upload all
+./build-depends.sh --build --upload all
 ```
 
 ### 场景 4: 本地测试
@@ -485,12 +485,12 @@ vim configures/common/casdoor/casdoor.yml
 
 ### Q1: 如何添加新的镜像构建配置？
 
-1. 在 [`images/`](images/) 目录创建 `{name}.json` 配置文件
-2. 运行 `./build-images.sh --package {name} --build --upload def`
+1. 在 [`depends/`](depends/) 目录创建 `{name}.json` 配置文件
+2. 运行 `./build-depends.sh --package {name} --build --upload def`
 
 ### Q2: 如何添加新的部署包？
 
-1. 在 [`builds/`](builds/) 目录创建 `{name}.json` 配置文件
+1. 在 [`components/`](components/) 目录创建 `{name}.json` 配置文件
 2. 在 [`configures/common/`](configures/common/) 目录创建对应配置文件
 3. 运行 `./build-packages.sh --package {name} --def --upload def`
 
@@ -503,7 +503,7 @@ vim configures/common/casdoor/casdoor.yml
 
 ```bash
 # 查看构建配置中的版本
-cat builds/backend.json | jq '.version'
+cat components/backend.json | jq '.version'
 
 # 查看生成的 manifest
 cat configures/common/costrict-system/manifest.json

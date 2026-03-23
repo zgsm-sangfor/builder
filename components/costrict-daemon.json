@@ -1,0 +1,13 @@
+{
+  "name": "costrict-daemon",
+  "type": "exec",
+  "path": "../../costrict-admin/daemon",
+  "platforms": [
+    {
+      "os": "linux",
+      "arch": "amd64"
+    }
+  ],
+  "version": "1.0.49",
+  "description": "The daemon of costrict"
+}

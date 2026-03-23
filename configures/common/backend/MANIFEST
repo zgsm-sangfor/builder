@@ -30,7 +30,7 @@
 # ===================================================
 @@~
 
-docker-compose.yml
+docker-compose.yml.in
 system-spec.json
 MANIFEST
 

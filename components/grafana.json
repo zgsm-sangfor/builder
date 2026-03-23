@@ -1,0 +1,7 @@
+﻿{
+    "name":  "grafana",
+    "type":  "zip",
+    "path":  "./configures",
+    "version":  "1.0.0",
+    "description":  "Visualization platform for building interactive dashboards"
+}

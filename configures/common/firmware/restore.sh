@@ -25,7 +25,7 @@
 #   步骤2. 加载Docker镜像：调用$backend/scripts/load-images.sh加载镜像
 #   步骤3. 恢复backend目录：将$input/backend下的内容拷贝到$backend目录
 #   步骤4. 恢复data目录：将$input/data下的内容拷贝到$data目录
-#   步骤5. 注册服务：source加载$backend/init.sh，运行register_services注册costrict-admin服务
+#   步骤5. 注册服务：source加载$backend/init.sh，运行register_services注册costrict-daemon服务
 #   步骤6. 启动服务：运行$backend/run.sh start，启动docker compose服务
 #
 # 备份目录结构要求：
@@ -58,7 +58,7 @@
 # 依赖脚本：
 #   - check.sh: 用于检查环境是否满足恢复要求
 #   - $backend/scripts/load-images.sh: 用于加载Docker镜像
-#   - $backend/init.sh: 用于注册costrict-admin服务
+#   - $backend/init.sh: 用于注册costrict-daemon服务
 #   - $backend/run.sh: 用于启动docker compose服务
 #
 # 返回值：
@@ -433,23 +433,23 @@ start_docker_compose_services() {
     fi
 }
 
-start_costrict_admin_service() {
-    log "INFO" "启动costrict-admin服务..."
+start_costrict_daemon_service() {
+    log "INFO" "启动costrict-daemon服务..."
     
     if command -v service >/dev/null 2>&1; then
-        if service costrict-admin start; then
-            log "INFO" "costrict-admin服务已启动"
+        if service costrict-daemon start; then
+            log "INFO" "costrict-daemon服务已启动"
         else
-            log "WARN" "costrict-admin服务启动失败或未安装"
+            log "WARN" "costrict-daemon服务启动失败或未安装"
         fi
-    elif systemctl is-enabled costrict-admin &> /dev/null; then
-        if systemctl start costrict-admin; then
-            log "INFO" "costrict-admin服务已启动"
+    elif systemctl is-enabled costrict-daemon &> /dev/null; then
+        if systemctl start costrict-daemon; then
+            log "INFO" "costrict-daemon服务已启动"
         else
-            log "WARN" "costrict-admin服务启动失败"
+            log "WARN" "costrict-daemon服务启动失败"
         fi
     else
-        log "WARN" "costrict-admin服务未安装，跳过启动"
+        log "WARN" "costrict-daemon服务未安装，跳过启动"
     fi
     
     return 0
@@ -465,7 +465,7 @@ show_restore_summary() {
     log "INFO" ""
     log "INFO" "后续操作:"
     log "INFO" "  1. 检查服务状态: cd $BACKEND_DIR; bash run.sh status"
-    log "INFO" "  2. 检查costrict-admin服务: service costrict-admin status"
+    log "INFO" "  2. 检查costrict-daemon服务: service costrict-daemon status"
     log "INFO" "  3. 查看日志: cd $BACKEND_DIR; bash run.sh logs"
     log "INFO" "======================================"
     log "INFO" ""
@@ -525,7 +525,7 @@ main() {
     fi
 
     start_docker_compose_services
-    start_costrict_admin_service
+    start_costrict_daemon_service
     
     # 显示汇总信息
     show_restore_summary

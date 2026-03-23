@@ -1,0 +1,7 @@
+﻿{
+    "name":  "es",
+    "type":  "zip",
+    "path":  "./configures",
+    "version":  "1.0.0",
+    "description":  "Distributed search and analytics engine for fast data retrieval"
+}

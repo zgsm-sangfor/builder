@@ -1,4 +1,26 @@
 #!/bin/bash
+# ============================================================================
+# 系统初始化脚本
+# ============================================================================
+# 功能说明:
+#   本脚本用于初始化并安装 CoStrict 系统，执行以下操作：
+#     1. 创建系统所需的目录结构
+#     2. 部署 docker-compose.yml 配置文件
+#     3. 生成必要的环境变量文件和密钥
+#     4. 初始化数据库配置
+#     5. 创建初始化标识文件，防止重复初始化
+#
+# 使用场景:
+#   - 首次安装 CoStrict 系统
+#   - 重新初始化已卸载的系统
+#   - 强制重新初始化现有系统（使用 --force 参数）
+#
+# 依赖说明:
+#   - 需要安装 Docker 和 Docker Compose
+#   - 需要 bash 4.0 或更高版本
+#   - 需要 root 权限（用于创建系统目录）
+# ============================================================================
+
 set -e
 set -u
 set -o pipefail 2>/dev/null || true
@@ -27,6 +49,8 @@ log() {
 
 show_usage() {
     cat << EOF
+初始化并安装 CoStrict 系统，创建目录结构、部署配置文件、生成环境变量和密钥
+
 用法: $0 [选项]
 
 选项:
@@ -149,40 +173,23 @@ fix_permissions() {
 }
 
 process_template_files() {
-    local base_dir="${BACKEND_DIR}"
-    
-    # 切换到目标目录
-    cd "$base_dir" || {
-        log "ERROR" "无法切换到安装目录: $base_dir"
-        return 1
-    }
-    
     log "INFO" "开始处理模板文件..."
-    
-    # 检查模板解析脚本是否存在
-    if [[ ! -f "tpl-resolve.sh" ]]; then
-        log "WARN" "模板解析脚本不存在: tpl-resolve.sh，跳过模板处理"
-        cd - >/dev/null
-        return 0
-    fi
-    
-    # 检查配置文件是否存在
-    if [[ ! -f "configure.sh" ]]; then
-        log "WARN" "配置文件不存在: configure.sh，跳过模板处理"
-        cd - >/dev/null
-        return 0
-    fi
-    
-    # 执行模板解析脚本
-    log "INFO" "执行模板解析..."
     if bash tpl-resolve.sh; then
         log "INFO" "模板文件处理成功"
     else
         log "WARN" "模板文件处理失败，但继续安装"
     fi
     
-    # 切换回原目录
-    cd - >/dev/null
+    return 0
+}
+
+gen_docker_compose_yml() {
+    log "INFO" "生成docker-compose.yml..."
+    if bash scripts/gen-compose-yml.sh -f; then
+        log "INFO" "生成docker-compose.yml成功"
+    else
+        log "WARN" "生成docker-compose.yml失败"
+    fi
     return 0
 }
 
@@ -238,52 +245,16 @@ register_services() {
             log "ERROR" "服务 $service_name 注册失败"
         fi
     done
-    
     return 0
 }
 
 download_docker_images() {
-    local base_dir="${BACKEND_DIR}"
-    
-    # 切换到目标目录
-    cd "$base_dir" || {
-        log "ERROR" "无法切换到安装目录: $base_dir"
-        return 1
-    }
-    
     log "INFO" "开始下载Docker镜像..."
-    
-    # 检查镜像下载脚本是否存在
-    if [[ ! -f "docker-download-images.sh" ]]; then
-        log "ERROR" "镜像下载脚本不存在: docker-download-images.sh"
-        cd - >/dev/null
-        return 1
-    fi
-    
-    # 检查Docker是否可用
-    if ! command -v docker >/dev/null 2>&1; then
-        log "WARN" "Docker未安装，跳过镜像下载"
-        cd - >/dev/null
-        return 0
-    fi
-    
-    # 检查Docker服务是否运行
-    if ! docker info >/dev/null 2>&1; then
-        log "WARN" "Docker服务未运行，跳过镜像下载"
-        cd - >/dev/null
-        return 0
-    fi
-    
-    # 执行镜像下载脚本
-    log "INFO" "执行镜像下载..."
     if bash docker-download-images.sh; then
         log "INFO" "Docker镜像下载成功"
     else
         log "WARN" "Docker镜像下载失败，但继续安装"
     fi
-    
-    # 切换回原目录
-    cd - >/dev/null
     return 0
 }
 
@@ -322,7 +293,6 @@ configure_apisix_routes() {
     
     # 配置APISIX路由
     local apisix_scripts=(
-        #"apisix-ai-gateway.sh"
         "apisix-casdoor.sh"
         "apisix-chatrag.sh"
         "apisix-codereview.sh"
@@ -335,7 +305,6 @@ configure_apisix_routes() {
         "apisix-grafana.sh"
         "apisix-issue.sh"
         "apisix-oidc-auth.sh"
-        #"apisix-quota-manager.sh"
     )
     
     for script in "${apisix_scripts[@]}"; do
@@ -368,43 +337,34 @@ mark_system_initialized() {
 }
 
 gen_costrict_env() {
-    log "INFO" "开始生成 costrict.env 配置文件"
-    
     local source_file="costrict.env.in"
     local target_file="costrict.env"
-    local script_file="scripts/gen-secret.sh"
     
     # 检查目标文件是否已存在
     if [[ -f "$target_file" ]]; then
-        log "INFO" "配置文件已存在，跳过生成: $target_file"
+        log "INFO" "配置文件 $target_file 已存在，跳过..."
         return 0
     fi
     
     # 检查源文件是否存在
     if [[ ! -f "$source_file" ]]; then
-        log "ERROR" "配置模板文件不存在: $source_file"
-        return 1
-    fi
-    
-    # 检查密钥生成脚本是否存在
-    if [[ ! -f "$script_file" ]]; then
-        log "ERROR" "密钥生成脚本不存在: $script_file"
+        log "ERROR" "生成 $target_file 配置文件失败，配置模板文件不存在: $source_file"
         return 1
     fi
     
     # 调用密钥生成脚本
-    log "INFO" "调用 $script_file 生成密钥配置"
-    if bash "$script_file" -i "$source_file" -o "$target_file"; then
-        log "INFO" "成功生成配置文件: $target_file"
+    log "INFO" "调用 scripts/gen-secret.sh 生成 $target_file 配置文件"
+    if bash scripts/gen-secret.sh -i "$source_file" -o "$target_file"; then
+        log "INFO" "生成配置文件 $target_file 成功"
         return 0
     else
-        log "ERROR" "生成配置文件失败: $target_file"
+        log "ERROR" "生成配置文件 $target_file 失败"
         return 1
     fi
 }
 
 save_install_env() {
-    local env_file="${BACKEND_DIR}/install.env"
+    local env_file="${BACKEND_DIR}/.install.env"
     
     log "INFO" "保存安装环境变量到: $env_file"
     
@@ -424,7 +384,7 @@ EOF
         log "INFO" "安装环境变量已成功保存"
         return 0
     else
-        log "ERROR" "保存安装环境变量失败"
+        log "ERROR" "安装环境变量保存失败"
         return 1
     fi
 }
@@ -436,6 +396,12 @@ main() {
     # 解析命令行参数
     parse_arguments "$@"
     
+    # 切换到安装目录
+    cd "${BACKEND_DIR}" || {
+        log "ERROR" "无法切换到安装目录: ${BACKEND_DIR}"
+        exit 1
+    }
+
     # 检查系统是否已初始化（非强制模式）
     if [ "$FORCE_REINIT" = false ] ; then
         if is_system_initialized; then
@@ -447,41 +413,25 @@ main() {
     else
         log "INFO" "强制重新初始化模式，跳过初始化检查..."
     fi
-
-    gen_costrict_env
-    save_install_env
     # 验证安装环境
     log "INFO" "执行环境检查脚本..."
     if ! bash check.sh --dir "${BACKEND_DIR}"; then
-        log "WARN" "安装环境验证发现问题，但继续执行"
+        log "ERROR" "安装环境验证发现问题，请排除问题后重新安装"
+        exit 1
     fi
 
-    # 注册系统服务
-    if ! register_services; then
-        log "WARN" "注册系统服务发现问题，但继续执行"
-    fi
+
+    gen_costrict_env
+    save_install_env
     
-    # 修正目录权限
-    if ! fix_permissions; then
-        log "WARN" "权限修正失败，但继续执行"
-    fi
-    
-    # 下载Docker镜像
-    if ! download_docker_images; then
-        log "WARN" "Docker镜像下载失败，请手动执行 ${BACKEND_DIR}/docker-download-images.sh"
-    fi
-    
-    # 处理模板文件
-    if ! process_template_files; then
-        log "WARN" "模板文件处理失败，但继续执行"
-    fi
+    register_services
+    fix_permissions
+    download_docker_images
+    process_template_files
+    gen_docker_compose_yml
     
     # 启动Docker Compose服务
     log "INFO" "启动Docker Compose服务..."
-    cd "${base_dir:-$BACKEND_DIR}" || {
-        log "ERROR" "无法切换到安装目录"
-        return 1
-    }
     if ! docker-compose -f docker-compose.yml up -d; then
         log "ERROR" "Docker Compose服务启动失败"
         return 1
@@ -492,9 +442,6 @@ main() {
     if ! configure_apisix_routes; then
         log "WARN" "APISIX路由配置失败，但系统已启动"
     fi
-    
-    # 切换回原目录（如果在切换后）
-    cd - >/dev/null || true
     
     # 标记系统已初始化完成
     mark_system_initialized

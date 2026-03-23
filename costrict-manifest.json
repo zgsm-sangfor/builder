@@ -1,6 +1,11 @@
 {
   "leadings": [
     {
+      "component_name": "costrict-daemon",
+      "display_name": "执行引擎管理服务",
+      "description": "管理CoStrict后端的执行引擎，如K8s,Compose"
+    }, 
+    {
       "component_name": "costrict-admin",
       "display_name": "后端管理工具",
       "description": "后端管理工具，提供各种后端管理实用工具"
@@ -23,76 +28,136 @@
   ],
   "components": [
     {
-      "name": "costrict-admin"
+      "name": "costrict-daemon",
+      "subsystem": "root"
     },
     {
-      "name": "firmware"
+      "name": "costrict-admin",
+      "subsystem": "root"
     },
     {
-      "name": "backend"
+      "name": "firmware",
+      "subsystem": "root"
     },
     {
-      "name": "frontend"
+      "name": "backend",
+      "subsystem": "root"
     },
     {
-      "name": "costrict-admin-backend"
+      "name": "frontend",
+      "subsystem": "root"
     },
     {
-      "name": "costrict-admin-frontend"
+      "name": "costrict-admin-backend",
+      "subsystem": "backend"
     },
     {
-      "name": "casdoor"
+      "name": "costrict-admin-frontend",
+      "subsystem": "backend"
     },
     {
-      "name": "oneapi"
+      "name": "costrict-license-sdk",
+      "subsystem": "backend"
     },
     {
-      "name": "etcd"
+      "name": "casdoor",
+      "subsystem": "backend"
     },
     {
-      "name": "redis"
+      "name": "oidc-auth",
+      "subsystem": "backend"
     },
     {
-      "name": "postgres"
+      "name": "oneapi",
+      "subsystem": "backend"
     },
     {
-      "name": "apisix"
+      "name": "etcd",
+      "subsystem": "backend"
     },
     {
-      "name": "portal"
+      "name": "redis",
+      "subsystem": "backend"
     },
     {
-      "name": "cotund"
+      "name": "postgres",
+      "subsystem": "backend"
     },
     {
-      "name": "codebase-querier"
+      "name": "apisix",
+      "subsystem": "backend"
     },
     {
-      "name": "codebase-embedder"
+      "name": "portal",
+      "subsystem": "backend"
     },
     {
-      "name": "chat-rag"
+      "name": "cotund",
+      "subsystem": "backend"
     },
     {
-      "name": "codereview"
+      "name": "codebase-querier",
+      "subsystem": "backend"
     },
     {
-      "name": "credit-manager"
+      "name": "codebase-embedder",
+      "subsystem": "backend"
     },
     {
-      "name": "code-completion"
+      "name": "chat-rag",
+      "subsystem": "backend"
     },
     {
-      "name": "monitoring"
+      "name": "codereview",
+      "subsystem": "backend"
     },
     {
-      "name": "quota-manager"
+      "name": "credit-manager",
+      "subsystem": "backend"
     },
     {
-      "name": "client-manager"
+      "name": "code-completion",
+      "subsystem": "backend"
     },
     {
-      "name": "weaviate"
-    }
+      "name": "es",
+      "subsystem": "backend"
+    },
+    {
+      "name": "prometheus",
+      "subsystem": "backend"
+    },
+    {
+      "name": "grafana",
+      "subsystem": "backend"
+    },
+    {
+      "name": "user-indicator-for-es",
+      "subsystem": "backend"
+    },
+    {
+      "name": "quota-manager",
+      "subsystem": "backend"
+    },
+    {
+      "name": "client-manager",
+      "subsystem": "backend"
+    },
+    {
+      "name": "weaviate",
+      "subsystem": "backend"
+    },
+    {
+      "name": "costrict",
+      "subsystem": "frontend"
+    },
+    {
+      "name": "cotun",
+      "subsystem": "frontend"
+    },
+    {
+      "name": "completion-agent",
+      "subsystem": "frontend"
+    } 
   ]
 }

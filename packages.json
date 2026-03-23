@@ -17,10 +17,13 @@
     "credit-manager",
     "client-manager",
     "etcd",
-    "monitoring",
     "oneapi",
     "portal",
     "postgres",
+    "user-indicator-for-es",
+    "es",
+    "prometheus",
+    "grafana",
     "quota-manager",
     "redis",
     "weaviate",
@@ -34,6 +37,7 @@
     "costrict-admin-frontend",
     "costrict-admin-backend",
     "costrict-admin",
+    "costrict-daemon",
     "costrict-system"
   ]
 }

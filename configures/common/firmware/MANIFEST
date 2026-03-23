@@ -38,6 +38,7 @@ check.sh
 docker-download-images.sh
 deploy-to.sh
 init.sh
+cleanup.sh
 run.sh
 backup.sh
 restore.sh

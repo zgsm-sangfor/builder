@@ -8,6 +8,13 @@
 # 示例:
 #   ./gen-secret.sh -i sample.env -o output.env
 
+log() {
+    local level=$1
+    local message=$2
+    local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+    echo -e "[${timestamp}] [${level}] ${message}"
+}
+
 # 生成 base64 编码的随机密钥
 gen_base64() {
     local size=$1
@@ -44,7 +51,7 @@ gen_hex() {
 gen_password() {
     local size=$1
     local password=""
-    local chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?'
+    local chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~!@#%*_+-=,.'
     local chars_length=${#chars}
     
     # 生成随机密码
@@ -62,11 +69,11 @@ replace_secrets() {
     local target_file=$2
     
     if [[ ! -f "$source_file" ]]; then
-        echo "[ERROR] 源文件不存在: $source_file"
+        log "ERROR" "源文件不存在: $source_file"
         return 1
     fi
     
-    echo "[INFO] 开始处理源文件: $source_file"
+    log "INFO" "开始处理源文件: $source_file"
     
     # 清空目标文件（如果存在）
     > "$target_file"
@@ -98,18 +105,18 @@ replace_secrets() {
                     secret=$(gen_password "$size")
                     ;;
                 *)
-                    echo "[ERROR] 未知的密钥生成函数: $func"
+                    log "ERROR" "未知的密钥生成函数: $func"
                     return 1
                     ;;
             esac
             
             # 验证密钥生成是否成功
             if [[ -z "$secret" ]]; then
-                echo "[ERROR] 生成密钥失败: $func $size"
+                log "ERROR" "生成密钥失败: $func $size"
                 return 1
             fi
             
-            echo "[INFO] 第 $((line_num + 1)) 行: 替换标记 $match 为 ${func} 密钥 (${#secret} 字符)"
+            log "INFO" "第 $((line_num + 1)) 行: 替换标记 $match 为 ${func} 密钥 (${#secret} 字符)"
             
             # 替换该行中的第一个匹配标记
             new_line="${new_line//$match/$secret}"
@@ -123,12 +130,12 @@ replace_secrets() {
     done < "$source_file"
     
     if [[ $replaced_count -eq 0 ]]; then
-        echo "[INFO] 文件中未找到密钥标记"
+        log "INFO" "文件中未找到密钥标记"
     else
-        echo "[INFO] 已替换 $replaced_count 个密钥标记"
+        log "INFO" "已替换 $replaced_count 个密钥标记"
     fi
     
-    echo "[INFO] 密钥替换完成，结果已写入: $target_file"
+    log "INFO" "密钥替换完成，结果已写入: $target_file"
     return 0
 }
 
@@ -196,29 +203,28 @@ done
 
 # 检查必需参数
 if [[ -z "$SOURCE_FILE" || -z "$TARGET_FILE" ]]; then
-    echo "[ERROR] 缺少必需参数"
+    log "ERROR" "缺少必需参数"
     usage
     exit 1
 fi
 
 # 检查源文件
 if [[ ! -f "$SOURCE_FILE" ]]; then
-    echo "[ERROR] 源文件不存在: $SOURCE_FILE"
+    log "ERROR" "源文件不存在: $SOURCE_FILE"
     exit 1
 fi
 
 # 检查目标文件是否存在，如果已存在且未启用 force 选项则退出
 if [[ -f "$TARGET_FILE" && "$FORCE" != "true" ]]; then
-    echo "[ERROR] 目标文件已存在: $TARGET_FILE"
-    echo "[INFO] 使用 -f 选项强制覆盖"
+    log "ERROR" "目标文件已存在: $TARGET_FILE, 使用 -f 选项强制覆盖"
     exit 1
 fi
 
 # 执行密钥替换
 if replace_secrets "$SOURCE_FILE" "$TARGET_FILE"; then
-    echo "[INFO] 成功生成密钥文件: $TARGET_FILE"
+    log "INFO" "成功生成密钥文件: $TARGET_FILE"
     exit 0
 else
-    echo "[ERROR] 生成密钥文件失败"
+    log "ERROR" "生成密钥文件失败"
     exit 1
 fi

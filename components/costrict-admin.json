@@ -1,0 +1,13 @@
+{
+  "name": "costrict-admin",
+  "type": "exec",
+  "path": "../../costrict-admin/utility",
+  "platforms": [
+    {
+      "os": "linux",
+      "arch": "amd64"
+    }
+  ],
+  "version": "1.0.78",
+  "description": "Utilities for backend management of Costrict"
+}

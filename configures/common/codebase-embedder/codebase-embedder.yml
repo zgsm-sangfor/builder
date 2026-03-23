@@ -11,9 +11,3 @@ services:
       - ${COSTRICT_DATA_DIR}/logs/codebase-embedder/logs:/app/logs
     networks:
       - shenma
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/health"]
-      interval: 20s
-      timeout: 5s
-      retries: 3
-      start_period: 15s

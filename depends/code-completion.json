@@ -1,0 +1,14 @@
+{
+  "name": "code-completion",
+  "repo": "zgsm",
+  "version": "1.7.100",
+  "type": "exec",
+  "path": "../../services/code-completions-go",
+  "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
+  "tag": "v{{.version}}",
+  "component": {
+    "workdir": "./configures/common/code-completion",
+    "command": "echo IMAGE_CODE_COMPLETION={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
+  },
+  "description": "Go code completion service"
+}

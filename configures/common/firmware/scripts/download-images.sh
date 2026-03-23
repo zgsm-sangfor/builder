@@ -1,5 +1,12 @@
 #!/bin/bash
 
+log() {
+    local level=$1
+    local message=$2
+    local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+    echo -e "[${timestamp}] [${level}] ${message}"
+}
+
 # 使用getopt解析参数
 TEMP=$(getopt -o b:o: --long base-url:,output: -n "$0" -- "$@")
 eval set -- "$TEMP"
@@ -40,7 +47,7 @@ if command -v curl >/dev/null 2>&1; then
 elif command -v wget >/dev/null 2>&1; then
     download_cmd="wget"
 else
-    echo "错误：未找到wget或curl命令" >&2
+    log "ERROR" "未找到wget或curl命令" >&2
     exit 1
 fi
 
@@ -48,15 +55,15 @@ fi
 mkdir -p "$output_dir"
 
 # 下载文件列表
-echo "正在下载文件列表..."
+log "INFO" "正在下载文件列表..."
 if [ "$download_cmd" = "wget" ]; then
     if ! wget -q "$list_url" -O "$temp_list"; then
-        echo "无法下载文件列表"
+        log "ERROR" "无法下载文件列表"
         exit 1
     fi
 else # curl
     if ! curl -s -o "$temp_list" "$list_url"; then
-        echo "无法下载文件列表"
+        log "ERROR" "无法下载文件列表"
         exit 1
     fi
 fi
@@ -75,7 +82,7 @@ while read -r filename; do
     
     # 全局变量，记录是否有下载失败
     has_error=false
-    echo "正在下载: $filename"
+    log "INFO" "正在下载: $filename"
     if [ "$download_cmd" = "wget" ]; then
         if ! wget -q "$file_url" -O "$output_path"; then
             has_error=true
@@ -84,17 +91,18 @@ while read -r filename; do
     else # curl
         if ! curl -s -o "$output_path" "$file_url"; then
             has_error=true
+            ((error_count++))
         fi
     fi
     if [ "$has_error" = true ]; then
-        echo "下载失败: $filename"
+        log "WARN" "下载失败: $filename"
     else
-        echo "下载成功: $filename"
+        log "WARN" "下载成功: $filename"
     fi
 done < "$temp_list"
 
 if [ "$error_count" -gt 0 ]; then
-    echo "文件下载完成，但有 $error_count 个文件下载失败"
+    log "ERROR" "文件下载完成，但有 $error_count 个文件下载失败"
 else
-    echo "所有文件下载成功"
+    log "INFO" "所有文件下载成功"
 fi

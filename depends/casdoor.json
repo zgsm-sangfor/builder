@@ -1,0 +1,15 @@
+{
+  "name": "casdoor",
+  "repo": "zgsm",
+  "version": "2.1.5",
+  "type": "exec",
+  "path": "../../source/casdoor",
+  "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:{{.version}}",
+  "tag": "{{.version}}",
+  "enabled": false,
+  "component": {
+    "workdir": "./configures/common/casdoor",
+    "command": "echo IMAGE_CASDOOR={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
+  },
+  "description": "User Authentication Management System"
+}

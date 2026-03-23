@@ -5,7 +5,7 @@
 curl -i http://$APISIX_ADDR/apisix/admin/upstreams -H "$AUTH" -H "$TYPE" -X PUT  -d '{
     "id": "code-completion",
     "nodes": {
-      "code-completion:5000": 1
+      "code-completion:8080": 1
     },
     "type": "roundrobin"
   }'
@@ -13,7 +13,7 @@ curl -i http://$APISIX_ADDR/apisix/admin/upstreams -H "$AUTH" -H "$TYPE" -X PUT 
 curl -i  http://$APISIX_ADDR/apisix/admin/routes -H "$AUTH" -H "$TYPE" -X PUT -d '{
     "id": "code-completion",
     "name": "code-completion",
-    "uris": ["/code-completion/api/v1/completions"],
+    "uris": ["/code-completion/*"],
     "upstream_id": "code-completion",
     "plugins": {
       "openid-connect": {

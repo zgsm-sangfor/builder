@@ -1,0 +1,12 @@
+services:
+  prometheus:
+    image: ${IMAGE_PROMETHEUS}
+    restart: always
+    environment:
+      TZ: "Asia/Shanghai"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "${PORT_PROMETHEUS}:9090"
+    networks:
+      - shenma

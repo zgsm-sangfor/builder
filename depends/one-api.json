@@ -1,0 +1,15 @@
+{
+  "name": "one-api",
+  "repo": "zgsm",
+  "version": "1.0.4",
+  "type": "exec",
+  "path": "../../source/new-api",
+  "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
+  "tag": "v{{.version}}",
+  "enabled": false,
+  "component": {
+    "workdir": "./configures/common/oneapi",
+    "command": "echo IMAGE_ONEAPI={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
+  },
+  "description": "LLM Management Gateway Service"
+}

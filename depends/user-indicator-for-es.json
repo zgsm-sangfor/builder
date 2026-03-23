@@ -1,0 +1,14 @@
+{
+  "name": "user-indicator-for-es",
+  "repo": "zgsm",
+  "version": "0.0.6",
+  "type": "exec",
+  "path": "../../zgsm-ai/user-indicator-for-es",
+  "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
+  "tag": "v{{.version}}",
+  "component": {
+    "workdir": "./configures/common/user-indicator-for-es",
+    "command": "echo IMAGE_USER_INDICATOR_FOR_ES={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
+  },
+  "description": "user indicator"
+}

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 function usage() {
     echo "tpl-resolve.sh [-f input-filename] [-o output-filename] [-h]"

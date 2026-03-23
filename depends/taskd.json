@@ -1,0 +1,15 @@
+{
+  "name": "taskd",
+  "repo": "zgsm",
+  "version": "1.0.3",
+  "type": "exec",
+  "path": "../../services/taskd",
+  "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
+  "tag": "v{{.version}}",
+  "enabled": false,
+  "component": {
+    "workdir": "./configures/common/taskd",
+    "command": "echo IMAGE_TASKD={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
+  },
+  "description": "Task management service"
+}

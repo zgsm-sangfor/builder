@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# check-update.sh - 检测builds目录中包的版本和内容变化，更新包版本
+# check-update.sh - 检测components或depends目录中包的版本和内容变化，更新包版本
 #
 # 功能：
-# - 遍历builds目录中的JSON配置文件
+# - 遍历components或depends目录中的JSON配置文件（由-t/--build-type选项指定）
 # - 计算包path所指目录的CHECKSUM和文件数
 # - 比较当前版本和checksum与latest.json中的记录
 # - 根据变化情况输出提示或更新latest.json
@@ -15,17 +15,20 @@ set -e
 UPDATE_VERSION=false
 VERBOSE=false
 PACKAGES=""
+BUILD_TYPE="component"
 
-# 配置文件路径
-BUILDS_DIR="builds"
+# 配置文件路径（将在参数解析后根据BUILD_TYPE设置）
+JSONS_DIR=""
+LATEST_FIELD_NAME=""
 LATEST_JSON="latest.json"
 
 # 打印帮助信息的函数
 print_usage() {
-    echo "Usage: check-update.sh [-u|--update] [-p|--packages PACKAGE1,PACKAGE2,...] [-h|--help] [-v|--verbose]"
+    echo "Usage: check-update.sh [-u|--update] [-p|--packages PACKAGE1,PACKAGE2,...] [-t|--build-type TYPE] [-h|--help] [-v|--verbose]"
     echo "Options:"
-    echo "  -u, --update          Update package version when checksum changes"
+    echo "  -t, --build-type      Build type: dependency or component (default: component)"
     echo "  -p, --packages        Only check specified packages (comma-separated list)"
+    echo "  -u, --update          Update package version when checksum changes"
     echo "  -v, --verbose         Show checksum calculation details for each file"
     echo "  -h, --help            Show this help message"
 }
@@ -36,18 +39,42 @@ log() {
     echo -e "[${level}] ${message}" >&2
 }
 
+# 检查模块是否被启用
+# 参数: $1 - JSON文件路径
+# 返回值: 0=启用, 1=禁用
+is_module_enabled() {
+    local json_file="$1"
+    
+    # 检查enabled字段，如果不存在则默认为启用(true)
+    # 使用 jq 的布尔逻辑：当 enabled 不存在或不为 false/字符串"false" 时返回真
+    local is_enabled=$(jq -r 'if .enabled == false or .enabled == "false" then "false" else "true" end' "$json_file" 2>/dev/null)
+    
+    # 如果enabled字段的值为false（布尔值或字符串），则禁用
+    if [ "$is_enabled" = "false" ]; then
+        return 1
+    fi
+    
+    return 0
+}
+
+prompt_verbose() {
+    if [ "$VERBOSE" = true ]; then
+        local message=$1
+        echo -e "${message}" >&2
+    fi
+}
+
 prompt() {
     local message=$1
     echo -e "${message}" >&2
 }
-
 # 从文件列表计算CHECKSUM（通用函数）
 # 输入：通过参数传递的文件列表（可变参数）
 # 输出格式：第一行checksum，第二行文件数
 calculate_checksum_from_file_list() {
     # 如果没有传参，返回空
     if [ $# -eq 0 ]; then
-        prompt "no any files"
+        prompt_verbose "no any files"
         echo ""
         echo "0"
         return
@@ -55,15 +82,12 @@ calculate_checksum_from_file_list() {
     
     # 统计文件数
     local file_count=$#
-    
     # 计算checksum
     local sha256_output=$(printf "%s\n" "$@" | xargs sha256sum 2>/dev/null | sort)
     local checksum=$(echo "$sha256_output" | sha256sum | awk '{print $1}')
     
     # 如果开启了verbose模式，输出每个文件的checksum
-    if [ "$VERBOSE" = true ]; then
-        prompt "$sha256_output"
-    fi
+    prompt_verbose "$sha256_output"
     
     # 输出两行：checksum, file_count
     echo "$checksum"
@@ -76,7 +100,7 @@ calculate_directory_checksum() {
     local dir="$1"
     
     if [ ! -d "$dir" ]; then
-        prompt "$dir is not a directory"
+        prompt_verbose "$dir is not a directory"
         echo ""
         echo "0"
         return
@@ -98,7 +122,7 @@ calculate_go_directory_checksum() {
     local dir="$1"
     
     if [ ! -d "$dir" ]; then
-        prompt "$dir is not a directory"
+        prompt_verbose "$dir is not a directory"
         echo ""
         echo "0"
         return
@@ -111,6 +135,67 @@ calculate_go_directory_checksum() {
     done < <(find "$dir" -type f \( -name "*.go" -o -name "*.mod" \) ! -path "*/.git/*" -print0 2>/dev/null)
     
     # 调用通用函数计算checksum
+    calculate_checksum_from_file_list "${file_list[@]}"
+}
+
+# 计算前端项目目录的CHECKSUM
+# 输出格式：第一行checksum，第二行文件数
+# 参数：
+#   $1: dir - 要扫描的目录
+#   $2: json_file - JSON配置文件路径（用于读取excludes字段）
+calculate_frontend_checksum() {
+    local dir="$1"
+    local json_file="$2"
+    
+    if [ ! -d "$dir" ]; then
+        prompt_verbose "$dir is not a directory"
+        echo ""
+        echo "0"
+        return
+    fi
+    
+    # 默认排除的目录
+    local exclude_patterns=("*/.git/*" "*/dist/*" "*/node_modules/*")
+    # 构建find命令的排除表达式
+    local find_exclude_args=("-path" "*/.git/*" "-o" "-path" "*/dist/*" "-o" "-path" "*/node_modules/*")
+    
+    # 从JSON文件中读取自定义excludes，并检查是否重复
+    local exclude_count=$(jq -r '.excludes | length // 0' "$json_file" 2>/dev/null)
+    for ((i=0; i<exclude_count; i++)); do
+        local exclude=$(jq -r ".excludes[$i] // empty" "$json_file" 2>/dev/null)
+        if [ -n "$exclude" ] && [ "$exclude" != "null" ]; then
+            # 检查是否已经存在
+            local duplicate=false
+            for existing in "${exclude_patterns[@]}"; do
+                if [ "$existing" = "$exclude" ]; then
+                    duplicate=true
+                    break
+                fi
+            done
+            # 如果不存在重复，则添加
+            if [ "$duplicate" = false ]; then
+                exclude_patterns+=("$exclude")
+                find_exclude_args+=("-o")
+                find_exclude_args+=("-path")
+                find_exclude_args+=("$exclude")
+            fi
+        fi
+    done
+    
+    # 构建find命令的排除参数
+    local find_exclude="! \\( ${find_exclude_args[*]} \\)"
+    local find_include="\\( -name \"*.js\" -o -name \"*.vue\" -o -name \"*.html\" -o -name \"*.ts\" -o -name \"*.json\" \\)"
+    
+    # 使用find获取前端文件列表并缓存在数组中
+    local file_list=()
+    local find_cmd="find \"$dir\" -type f $find_include $find_exclude -print0"
+    
+    while IFS= read -r -d '' file; do
+        file_list+=("$file")
+    done < <(eval "$find_cmd" 2>/dev/null)
+    
+    # 调用通用函数计算checksum
+    prompt_verbose "${find_cmd}"
     calculate_checksum_from_file_list "${file_list[@]}"
 }
 
@@ -177,10 +262,10 @@ calculate_zip_package_checksum() {
 }
 
 # 递增包的patch版本号
+# 第一个参数为需要修改的文件路径
 increment_patch_version() {
-    local package_name="$1"
+    local package_config_file="$1"
     local current_version="$2"
-    local package_config_file="$BUILDS_DIR/${package_name}.json"
 
     # 自动递增 patch 版本号
     local MAJOR=$(echo "$current_version" | cut -d'.' -f1)
@@ -189,7 +274,7 @@ increment_patch_version() {
     local NEW_PATCH=$((PATCH + 1))
     local NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
 
-    # 使用 jq 更新builds目录中对应JSON文件的版本号
+    # 使用 jq 更新指定JSON文件的版本号
     jq "(.version) |= \"$NEW_VERSION\"" "$package_config_file" > "$package_config_file.tmp"
 
     if [ $? -ne 0 ]; then
@@ -202,23 +287,139 @@ increment_patch_version() {
     echo "$NEW_VERSION"
 }
 
+# 处理单个包
+# 参数:
+#   $1: json_file - JSON 配置文件路径
+# 返回值: 0=已修改, 1=未修改
+process_package() {
+    local json_file="$1"
+    local modified=false
+    
+    local package_name=$(basename "$json_file" .json)
+    
+    # 从components目录的JSON文件中读取包信息
+    local package_version=$(jq -r ".version // empty" "$json_file")
+    local package_path=$(jq -r ".path // empty" "$json_file")
+    local package_type=$(jq -r ".type // empty" "$json_file")
+    local package_target=$(jq -r ".target // empty" "$json_file")
+    
+    # 检查version字段是否存在
+    if [ -z "$package_version" ] || [ "$package_version" = "null" ] || [ "$package_version" = "" ]; then
+        log "WARN" "No version found for package '$package_name', skipping..."
+        return 1
+    fi
+    
+    # 检查path字段是否存在
+    if [ -z "$package_path" ] || [ "$package_path" = "null" ] || [ "$package_path" = "" ]; then
+        log "WARN" "No path found for package '$package_name', skipping..."
+        return 1
+    fi
+    
+    # 根据包类型计算CHECKSUM和文件数
+    local new_checksum=""
+    local new_file_count=0
+    
+    if [ "$package_type" = "conf" ]; then
+        # conf类型：path、target跨所有平台查找文件
+        if [ -z "$package_target" ] || [ "$package_target" = "null" ] || [ "$package_target" = "" ]; then
+            log "WARN" "No target found for conf package '$package_name', skipping..."
+            return 1
+        fi
+        local result=$(calculate_conf_package_checksum "$package_path" "$package_target")
+        new_checksum=$(echo "$result" | head -n1)
+        new_file_count=$(echo "$result" | tail -n1)
+    elif [ "$package_type" = "zip" ]; then
+        # zip类型：跨所有平台查找目录
+        local result=$(calculate_zip_package_checksum "$package_path" "$package_name")
+        new_checksum=$(echo "$result" | head -n1)
+        new_file_count=$(echo "$result" | tail -n1)
+    elif [ "$package_type" = "exec" ]; then
+        # exec类型：只扫描Go相关文件（.go和.mod文件）
+        local result=$(calculate_go_directory_checksum "$package_path")
+        new_checksum=$(echo "$result" | head -n1)
+        new_file_count=$(echo "$result" | tail -n1)
+    elif [ "$package_type" = "frontend" ]; then
+        # frontend类型：扫描前端源文件（*.js, *.vue, *.html, *.ts, *.json）
+        local result=$(calculate_frontend_checksum "$package_path" "$json_file")
+        new_checksum=$(echo "$result" | head -n1)
+        new_file_count=$(echo "$result" | tail -n1)
+    else
+        # 其他类型：扫描目录下所有文件
+        local result=$(calculate_directory_checksum "$package_path")
+        new_checksum=$(echo "$result" | head -n1)
+        new_file_count=$(echo "$result" | tail -n1)
+    fi
+    
+    if [ -z "$new_checksum" ]; then
+        log "ERROR" "Failed to calculate checksum for package '$package_name' at path '$package_path'"
+        return 1
+    fi
+    
+    # 从latest.json中读取之前的版本和checksum
+    local old_version=$(jq -r ".${LATEST_FIELD_NAME}[\"$package_name\"].version // \"null\"" "$LATEST_JSON")
+    local old_checksum=$(jq -r ".${LATEST_FIELD_NAME}[\"$package_name\"].checksum // \"null\"" "$LATEST_JSON")
+    
+    # 比较 version=$package_version,files=$new_file_count
+    if [ "$old_version" = "null" ]; then
+        # 首次记录
+        log "MODIFIED" "First time recording package '$package_name': version=$package_version, files=$new_file_count"
+        jq ".${LATEST_FIELD_NAME}[\"$package_name\"] = {\"version\": \"$package_version\", \"checksum\": \"$new_checksum\", \"file_count\": $new_file_count}" "$LATEST_JSON" > "$LATEST_JSON.tmp"
+        mv "$LATEST_JSON.tmp" "$LATEST_JSON"
+        modified=true
+    elif [ "$package_version" = "$old_version" ]; then
+        # 版本号未变
+        if [ "$new_checksum" = "$old_checksum" ]; then
+            # 版本号和CHECKSUM都没变
+            log "INFO" "No changes for package '$package_name': version=$package_version, files=$new_file_count"
+        else
+            # 版本号未变但CHECKSUM变了
+            if [ "$UPDATE_VERSION" = true ]; then
+                # 启用自动版本递增
+                local new_version=$(increment_patch_version "$json_file" "$package_version")
+                log "MODIFIED" "Update version for '$package_name': $package_version -> $new_version"
+                
+                # 更新latest.json
+                jq ".${LATEST_FIELD_NAME}[\"$package_name\"] = {\"version\": \"$new_version\", \"checksum\": \"$new_checksum\", \"file_count\": $new_file_count}" "$LATEST_JSON" > "$LATEST_JSON.tmp"
+                mv "$LATEST_JSON.tmp" "$LATEST_JSON"
+                modified=true
+            else
+                # 未启用自动版本递增，仅记录
+                log "MODIFIED" "Module '$package_name' has been modified (version=$package_version, files=$new_file_count, checksum changed)"
+                modified=true
+            fi
+        fi
+    else
+        # 版本号变了
+        if [ "$new_checksum" = "$old_checksum" ]; then
+            # 版本号变了但CHECKSUM未变（这是不正常的，但也记录）
+            log "MODIFIED" "Module '$package_name': checksum unchanged, version updated: $old_version -> $package_version"
+        else
+            # 版本号和CHECKSUM都变了
+            log "MODIFIED" "Module '$package_name' version updated: $old_version -> $package_version"
+        fi
+        
+        # 更新latest.json
+        jq ".${LATEST_FIELD_NAME}[\"$package_name\"] = {\"version\": \"$package_version\", \"checksum\": \"$new_checksum\", \"file_count\": $new_file_count}" "$LATEST_JSON" > "$LATEST_JSON.tmp"
+        mv "$LATEST_JSON.tmp" "$LATEST_JSON"
+        modified=true
+    fi
+    
+    if [ "$modified" = true ]; then
+        # 返回 0 表示包被修改
+        return 0
+    else
+        # 返回 1 表示包未修改
+        return 1
+    fi
+}
+
 # 主函数
 main() {
     prompt "=============================================="
-    prompt "Checking package updates from $BUILDS_DIR"
+    prompt "Checking package updates from $JSONS_DIR (type: $BUILD_TYPE)"
     prompt "=============================================="
     prompt ""
     
-    # 遍历 builds 目录中的所有 JSON 文件
-    local package_count=0
-    for json_file in "$BUILDS_DIR"/*.json; do
-        if [ -f "$json_file" ]; then
-            package_count=$((package_count + 1))
-        fi
-    done
-    
-    prompt "Found $package_count packages"
-    prompt ""
     
     # 遍历每个包
     local modified_packages=()
@@ -230,142 +431,42 @@ main() {
         IFS=',' read -ra target_packages <<< "$PACKAGES"
         log "INFO" "Checking only specified packages: ${target_packages[*]}"
     fi
-    
-    for json_file in "$BUILDS_DIR"/*.json; do
+    local package_count=0
+    local checked_count=0
+    for json_file in "$JSONS_DIR"/*.json; do
         [ -f "$json_file" ] || continue
         
-        local package_name=$(basename "$json_file" .json)
+        package_count=$((package_count + 1))
 
+        local package_name=$(basename "$json_file" .json)
         # 如果指定了packages选项，检查当前包是否在目标列表中
+        local should_process=true
         if [ ${#target_packages[@]} -gt 0 ]; then
-            local found=false
+            should_process=false
             for target in "${target_packages[@]}"; do
                 if [ "$package_name" = "$target" ]; then
-                    found=true
+                    should_process=true
                     break
                 fi
             done
-            if [ "$found" = false ]; then
+        else
+            # 检查模块是否启用，如果禁用则跳过
+            if ! is_module_enabled "$json_file"; then
+                log "INFO" "Module '$package_name' is disabled, skipping..."
                 continue
             fi
         fi
         
-        # 从builds目录的JSON文件中读取包信息
-        local package_version=$(jq -r ".version // empty" "$json_file")
-        local package_path=$(jq -r ".path // empty" "$json_file")
-        local package_type=$(jq -r ".type // empty" "$json_file")
-        local package_target=$(jq -r ".target // empty" "$json_file")
-        
-        prompt "Processing package: $package_name"
-        
-        # 检查version字段是否存在
-        if [ -z "$package_version" ] || [ "$package_version" = "null" ] || [ "$package_version" = "" ]; then
-            log "WARN" "No version found for package '$package_name', skipping..."
-            prompt ""
-            continue
-        fi
-        
-        # 检查path字段是否存在
-        if [ -z "$package_path" ] || [ "$package_path" = "null" ] || [ "$package_path" = "" ]; then
-            log "WARN" "No path found for package '$package_name', skipping..."
-            prompt ""
-            continue
-        fi
-        
-        # 根据包类型计算CHECKSUM和文件数
-        local new_checksum=""
-        local new_file_count=0
-        
-        if [ "$package_type" = "conf" ]; then
-            # conf类型：path、target跨所有平台查找文件
-            if [ -z "$package_target" ] || [ "$package_target" = "null" ] || [ "$package_target" = "" ]; then
-                log "WARN" "No target found for conf package '$package_name', skipping..."
-                prompt ""
-                continue
+        if [ "$should_process" = true ]; then
+            checked_count=$((checked_count + 1))
+            if process_package "$json_file"; then
+                modified_packages+=("$package_name")
             fi
-            local result=$(calculate_conf_package_checksum "$package_path" "$package_target")
-            new_checksum=$(echo "$result" | head -n1)
-            new_file_count=$(echo "$result" | tail -n1)
-        elif [ "$package_type" = "zip" ]; then
-            # zip类型：跨所有平台查找目录
-            local result=$(calculate_zip_package_checksum "$package_path" "$package_name")
-            new_checksum=$(echo "$result" | head -n1)
-            new_file_count=$(echo "$result" | tail -n1)
-        elif [ "$package_type" = "exec" ]; then
-            # exec类型：只扫描Go相关文件（.go和.mod文件）
-            local full_path="$package_path"
-            local result=$(calculate_go_directory_checksum "$full_path")
-            new_checksum=$(echo "$result" | head -n1)
-            new_file_count=$(echo "$result" | tail -n1)
-        else
-            # 其他类型：扫描目录下所有文件
-            local full_path="$package_path"
-            local result=$(calculate_directory_checksum "$full_path")
-            new_checksum=$(echo "$result" | head -n1)
-            new_file_count=$(echo "$result" | tail -n1)
         fi
-        
-        if [ -z "$new_checksum" ]; then
-            log "ERROR" "Failed to calculate checksum for package '$package_name' at path '$package_path'"
-            prompt ""
-            continue
-        fi
-        
-        # 从latest.json中读取之前的版本和checksum
-        local old_version=$(jq -r ".\"$package_name\".version // \"null\"" "$LATEST_JSON")
-        local old_checksum=$(jq -r ".\"$package_name\".checksum // \"null\"" "$LATEST_JSON")
-        
-        prompt "Package '$package_name': files=$new_file_count"
-        
-        # 比较
-        if [ "$old_version" = "null" ]; then
-            # 首次记录
-            log "INFO" "First time recording package '$package_name': version=$package_version"
-            jq ".\"$package_name\" = {\"version\": \"$package_version\", \"checksum\": \"$new_checksum\", \"file_count\": $new_file_count}" "$LATEST_JSON" > "$LATEST_JSON.tmp"
-            mv "$LATEST_JSON.tmp" "$LATEST_JSON"
-            modified_packages+=("$package_name")
-        elif [ "$package_version" = "$old_version" ]; then
-            # 版本号未变
-            if [ "$new_checksum" = "$old_checksum" ]; then
-                # 版本号和CHECKSUM都没变
-                log "INFO" "No changes for package '$package_name'"
-            else
-                # 版本号未变但CHECKSUM变了
-                if [ "$UPDATE_VERSION" = true ]; then
-                    # 启用自动版本递增
-                    local new_version=$(increment_patch_version "$package_name" "$package_version")
-                    log "MODIFIED" "Update version for '$package_name': $package_version -> $new_version"
-                    
-                    # 更新latest.json
-                    jq ".\"$package_name\" = {\"version\": \"$new_version\", \"checksum\": \"$new_checksum\", \"file_count\": $new_file_count}" "$LATEST_JSON" > "$LATEST_JSON.tmp"
-                    mv "$LATEST_JSON.tmp" "$LATEST_JSON"
-                    modified_packages+=("$package_name")
-                else
-                    # 未启用自动版本递增，仅记录
-                    log "MODIFIED" "Module '$package_name' has been modified (version=$package_version, checksum changed)"
-                    modified_packages+=("$package_name")
-                fi
-            fi
-        else
-            # 版本号变了
-            if [ "$new_checksum" = "$old_checksum" ]; then
-                # 版本号变了但CHECKSUM未变（这是不正常的，但也记录）
-                log "WARN" "Module '$package_name' version changed but checksum didn't: $old_version -> $package_version"
-            else
-                # 版本号和CHECKSUM都变了
-                log "INFO" "Module '$package_name' version updated: $old_version -> $package_version"
-            fi
-            
-            # 更新latest.json
-            jq ".\"$package_name\" = {\"version\": \"$package_version\", \"checksum\": \"$new_checksum\", \"file_count\": $new_file_count}" "$LATEST_JSON" > "$LATEST_JSON.tmp"
-            mv "$LATEST_JSON.tmp" "$LATEST_JSON"
-            modified_packages+=("$package_name")
-        fi
-        
-        prompt ""
     done
     
     prompt "=============================================="
+    prompt "Total packages: $package_count, Checked packages: $checked_count"
     if [ ${#modified_packages[@]} -gt 0 ]; then
         prompt "Check completed. $LATEST_JSON has been updated."
     else
@@ -380,7 +481,7 @@ main() {
 }
 
 # Parse command line options
-args=$(getopt -o uhp:v --long help,update,packages:,verbose -n 'check-update.sh' -- "$@")
+args=$(getopt -o uhp:vt: --long help,update,packages:,verbose,build-type: -n 'check-update.sh' -- "$@")
 [ $? -ne 0 ] && print_usage && exit 1
 
 eval set -- "$args"
@@ -389,6 +490,14 @@ while true; do
     case "$1" in
         -u|--update) UPDATE_VERSION=true; shift;;
         -p|--packages) PACKAGES="$2"; shift 2;;
+        -t|--build-type)
+            BUILD_TYPE="$2"
+            if [ "$BUILD_TYPE" != "dependency" ] && [ "$BUILD_TYPE" != "component" ]; then
+                log "ERROR" "Invalid build-type: $BUILD_TYPE (must be 'dependency' or 'component')"
+                exit 1
+            fi
+            shift 2
+            ;;
         -v|--verbose) VERBOSE=true; shift;;
         -h|--help) print_usage; exit 0;;
         --) shift; break;;
@@ -396,15 +505,27 @@ while true; do
     esac
 done
 
-# 检查builds目录是否存在
-if [ ! -d "$BUILDS_DIR" ]; then
-    log "ERROR" "$BUILDS_DIR directory not found!"
+# 根据BUILD_TYPE设置JSONS_DIR和LATEST_FIELD_NAME
+case "$BUILD_TYPE" in
+    dependency)
+        JSONS_DIR="./depends"
+        LATEST_FIELD_NAME="dependency"
+        ;;
+    component)
+        JSONS_DIR="./components"
+        LATEST_FIELD_NAME="component"
+        ;;
+esac
+
+# 检查JSONS_DIR目录是否存在
+if [ ! -d "$JSONS_DIR" ]; then
+    log "ERROR" "$JSONS_DIR directory not found!"
     exit 1
 fi
 
-# 检查builds目录中是否有JSON文件
-if [ -z "$(ls -A "$BUILDS_DIR"/*.json 2>/dev/null)" ]; then
-    log "ERROR" "No JSON files found in $BUILDS_DIR directory!"
+# 检查JSONS_DIR目录中是否有JSON文件
+if [ -z "$(ls -A "$JSONS_DIR"/*.json 2>/dev/null)" ]; then
+    log "ERROR" "No JSON files found in $JSONS_DIR directory!"
     exit 1
 fi
 

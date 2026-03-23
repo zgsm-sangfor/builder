@@ -1,0 +1,15 @@
+{
+  "name": "tagd",
+  "repo": "zgsm",
+  "version": "1.0.4",
+  "type": "exec",
+  "path": "../../services/tagd",
+  "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
+  "tag": "v{{.version}}",
+  "enabled": false,
+  "component": {
+    "workdir": "./configures/common/tagd",
+    "command": "echo IMAGE_TAGD={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
+  },
+  "description": "Tag management service"
+}

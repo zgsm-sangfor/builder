@@ -1,0 +1,15 @@
+{
+  "name": "codebase-embedder",
+  "repo": "zgsm",
+  "version": "0.2.6",
+  "type": "exec",
+  "path": "../../zgsm-ai/codebase-embedder",
+  "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
+  "tag": "v{{.version}}",
+  "enabled": false,
+  "component": {
+    "workdir": "./configures/common/codebase-embedder",
+    "command": "echo IMAGE_CODEBASE_EMBEDDER={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
+  },
+  "description": "A service used to construct embeddable code vectors"
+}

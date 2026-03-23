@@ -1,0 +1,15 @@
+{
+  "name": "chat-rag",
+  "repo": "zgsm",
+  "version": "1.2.8",
+  "type": "exec",
+  "path": "../../zgsm-ai/chat-rag",
+  "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
+  "tag": "v{{.version}}",
+  "enabled": false,
+  "component": {
+    "workdir": "./configures/common/chat-rag",
+    "command": "echo IMAGE_CHATRAG={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
+  },
+  "description": "CHAT service with RAG enhancement capabilities"
+}

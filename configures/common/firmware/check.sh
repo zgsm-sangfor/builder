@@ -1,4 +1,37 @@
 #!/bin/bash
+# ============================================================================
+# 系统环境检查脚本
+# ============================================================================
+# 功能说明:
+#   本脚本用于验证 CoStrict 系统的安装环境，执行以下检查：
+#     1. 系统命令依赖检查（bash, docker, docker-compose 等）
+#     2. Docker 和 Docker Compose 版本检查
+#     3. 系统资源检查（磁盘空间、内存等）
+#     4. 端口占用检查
+#     5. 配置文件完整性检查
+#
+# 使用场景:
+#   - 系统安装前环境验证
+#   - 系统故障诊断
+#   - 系统健康检查
+#   - restore.sh 恢复前的环境验证
+#
+# 依赖说明:
+#   - 需要 bash 4.0 或更高版本
+#   - 需要安装 Docker 和 Docker Compose
+#
+# 检查项目:
+#   - 系统命令是否存在及版本要求
+#   - Docker 服务是否运行
+#   - Docker Compose 功能是否正常
+#   - 必要的端口是否可用
+#   - 磁盘空间是否充足
+#   - 配置文件是否完整
+#
+# 作者: CoStrict Team
+# 版本: 1.0
+# ============================================================================
+
 set -e
 set -u
 set -o pipefail 2>/dev/null || true
@@ -49,6 +82,7 @@ validate_install_environment() {
         ["bash"]="4.0"
         ["docker"]="19.0"
         ["curl"]="7.0"
+        ["jq"]="1.5"
         ["awk"]="1.0"
         ["sed"]="4.0"
         ["grep"]="2.0"
@@ -122,10 +156,12 @@ validate_install_environment() {
         "${target_base}/codebase-querier"
         "${target_base}/codereview"
         "${target_base}/costrict-admin-backend"
-        "${target_base}/cotun"
+        "${target_base}/cotund"
         "${target_base}/credit-manager"
         "${target_base}/etcd"
-        "${target_base}/monitoring"
+        "${target_base}/es"
+        "${target_base}/prometheus"
+        "${target_base}/grafana"
         "${target_base}/oneapi"
         "${target_base}/portal"
         "${target_base}/portal/data/costrict-admin"
@@ -145,8 +181,8 @@ validate_install_environment() {
     # ========== 4. 检查核心配置文件 ==========
     log "INFO" "检查核心配置文件..."
     local required_configs=(
-        "docker-compose.yml"
-        "costrict.env"
+        "docker-compose.yml.in"
+        "costrict.env.in"
         "MANIFEST"
     )
     
@@ -171,14 +207,17 @@ validate_install_environment() {
     local required_scripts=(
         "configure.sh"
         "tpl-resolve.sh"
-        "backup.sh"
         "deploy-to.sh"
         "init.sh"
+        "cleanup.sh"
+        "backup.sh"
         "restore.sh"
         "run.sh"
         "docker-download-images.sh"
         "scripts/download-images.sh"
         "scripts/gen-env-file.sh"
+        "scripts/gen-secret.sh"
+        "scripts/gen-compose-yml.sh"
         "scripts/load-images.sh"
         "scripts/pull-images.sh"
         "scripts/push-images.sh"

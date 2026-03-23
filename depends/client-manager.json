@@ -1,0 +1,14 @@
+{
+  "name": "client-manager",
+  "repo": "zgsm",
+  "version": "1.0.13",
+  "type": "exec",
+  "path": "../../services/client-manager",
+  "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
+  "tag": "v{{.version}}",
+  "component": {
+    "workdir": "./configures/common/client-manager",
+    "command": "echo IMAGE_CLIENT_MANAGER={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
+  },
+  "description": ""
+}

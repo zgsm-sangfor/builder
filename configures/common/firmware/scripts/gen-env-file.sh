@@ -108,6 +108,11 @@ gen_dot_env() {
     merge_env ${DOT_ENV_FILE} ${COSTRICT_ENV_FILE}
     merge_env ${DOT_ENV_FILE} ${INSTALL_ENV_FILE}
     
+    # 如果存在 FROM_DIR/costrict-admin.env，则将其合并到 .env
+    if [[ -f "${COSTRICT_ADMIN_ENV_FILE}" ]]; then
+        merge_env "${DOT_ENV_FILE}" "${COSTRICT_ADMIN_ENV_FILE}"
+    fi
+    
     gen_lack_env
 
     return 0
@@ -141,18 +146,25 @@ done
 [[ "${FROM_DIR: -1}" != "/" ]] && FROM_DIR="${FROM_DIR}/"
 [[ "${OUTPUT_DIR: -1}" != "/" ]] && OUTPUT_DIR="${OUTPUT_DIR}/"
 
+# 安装过程生成的记录所有镜像地址的env
 IMAGES_ENV_FILE="${OUTPUT_DIR}.images.env"
+# 安装过程生成的记录镜像URL的列表文件
 IMAGES_LIST_FILE="${OUTPUT_DIR}.images.list"
-DOT_ENV_FILE="${OUTDIR_DIR}.env"
+# 安装过程记录的配置(安装目录)
+INSTALL_ENV_FILE="${FROM_DIR}.install.env"
+# 安装结束时构建的记录所有环境变量，可供docker-compose.yml使用的变量文件
+DOT_ENV_FILE="${OUTPUT_DIR}.env"
+# 出厂预设的配置costrict.env.in，经过了本地化处理(比如重新生成密码)
 COSTRICT_ENV_FILE="${FROM_DIR}costrict.env"
-INSTALL_ENV_FILE="${FROM_DIR}install.env"
+# 管理员配置
+COSTRICT_ADMIN_ENV_FILE="${FROM_DIR}costrict-admin.env"
 
 mkdir -p ${OUTPUT_DIR}
 
 # 根据各个目录下的image.env构建.images.list
 log "INFO" "生成镜像环境变量文件: ${IMAGES_ENV_FILE} ..."
 if ! gen_images_env ${IMAGES_ENV_FILE}; then
-    return 1
+    exit 1
 fi
 
 # 从.images.env提取镜像列表
@@ -162,5 +174,5 @@ awk -F'=' '{print $2}' "${IMAGES_ENV_FILE}" > "${IMAGES_LIST_FILE}"
 # 把costrict.env,.images.env合并成.env文件
 log "INFO" "生成环境变量文件 ${DOT_ENV_FILE} ..."
 if ! gen_dot_env; then
-    return 1
+    exit 1
 fi

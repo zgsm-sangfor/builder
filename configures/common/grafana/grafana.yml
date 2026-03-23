@@ -1,0 +1,14 @@
+services:
+  grafana:
+    image: ${IMAGE_GRAFANA}
+    restart: always
+    environment:
+      TZ: "Asia/Shanghai"
+    ports:
+      - "${PORT_GRAFANA}:3000"
+    volumes:
+      - "./grafana/provisioning:/etc/grafana/provisioning"
+      - "./grafana/dashboards:/var/lib/grafana/dashboards"
+      - "./grafana/config/grafana.ini:/etc/grafana/grafana.ini:ro"
+    networks:
+      - shenma

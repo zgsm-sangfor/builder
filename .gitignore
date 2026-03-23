@@ -3,8 +3,8 @@
 packages
 # 但包含以下特定文件和目录
 !build-costrict.sh
-!build-packages.sh
-!build-images.sh
+!build-components.sh
+!build-depends.sh
 !check-update.sh
 !update-manifest.sh
 !start-local-site.sh
@@ -13,9 +13,9 @@ packages
 !README.md
 !configures/
 !configures/**
-!builds/
-!builds/**
-!images/
-!images/**
+!components/
+!components/**
+!depends/
+!depends/**
 !site/
 !site/**

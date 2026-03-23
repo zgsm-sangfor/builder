@@ -21,7 +21,7 @@
 #
 # 备份步骤：
 #   1. 调用 $backend/run.sh stop 停止docker compose服务
-#   2. 调用 service costrict-admin stop 停止costrict-admin服务
+#   2. 调用 service costrict-daemon stop 停止costrict-daemon服务
 #   3. 拷贝目录 $backend 的所有内容到 $output/backend 下
 #   4. 拷贝目录 $data 的所有内容到 $output/data 下
 #   5. 调用 $backend/scripts/save-images.sh 将Docker镜像备份到 $output/images 下
@@ -210,16 +210,16 @@ stop_docker_compose_services() {
     fi
 }
 
-stop_costrict_admin_service() {
-    log "INFO" "停止costrict-admin服务..."
-    if service costrict-admin status >/dev/null 2>&1; then
-        if service costrict-admin stop; then
-            log "INFO" "costrict-admin服务已停止"
+stop_costrict_daemon_service() {
+    log "INFO" "停止costrict-daemon服务..."
+    if service costrict-daemon status >/dev/null 2>&1; then
+        if service costrict-daemon stop; then
+            log "INFO" "costrict-daemon服务已停止"
         else
-            log "WARN" "costrict-admin服务停止失败"
+            log "WARN" "costrict-daemon服务停止失败"
         fi
     else
-        log "INFO" "costrict-admin服务未运行，跳过"
+        log "INFO" "costrict-daemon服务未运行，跳过"
     fi
     return 0
 }
@@ -348,7 +348,7 @@ main() {
     
     # 执行备份
     stop_docker_compose_services
-    stop_costrict_admin_service
+    stop_costrict_daemon_service
     create_output_directory
     backup_backend_directory
     backup_data_directory

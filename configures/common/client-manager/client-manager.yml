@@ -9,9 +9,3 @@ services:
       - ${COSTRICT_DATA_DIR}/data/client-manager/data:/data
     networks:
       - shenma
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
-      interval: 20s
-      timeout: 5s
-      retries: 3
-      start_period: 15s

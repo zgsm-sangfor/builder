@@ -20,6 +20,12 @@
       ]
     },
     {
+      "component_name": "costrict-license-sdk",
+      "display_name": "CoStrict授权服务",
+      "description": "CoStrict授权服务",
+      "allowed_versions": ">=1.0.0"
+    },
+    {
       "component_name": "casdoor",
       "display_name": "Casdoor",
       "description": "身份认证和授权平台",
@@ -27,6 +33,18 @@
       "dependences": [
         {
           "component_name": "postgres",
+          "version": ">=1.0.0"
+        }
+      ]
+    },
+    {
+      "component_name": "oidc-auth",
+      "display_name": "Casdoor认证客户端",
+      "description": "Casdoor认证客户端",
+      "allowed_versions": ">=1.0.0",
+      "dependences": [
+        {
+          "component_name": "casdoor",
           "version": ">=1.0.0"
         }
       ]
@@ -116,10 +134,28 @@
       "allowed_versions": ">=1.0.0"
     },
     {
-      "component_name": "monitoring",
-      "display_name": "监控服务",
-      "description": "提供系统监控和数据可视化功能",
+      "component_name": "prometheus",
+      "display_name": "Prometheus指标监控服务",
+      "description": "提供系统监控功能",
       "allowed_versions": ">=1.0.0"
+    },
+    {
+      "component_name": "es",
+      "display_name": "ElasticSearch运营数据存储",
+      "description": "提供运营数据的采集和存储",
+      "allowed_versions": ">=1.0.0"
+    },
+    {
+      "component_name": "grafana",
+      "display_name": "Grafana数据可视化服务",
+      "description": "提供数据可视化功能",
+      "allowed_versions": ">=1.0.0"
+    },
+    {
+      "component_name": "user-indicator-for-es",
+      "display_name": "用户指标采集服务",
+      "description": "采集各个客户端反馈的指标，存储到ES",
+      "allowed_versions": ">=0.0.1"
     },
     {
       "component_name": "quota-manager",
@@ -182,7 +218,7 @@
     },
     {
       "service_name": "oidc-auth",
-      "component_name": "casdoor",
+      "component_name": "oidc-auth",
       "health_url": "http://localhost:8085/healthz",
       "log_file": "/var/log/oidc-auth.log"
     },
@@ -254,6 +290,12 @@
       "log_file": "/var/log/credit-manager.log"
     },
     {
+      "service_name": "client-manager",
+      "component_name": "client-manager",
+      "health_url": "http://localhost:8098/healthz",
+      "log_file": "/var/log/client-manager.log"
+    },
+    {
       "service_name": "code-completion",
       "component_name": "code-completion",
       "health_url": "http://localhost:8099/healthz",
@@ -261,24 +303,36 @@
     },
     {
       "service_name": "prometheus",
-      "component_name": "monitoring",
+      "component_name": "prometheus",
       "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_PROMETHEUS }}",
       "health_url": "http://localhost:39090/healthz",
       "log_file": "/var/log/prometheus.log"
     },
     {
       "service_name": "grafana",
-      "component_name": "monitoring",
+      "component_name": "grafana",
       "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_GRAFANA }}",
       "health_url": "http://localhost:33000/healthz",
       "log_file": "/var/log/grafana.log"
     },
     {
       "service_name": "es",
-      "component_name": "monitoring",
+      "component_name": "es",
       "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_ES }}",
       "health_url": "http://localhost:39200/healthz",
       "log_file": "/var/log/es.log"
+    },
+    {
+      "service_name": "user-indicator-for-es",
+      "component_name": "user-indicator-for-es",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_ES }}",
+      "health_url": "http://localhost:39200/healthz",
+      "log_file": "/var/log/es.log"
+    },
+    {
+      "service_name": "costrict-license-sdk",
+      "component_name": "costrict-license-sdk",
+      "visible": false
     }
   ],
   "dependencies": [

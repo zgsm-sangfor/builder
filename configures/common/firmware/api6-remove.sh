@@ -2,6 +2,8 @@
 
 . ./configure.sh
 
+# 功能：删除 APISIX 中指定的路由和上游配置
+
 # 显示帮助信息
 show_help() {
     echo "用法: $0 [选项]"

@@ -1,0 +1,26 @@
+services:
+  costrict-license-sdk:
+    image: ${IMAGE_COSTRICT_LICENSE_SDK}
+    restart: always
+    # 使用 entrypoint 脚本管理多进程
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    volumes:
+      - ./scripts/entrypoint.sh:/entrypoint.sh:ro
+      - ./data:/usr/local/platos/app/sf_license/data
+      - ./logs:/var/log/sf_license
+      - /etc/machine-id:/etc/machine-id:ro
+    environment:
+      - SF_LICENSE_PRODUCT_KEY_NAME=GENERAL1
+      - TZ=Asia/Shanghai
+    ports:
+      - "10000:10000"
+      - "10003:10003"
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:10003/health"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 40s
+    networks:
+      - shenma
+
