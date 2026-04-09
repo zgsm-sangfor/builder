@@ -25,7 +25,7 @@ do
 done
 
 . ./configure.sh
-. ./.images.env
+# . ./.images.env
 #
 # Process variable markers in a .tpl file, resolve variables to actual values
 # @param input_file Input file

@@ -1,7 +1,8 @@
 ﻿{
-    "name":  "codereview",
-    "type":  "zip",
-    "path":  "./configures",
-    "version":  "1.0.4",
-    "description":  "Code review service"
+  "name":  "codereview",
+  "type":  "zip",
+  "path":  "./configures",
+  "version":  "1.0.4",
+  "enabled": false,
+  "description":  "Code review service"
 }

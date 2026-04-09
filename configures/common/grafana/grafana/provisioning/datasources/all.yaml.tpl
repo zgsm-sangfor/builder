@@ -27,6 +27,10 @@ datasources:
    type: elasticsearch
    access: proxy
    url: http://es:9200
+   basicAuth: true
+   basicAuthUser: elastic
+   secureJsonData:
+    basicAuthPassword: {{PASSWORD_ELASTIC}}
    jsonData:
     index: '[metrics-]YYYY.MM.DD'
     interval: Daily

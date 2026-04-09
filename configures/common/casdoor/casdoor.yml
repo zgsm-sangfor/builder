@@ -7,5 +7,10 @@ services:
     environment:
       driverName: postgres
       dataSourceName: "host=postgres port=5432 user=${POSTGRES_USER} password=${PASSWORD_POSTGRES} dbname=casdoor sslmode=disable"
+      initDataFile: "/init_data.json"
+    volumes:
+      - ${COSTRICT_DATA_DIR}/logs/chat-rag/logs:/data/logs
+      - ./conf/app.conf:/conf/app.conf
+      - ./init_data.json:/init_data.json
     networks:
       - shenma

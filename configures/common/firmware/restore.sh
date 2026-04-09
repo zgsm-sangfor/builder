@@ -76,28 +76,7 @@ SCRIPT_NAME=$(basename "$0")
 LOG_FILE="${SCRIPT_NAME%.*}.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
-# -------------------------- Constants Definition --------------------------
-declare -r SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-declare -r DEFAULT_BACKEND_DIR="/usr/local/costrict"
-declare -r DEFAULT_DATA_DIR="/root/.costrict"
-declare -r DEFAULT_INPUT_DIR=""
-
-# -------------------------- Function Definitions --------------------------
-docker-compose() {
-    # Check if docker has compose subcommand
-    if docker compose version >/dev/null 2>&1; then
-        command docker compose "$@"
-    else
-        command docker-compose "$@"
-    fi
-}
-
-log() {
-    local level=$1
-    local message=$2
-    local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-    echo -e "[${timestamp}] [${level}] ${message}"
-}
+. ./utils.sh
 
 show_usage() {
     cat << EOF
@@ -105,13 +84,10 @@ show_usage() {
 
 选项:
     --input <path>     备份数据来源目录（必需），由backup.sh脚本生成
-    --backend <path>   backend所在目录，默认为 /usr/local/costrict
-    --data <path>      costrict数据目录，默认为 /root/.costrict
     -h, --help         显示帮助信息
 
 示例:
     $0 --input /mnt/backup/costrict_2024           # 恢复到默认路径
-    $0 --input /backup/latest --backend /opt/...   # 指定所有路径
 
 说明:
     本脚本用于恢复由backup.sh脚本备份的costrict后端系统。
@@ -122,23 +98,13 @@ EOF
 
 parse_arguments() {
     # 默认值
-    BACKEND_DIR="$DEFAULT_BACKEND_DIR"
-    DATA_DIR="$DEFAULT_DATA_DIR"
-    INPUT_DIR="$DEFAULT_INPUT_DIR"
+    INPUT_DIR=""
     
     # 解析参数
     while [[ $# -gt 0 ]]; do
         case $1 in
             --input)
                 INPUT_DIR="$2"
-                shift 2
-                ;;
-            --backend)
-                BACKEND_DIR="$2"
-                shift 2
-                ;;
-            --data)
-                DATA_DIR="$2"
                 shift 2
                 ;;
             -h|--help)
@@ -152,16 +118,12 @@ parse_arguments() {
                 ;;
         esac
     done
-    
-    # 转换为绝对路径
-    BACKEND_DIR="$(cd "$BACKEND_DIR" 2>/dev/null && echo "$BACKEND_DIR" || echo "$BACKEND_DIR")"
+
     if [[ -n "$INPUT_DIR" ]]; then
-        INPUT_DIR="$(cd "$INPUT_DIR" 2>/dev/null && echo "$INPUT_DIR" || echo "$INPUT_DIR")"
+        INPUT_DIR="$(cd "$INPUT_DIR" 2>/dev/null && pwd)" || INPUT_DIR=""
     fi
     
     log "INFO" "输入目录: $INPUT_DIR"
-    log "INFO" "Backend目录: $BACKEND_DIR"
-    log "INFO" "Costrict数据目录: $DATA_DIR"
 }
 
 check_root_permission() {
@@ -175,23 +137,21 @@ check_root_permission() {
 
 check_input_directory() {
     local missing_items=()
+    local required_dirs=(
+        "$INPUT_DIR"
+        "$INPUT_DIR/backend"
+        "$INPUT_DIR/backend/init.d"
+        "$INPUT_DIR/backend/scripts"
+        "$INPUT_DIR/data"
+        "$INPUT_DIR/images"
+    )
     
-    # 检查输入目录结构
-    if [[ ! -d "$INPUT_DIR" ]]; then
-        missing_items+=("输入目录不存在: $INPUT_DIR")
-    fi
-    
-    if [[ ! -d "$INPUT_DIR/backend" ]]; then
-        missing_items+=("缺少: \$INPUT_DIR/backend")
-    fi
-    
-    if [[ ! -d "$INPUT_DIR/data" ]]; then
-        missing_items+=("缺少: \$INPUT_DIR/data")
-    fi
-    
-    if [[ ! -d "$INPUT_DIR/images" ]]; then
-        missing_items+=("缺少: \$INPUT_DIR/images")
-    fi
+    # 遍历检查所有必需目录
+    for dir in "${required_dirs[@]}"; do
+        if [[ ! -d "$dir" ]]; then
+            missing_items+=("缺少目录: $dir")
+        fi
+    done
     
     if [[ ${#missing_items[@]} -gt 0 ]]; then
         log "ERROR" "输入目录结构检查失败:"
@@ -209,30 +169,38 @@ check_prerequisites() {
     local missing_items=()
     local input_backend_dir="$INPUT_DIR/backend"
     
-    # 检查backend目录
-    if [[ ! -d "$input_backend_dir" ]]; then
-        missing_items+=("Backend目录: $input_backend_dir")
+    if [[ -d "$COSTRICT_BACKEND_DIR" ]]; then
+        local file_count=$(find "$COSTRICT_BACKEND_DIR" -mindepth 1 -path "$COSTRICT_BACKEND_DIR/scripts" -prune -o -print | wc -l)
+        if [[ "$file_count" -ne 0 ]]; then
+            missing_items+=("目标目录 $COSTRICT_BACKEND_DIR 不为空，请手动清理")
+        fi
     fi
-    
+    if [[ -d "$COSTRICT_DATA_DIR" ]]; then
+        local file_count=$(find "$COSTRICT_DATA_DIR" -mindepth 1 -path "$COSTRICT_DATA_DIR/logs" -prune -o -print | wc -l)
+        if [[ "$file_count" -ne 0 ]]; then
+            missing_items+=("目标目录 $COSTRICT_DATA_DIR 不为空，请手动清理")
+        fi
+    fi
+
+   
     # 检查必要脚本
-    if [[ ! -f "$input_backend_dir/run.sh" ]]; then
-        missing_items+=("脚本: $input_backend_dir/run.sh")
-    fi
+    local required_scripts=(
+        "$input_backend_dir/run.sh"
+        "$input_backend_dir/init.sh"
+        "$input_backend_dir/scripts/load-images.sh"
+        "$input_backend_dir/scripts/gen-env-file.sh"
+        "$input_backend_dir/check.sh"
+        "$input_backend_dir/utils.sh"
+    )
     
-    if [[ ! -f "$input_backend_dir/init.sh" ]]; then
-        missing_items+=("脚本: $input_backend_dir/init.sh")
-    fi
-    
-    if [[ ! -f "$input_backend_dir/scripts/load-images.sh" ]]; then
-        missing_items+=("脚本: $input_backend_dir/scripts/load-images.sh")
-    fi
-    
-    if [[ ! -f "$input_backend_dir/check.sh" ]]; then
-        missing_items+=("脚本: $input_backend_dir/check.sh")
-    fi
+    for script in "${required_scripts[@]}"; do
+        if [[ ! -f "$script" ]]; then
+            missing_items+=("缺失脚本: $script")
+        fi
+    done
     
     if [[ ${#missing_items[@]} -gt 0 ]]; then
-        log "ERROR" "前置条件检查失败，以下项目缺失:"
+        log "ERROR" "前置条件检查失败，存在以下问题:"
         for item in "${missing_items[@]}"; do
             log "ERROR" "  - ${item}"
         done
@@ -282,14 +250,12 @@ load_docker_images() {
     log "INFO" "加载Docker镜像..."
     log "INFO" "镜像来源: $INPUT_DIR/images"
     
-    cd "$BACKEND_DIR" || return 1
-    
     if [[ ! -d "$INPUT_DIR/images" ]] || [[ -z "$(ls -A $INPUT_DIR/images 2>/dev/null)" ]]; then
         log "WARN" "镜像目录为空或不存在，跳过镜像加载"
         return 0
     fi
     
-    if bash scripts/load-images.sh "$INPUT_DIR/images"; then
+    if bash scripts/load-images.sh -l "$INPUT_DIR/images"; then
         log "INFO" "Docker镜像加载完成"
         return 0
     else
@@ -301,60 +267,70 @@ load_docker_images() {
 restore_backend_directory() {
     log "INFO" "恢复backend目录..."
     log "INFO" "备份源: $INPUT_DIR/backend"
-    log "INFO" "目标目录: $BACKEND_DIR"
+    log "INFO" "目标目录: $COSTRICT_BACKEND_DIR"
     
-    # 检查目标目录是否为空
-    if [[ -d "$BACKEND_DIR" ]]; then
-        local file_count=$(find "$BACKEND_DIR" -mindepth 1 ! -path "$BACKEND_DIR/scripts" ! -path "$BACKEND_DIR/scripts/*" | wc -l)
-        if [[ "$file_count" -ne 0 ]]; then
-            log "ERROR" "目标目录不为空，请手动清理：$BACKEND_DIR"
+    # 确保目标目录存在
+    mkdir -p "$COSTRICT_BACKEND_DIR"
+    
+    # 复制备份内容
+    # 使用rsync确保所有文件直接拷贝到目标目录，即使目标目录已存在也不会拷贝到子目录
+    if command -v rsync >/dev/null 2>&1; then
+        log "INFO" "使用rsync复制文件..."
+        if ! rsync -av --delete "$INPUT_DIR/backend/" "$COSTRICT_BACKEND_DIR/"; then
+            log "ERROR" "backend目录恢复失败"
+            return 1
+        fi
+    else
+        # 如果没有rsync，使用cp -r并删除源目录中的'.'和'..'
+        log "INFO" "使用cp复制文件..."
+        # 进入源目录并拷贝所有文件（包括隐藏文件）到目标目录
+        if ! (cd "$INPUT_DIR/backend" && tar cf - .) | (cd "$COSTRICT_BACKEND_DIR" && tar xf -); then
+            log "ERROR" "backend目录恢复失败"
             return 1
         fi
     fi
     
-    # 确保目标目录存在
-    mkdir -p "$BACKEND_DIR"
+    # 设置.sh文件为可执行（仅处理$COSTRICT_BACKEND_DIR和$COSTRICT_BACKEND_DIR/scripts目录）
+    log "INFO" "设置$COSTRICT_BACKEND_DIR及$COSTRICT_BACKEND_DIR/scripts目录下的.sh文件为可执行"
+    chmod +x "$COSTRICT_BACKEND_DIR"/*.sh 2>/dev/null || true
+    chmod +x "$COSTRICT_BACKEND_DIR/scripts"/*.sh 2>/dev/null || true
     
-    # 复制备份内容
-    if cp -rp "$INPUT_DIR/backend"/* "$BACKEND_DIR/"; then
-        log "INFO" "backend目录恢复完成"
-        return 0
-    else
-        log "ERROR" "backend目录恢复失败"
-        return 1
-    fi
+    log "INFO" "backend目录恢复完成"
+    return 0
 }
 
 restore_data_directory() {
-    log "INFO" "恢复costrict数据目录..."
+    log "INFO" "恢复数据目录..."
     log "INFO" "备份源: $INPUT_DIR/data"
-    log "INFO" "目标目录: $DATA_DIR"
+    log "INFO" "目标目录: $COSTRICT_DATA_DIR"
     
-    # 检查目标目录是否为空
-    if [[ -d "$DATA_DIR" ]]; then
-        local file_count=$(find "$DATA_DIR" -mindepth 1 | wc -l)
-        if [[ "$file_count" -ne 0 ]]; then
-            log "ERROR" "目标目录不为空，请手动清理：$DATA_DIR"
+    # 确保目标目录存在
+    mkdir -p "$COSTRICT_DATA_DIR"
+    
+    # 复制备份内容
+    # 使用rsync确保所有文件直接拷贝到目标目录，即使目标目录已存在也不会拷贝到子目录
+    if command -v rsync >/dev/null 2>&1; then
+        log "INFO" "使用rsync复制文件..."
+        if ! rsync -av --delete "$INPUT_DIR/data/" "$COSTRICT_DATA_DIR/"; then
+            log "ERROR" "数据目录恢复失败"
+            return 1
+        fi
+    else
+        # 如果没有rsync，使用tar进行拷贝
+        log "INFO" "使用tar复制文件..."
+        # 进入源目录并拷贝所有文件（包括隐藏文件）到目标目录
+        if ! (cd "$INPUT_DIR/data" && tar cf - .) | (cd "$COSTRICT_DATA_DIR" && tar xf -); then
+            log "ERROR" "数据目录恢复失败"
             return 1
         fi
     fi
     
-    # 确保目标目录存在
-    mkdir -p "$DATA_DIR"
-    
-    # 复制备份内容
-    if cp -rp "$INPUT_DIR/data"/* "$DATA_DIR/"; then
-        log "INFO" "costrict数据目录恢复完成"
-        return 0
-    else
-        log "ERROR" "costrict数据目录恢复失败"
-        return 1
-    fi
+    log "INFO" "数据目录恢复完成"
+    return 0
 }
 
 check_environment() {
     log "INFO" "执行环境检查..."
-    cd "$BACKEND_DIR" || return 1
     if ! bash check.sh; then
         log "ERROR" "环境检查失败"
         return 1
@@ -363,9 +339,8 @@ check_environment() {
     return 0
 }
 
-
 register_services() {
-    local initd_dir="${BACKEND_DIR}/init.d"
+    local initd_dir="${COSTRICT_BACKEND_DIR}/init.d"
     
     # 检查 init.d 目录是否存在
     if [[ ! -d "$initd_dir" ]]; then
@@ -422,7 +397,6 @@ register_services() {
 
 start_docker_compose_services() {
     log "INFO" "启动docker compose服务..."
-    cd "$BACKEND_DIR" || return 1
     
     if bash run.sh start; then
         log "INFO" "docker compose服务已启动"
@@ -460,13 +434,13 @@ show_restore_summary() {
     log "INFO" "恢复完成！"
     log "INFO" "======================================"
     log "INFO" "恢复来源: $INPUT_DIR"
-    log "INFO" "Backend目录: $BACKEND_DIR"
-    log "INFO" "Costrict数据目录: $DATA_DIR"
+    log "INFO" "系统安装目录: $COSTRICT_BACKEND_DIR"
+    log "INFO" "数据存储目录: $COSTRICT_DATA_DIR"
     log "INFO" ""
     log "INFO" "后续操作:"
-    log "INFO" "  1. 检查服务状态: cd $BACKEND_DIR; bash run.sh status"
+    log "INFO" "  1. 检查服务状态: cd $COSTRICT_BACKEND_DIR; bash run.sh status"
     log "INFO" "  2. 检查costrict-daemon服务: service costrict-daemon status"
-    log "INFO" "  3. 查看日志: cd $BACKEND_DIR; bash run.sh logs"
+    log "INFO" "  3. 查看日志: cd $COSTRICT_BACKEND_DIR; bash run.sh logs"
     log "INFO" "======================================"
     log "INFO" ""
     log "INFO" "注意事项:"
@@ -491,6 +465,11 @@ main() {
         show_usage
         exit 1
     fi
+
+    load_install_env
+
+    mkdir -p "$COSTRICT_BACKEND_DIR"
+    cd "$COSTRICT_BACKEND_DIR" || return 1
     
     # 检查root权限
     if ! check_root_permission; then
@@ -509,11 +488,12 @@ main() {
     
     check_docker_service
     check_docker_compose
-    
+
     # 执行恢复
-    load_docker_images
     restore_backend_directory
     restore_data_directory
+    load_docker_images
+    gen_env_files
 
     # 检查安装后的环境和依赖
     if ! check_environment; then

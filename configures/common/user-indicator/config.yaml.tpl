@@ -7,9 +7,9 @@ server:
     basePath: "/user-indicator/api/v1"
 
 es:
-  addresses: ["https://es:9200"]
-  username: ""
-  password: ""
+  addresses: ["http://es:9200"]
+  username: "elastic"
+  password: "{{PASSWORD_ELASTIC}}"
   indexs:
     "costrict_metrics": ""
   indicatorIndex: "costrict_metrics"
@@ -82,8 +82,8 @@ database:
 
 logger:
   level: "debug"         # debug, info, warn, error
-  format: "json"     # json, console
-  output: "console"        # console, file, both
+  format: "json"         # json, console
+  output: "console"      # console, file, both
   # filename: "logs/app.log"  # 日志文件路径
   # max_size: 100         # 单个日志文件最大大小，单位MB
   # max_backups: 5        # 保留的旧日志文件最大数量

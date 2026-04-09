@@ -134,9 +134,9 @@ if [ -n "$updated_packages" ]; then
     echo "Step 5: Building packages..."
     echo "----------------------------------------------------------------"
     if [ -n "$UPLOAD_ENV" ]; then
-        ./build-components.sh --packages "$updated_packages" --def --upload "$UPLOAD_ENV"
+        ./build-components.sh --packages "$updated_packages" --clean --build --pack --index --upload "$UPLOAD_ENV"
     else
-        ./build-components.sh --packages "$updated_packages" --def
+        ./build-components.sh --packages "$updated_packages" --clean --build --pack --index
     fi
 else
     echo "Step 5: No 'component' packages updated, skipping..."

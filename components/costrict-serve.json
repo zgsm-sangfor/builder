@@ -1,0 +1,18 @@
+{
+  "name": "costrict-serve",
+  "type": "exec",
+  "path": "../../costrict-admin/backend",
+  "platforms": [
+    {
+      "os": "linux",
+      "arch": "amd64"
+    },
+    {
+      "os": "windows",
+      "arch": "amd64"
+    }
+  ],
+  "enabled": false,
+  "version": "1.0.96",
+  "description": "Debug tools for backend management of Costrict"
+}

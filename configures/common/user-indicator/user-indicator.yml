@@ -1,8 +1,6 @@
 services:
-  user-indicator-for-es:
-    image: ${IMAGE_USER_INDICATOR_FOR_ES}
-    ports:
-      - "8080:8080"
+  user-indicator:
+    image: ${IMAGE_USER_INDICATOR}
     volumes:
       - ./config.yaml:/app/config.yaml:ro
       - ./cert/ca.crt:/app/cert/ca.crt:ro
@@ -15,3 +13,5 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+    networks:
+      - shenma

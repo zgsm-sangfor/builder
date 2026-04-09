@@ -8,6 +8,7 @@ services:
     volumes:
       - ./costrict-admin.json:/app/costrict-admin.json:ro
       - /var/run/docker.sock:/var/run/docker.sock
+      - /root/.costrict.install.env:/root/.costrict.install.env:ro
       - ${COSTRICT_BACKEND_DIR}:${COSTRICT_BACKEND_DIR}
       - ${COSTRICT_DATA_DIR}:${COSTRICT_DATA_DIR}
     extra_hosts:

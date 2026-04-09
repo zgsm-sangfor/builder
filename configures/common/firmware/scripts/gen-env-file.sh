@@ -11,8 +11,8 @@ gen_images_env() {
     local output_file="$1"
     
     # 切换到目标目录
-    cd "${FROM_DIR}" || {
-        log "ERROR" "无法切换到目录: ${FROM_DIR}"
+    cd "${WORK_DIR}" || {
+        log "ERROR" "无法切换到目录: ${WORK_DIR}"
         return 1
     }
     
@@ -83,34 +83,43 @@ merge_env() {
 }
 
 gen_lack_env() {
-    # source 加载 costrict.env，该文件中可能定义了COSTRICT_HOST，COSTRICT_BASEURL
-    if [ -f ${COSTRICT_ENV_FILE} ]; then
-        . ${COSTRICT_ENV_FILE}
+    # source 加载 .costrict.env和costrict-admin.env，
+    #   该文件中可能定义了COSTRICT_HOST，COSTRICT_PORT，COSTRICT_BASEURL
+    #   如果没定义，则设定一个默认值追加到.env
+    if [ -f "${IN_COSTRICT_ENV}" ]; then
+        . "${IN_COSTRICT_ENV}"
+    fi
+    if [[ -f "${IN_COSTRICT_ADMIN_ENV}" ]]; then
+        . "${IN_COSTRICT_ADMIN_ENV}"
     fi
     local server_ip=$(hostname -I | awk '{ print $1 }')
-    # 判断 COSTRICT_HOST 是否已定义，若未定义则添加到 .env
+
     if [ -z "${COSTRICT_HOST:-}" ]; then
         COSTRICT_HOST="${server_ip}"
-        echo "COSTRICT_HOST=\"${server_ip}\"" >> ${DOT_ENV_FILE}
+        echo "COSTRICT_HOST=\"${server_ip}\"" >> ${OUT_DOT_ENV}
     fi
     
-    # 判断 COSTRICT_BASEURL 是否已定义，若未定义则添加到 .env
+    if [ -z "${COSTRICT_PORT:-}" ]; then
+        COSTRICT_PORT="${PORT_APISIX_ENTRY}"
+        echo "COSTRICT_PORT=\"${PORT_APISIX_ENTRY}\"" >> ${OUT_DOT_ENV}
+    fi
+
     if [ -z "${COSTRICT_BASEURL:-}" ]; then
-        echo "COSTRICT_BASEURL=\"http://${COSTRICT_HOST}:${PORT_APISIX_ENTRY}\"" >> ${DOT_ENV_FILE}
+        echo "COSTRICT_BASEURL=\"http://${COSTRICT_HOST}:${COSTRICT_PORT}\"" >> ${OUT_DOT_ENV}
     fi
 }
 
 gen_dot_env() {
     # 清空 .env 文件（如果存在）
-    > ${DOT_ENV_FILE} 2>/dev/null || :  # 使用 : 确保命令总是成功
-    # 调用 merge_env，将 ".images.env" 和 "costrict.env" 合并到 ".env" 文件中
-    merge_env ${DOT_ENV_FILE} ${IMAGES_ENV_FILE}
-    merge_env ${DOT_ENV_FILE} ${COSTRICT_ENV_FILE}
-    merge_env ${DOT_ENV_FILE} ${INSTALL_ENV_FILE}
+    > ${OUT_DOT_ENV} 2>/dev/null || :  # 使用 : 确保命令总是成功
+    # 调用 merge_env，将 ".images.env,.costrict.env,.install.env" 合并到 ".env" 文件中
+    merge_env ${OUT_DOT_ENV} ${OUT_IMAGES_ENV}
+    merge_env ${OUT_DOT_ENV} ${IN_COSTRICT_ENV}
+    merge_env ${OUT_DOT_ENV} ${IN_INSTALL_ENV}
     
-    # 如果存在 FROM_DIR/costrict-admin.env，则将其合并到 .env
-    if [[ -f "${COSTRICT_ADMIN_ENV_FILE}" ]]; then
-        merge_env "${DOT_ENV_FILE}" "${COSTRICT_ADMIN_ENV_FILE}"
+    # 如果存在 costrict-admin.env，则将其合并到 .env
+    if [[ -f "${IN_COSTRICT_ADMIN_ENV}" ]]; then
+        merge_env "${OUT_DOT_ENV}" "${IN_COSTRICT_ADMIN_ENV}"
     fi
     
     gen_lack_env
@@ -119,22 +128,17 @@ gen_dot_env() {
 }
 
 # 使用getopt解析参数
-TEMP=$(getopt -o o:f: --long output:,from: -n "$0" -- "$@")
+TEMP=$(getopt -o d: --long dir: -n "$0" -- "$@")
 eval set -- "$TEMP"
 
 # 默认值
-OUTPUT_DIR="."
-FROM_DIR=$(pwd)
+WORK_DIR=$(pwd)
 
 # 解析参数
 while true ; do
     case "$1" in
-        -o|--output)
-            OUTPUT_DIR="$2"
-            shift 2
-            ;;
-        -f|--from)
-            FROM_DIR="$2"
+        -d|--dir)
+            WORK_DIR="$2"
             shift 2
             ;;
         --) shift ; break ;;
@@ -142,37 +146,35 @@ while true ; do
     esac
 done
 
-# 确保output_dir以'/'结尾
-[[ "${FROM_DIR: -1}" != "/" ]] && FROM_DIR="${FROM_DIR}/"
-[[ "${OUTPUT_DIR: -1}" != "/" ]] && OUTPUT_DIR="${OUTPUT_DIR}/"
+[[ "${WORK_DIR: -1}" != "/" ]] && WORK_DIR="${WORK_DIR}/"
 
 # 安装过程生成的记录所有镜像地址的env
-IMAGES_ENV_FILE="${OUTPUT_DIR}.images.env"
+OUT_IMAGES_ENV="${WORK_DIR}.images.env"
 # 安装过程生成的记录镜像URL的列表文件
-IMAGES_LIST_FILE="${OUTPUT_DIR}.images.list"
-# 安装过程记录的配置(安装目录)
-INSTALL_ENV_FILE="${FROM_DIR}.install.env"
+OUT_IMAGES_LIST="${WORK_DIR}.images.list"
 # 安装结束时构建的记录所有环境变量，可供docker-compose.yml使用的变量文件
-DOT_ENV_FILE="${OUTPUT_DIR}.env"
+OUT_DOT_ENV="${WORK_DIR}.env"
+# 安装过程记录的配置(安装目录)
+IN_INSTALL_ENV="/root/.costrict.install.env"
 # 出厂预设的配置costrict.env.in，经过了本地化处理(比如重新生成密码)
-COSTRICT_ENV_FILE="${FROM_DIR}costrict.env"
+IN_COSTRICT_ENV="${WORK_DIR}.costrict.env"
 # 管理员配置
-COSTRICT_ADMIN_ENV_FILE="${FROM_DIR}costrict-admin.env"
+IN_COSTRICT_ADMIN_ENV="${WORK_DIR}costrict-admin.env"
 
-mkdir -p ${OUTPUT_DIR}
+mkdir -p "${WORK_DIR}"
 
-# 根据各个目录下的image.env构建.images.list
-log "INFO" "生成镜像环境变量文件: ${IMAGES_ENV_FILE} ..."
-if ! gen_images_env ${IMAGES_ENV_FILE}; then
+# 根据各个目录下的image.env构建.images.env
+log "INFO" "生成镜像环境变量文件: ${OUT_IMAGES_ENV} ..."
+if ! gen_images_env ${OUT_IMAGES_ENV}; then
     exit 1
 fi
 
-# 从.images.env提取镜像列表
-log "INFO" "生成镜像列表文件: $IMAGES_LIST_FILE ..."
-awk -F'=' '{print $2}' "${IMAGES_ENV_FILE}" > "${IMAGES_LIST_FILE}"
+# 从.images.env提取镜像列表.images.list
+log "INFO" "生成镜像列表文件: $OUT_IMAGES_LIST ..."
+awk -F'=' '{print $2}' "${OUT_IMAGES_ENV}" > "${OUT_IMAGES_LIST}"
 
-# 把costrict.env,.images.env合并成.env文件
-log "INFO" "生成环境变量文件 ${DOT_ENV_FILE} ..."
+# 把.costrict.env,.images.env合并成.env文件
+log "INFO" "生成环境变量文件 ${OUT_DOT_ENV} ..."
 if ! gen_dot_env; then
     exit 1
 fi

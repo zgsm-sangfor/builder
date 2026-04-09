@@ -6,8 +6,12 @@
     {
       "os": "linux",
       "arch": "amd64"
+    },
+    {
+      "os": "windows",
+      "arch": "amd64"
     }
   ],
-  "version": "1.0.49",
+  "version": "1.0.55",
   "description": "The daemon of costrict"
 }

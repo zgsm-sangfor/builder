@@ -92,23 +92,7 @@
       "subsystem": "backend"
     },
     {
-      "name": "cotund",
-      "subsystem": "backend"
-    },
-    {
-      "name": "codebase-querier",
-      "subsystem": "backend"
-    },
-    {
-      "name": "codebase-embedder",
-      "subsystem": "backend"
-    },
-    {
       "name": "chat-rag",
-      "subsystem": "backend"
-    },
-    {
-      "name": "codereview",
       "subsystem": "backend"
     },
     {
@@ -132,7 +116,7 @@
       "subsystem": "backend"
     },
     {
-      "name": "user-indicator-for-es",
+      "name": "user-indicator",
       "subsystem": "backend"
     },
     {
@@ -144,15 +128,7 @@
       "subsystem": "backend"
     },
     {
-      "name": "weaviate",
-      "subsystem": "backend"
-    },
-    {
       "name": "costrict",
-      "subsystem": "frontend"
-    },
-    {
-      "name": "cotun",
       "subsystem": "frontend"
     },
     {

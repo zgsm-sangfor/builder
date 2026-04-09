@@ -1,6 +1,6 @@
 # User Indicator for ES - Docker Compose 部署配置
 
-本目录包含 user-indicator-for-es 服务的 Docker Compose 部署配置，用于在本地或测试环境中快速启动服务。
+本目录包含 user-indicator 服务的 Docker Compose 部署配置，用于在本地或测试环境中快速启动服务。
 
 ## 文件说明
 

@@ -45,22 +45,7 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 # Get the current directory
 declare -r BASE_DIR=$(pwd)
 
-# -------------------------- Function Definitions --------------------------
-docker-compose() {
-    # Check if docker has compose subcommand
-    if docker compose version >/dev/null 2>&1; then
-        command docker compose "$@"
-    else
-        command docker-compose "$@"
-    fi
-}
-
-log() {
-    local level=$1
-    local message=$2
-    local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-    echo -e "[${timestamp}] [${level}] ${message}"
-}
+. ./utils.sh
 
 check_core_dependencies() {
     local missing_deps=()
@@ -98,6 +83,53 @@ check_core_dependencies() {
     return 0
 }
 
+start_docker() {
+    log "INFO" "检查Docker服务状态..."
+    if ! docker info >/dev/null 2>&1; then
+        log "WARN" "Docker服务尚未启动，正在尝试启动..."
+        
+        # 尝试启动 Docker 服务（支持 systemctl 和 service 命令）
+        if command -v systemctl >/dev/null 2>&1; then
+            if sudo systemctl start docker; then
+                log "INFO" "Docker服务已通过systemctl启动"
+            else
+                log "ERROR" "Docker服务启动失败，请手动启动Docker服务"
+                return 1
+            fi
+        elif command -v service >/dev/null 2>&1; then
+            if sudo service docker start; then
+                log "INFO" "Docker服务已通过service命令启动"
+            else
+                log "ERROR" "Docker服务启动失败，请手动启动Docker服务"
+                return 1
+            fi
+        else
+            log "ERROR" "无法找到Docker服务启动命令，请手动启动Docker服务"
+            return 1
+        fi
+        
+        # 等待Docker服务启动
+        local max_wait=30
+        local count=0
+        while [[ $count -lt $max_wait ]]; do
+            if docker info >/dev/null 2>&1; then
+                log "INFO" "Docker服务已就绪"
+                break
+            fi
+            sleep 1
+            count=$((count + 1))
+        done
+        
+        if ! docker info >/dev/null 2>&1; then
+            log "ERROR" "Docker服务启动超时，请手动启动Docker服务"
+            return 1
+        fi
+    else
+        log "INFO" "Docker服务已启动"
+    fi
+    return 0
+}
+
 prepare() {
     log "INFO" "检查核心依赖..."
     if ! check_core_dependencies; then
@@ -105,9 +137,11 @@ prepare() {
         return 1
     fi
     
-    log "INFO" "生成环境变量文件 .env..."
-    if ! bash scripts/gen-env-file.sh; then
-        log "ERROR" "生成环境变量文件 .env失败"
+    if ! gen_env_files; then
+        return 1
+    fi
+
+    if ! start_docker; then
         return 1
     fi
     return 0
@@ -123,7 +157,7 @@ start_docker_services() {
         log "ERROR" "Docker Compose服务启动失败"
         return 1
     fi
-    . .env
+    . ./.env
     log "INFO" "Docker Compose服务启动完成"
     log "INFO" "系统启动完成"
     log "INFO" "请登录到诸葛神码后端管理页面 [http://${COSTRICT_HOST}:${PORT_APISIX_ENTRY}/costrict-admin/] (默认账号: admin, 密码: admin)"

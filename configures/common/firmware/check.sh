@@ -152,11 +152,7 @@ validate_install_environment() {
         "${target_base}/casdoor"
         "${target_base}/chat-rag"
         "${target_base}/code-completion"
-        "${target_base}/codebase-embedder"
-        "${target_base}/codebase-querier"
-        "${target_base}/codereview"
         "${target_base}/costrict-admin-backend"
-        "${target_base}/cotund"
         "${target_base}/credit-manager"
         "${target_base}/etcd"
         "${target_base}/es"
@@ -166,9 +162,7 @@ validate_install_environment() {
         "${target_base}/portal"
         "${target_base}/portal/data/costrict-admin"
         "${target_base}/postgres"
-        "${target_base}/quota-manager"
         "${target_base}/redis"
-        "${target_base}/weaviate"
     )
     
     for dir in "${required_service_dirs[@]}"; do
@@ -206,14 +200,15 @@ validate_install_environment() {
     log "INFO" "检查脚本文件..."
     local required_scripts=(
         "configure.sh"
-        "tpl-resolve.sh"
+        "utils.sh"
         "deploy-to.sh"
         "init.sh"
         "cleanup.sh"
         "backup.sh"
         "restore.sh"
         "run.sh"
-        "docker-download-images.sh"
+        "scripts/docker-download-images.sh"
+        "scripts/tpl-resolve.sh"
         "scripts/download-images.sh"
         "scripts/gen-env-file.sh"
         "scripts/gen-secret.sh"
@@ -223,24 +218,7 @@ validate_install_environment() {
         "scripts/push-images.sh"
         "scripts/save-images.sh"
         "scripts/verify-images.sh"
-    )
-    
-    for script in "${required_scripts[@]}"; do
-        local script_path="${target_base}/${script}"
-        if [[ ! -f "$script_path" ]]; then
-            log "ERROR" "脚本文件不存在: $script_path"
-            validation_errors=$((validation_errors + 1))
-        elif [[ ! -x "$script_path" ]]; then
-            log "WARN" "脚本文件无执行权限: $script_path"
-            validation_warnings=$((validation_warnings + 1))
-        else
-            log "INFO" "脚本文件存在: $script"
-        fi
-    done
-    
-    # ========== 6. 检查 APISIX 配置脚本 ==========
-    log "INFO" "检查 APISIX 配置脚本..."
-    local apisix_scripts=(
+
         "apisix-casdoor.sh"
         "apisix-chatrag.sh"
         "apisix-codereview.sh"
@@ -255,15 +233,23 @@ validate_install_environment() {
         "apisix-oidc-auth.sh"
     )
     
-    for script in "${apisix_scripts[@]}"; do
+    for script in "${required_scripts[@]}"; do
         local script_path="${target_base}/${script}"
         if [[ ! -f "$script_path" ]]; then
-            log "WARN" "APISIX配置脚本不存在: $script_path"
+            log "ERROR" "脚本文件不存在: $script_path"
+            validation_errors=$((validation_errors + 1))
+        elif [[ ! -x "$script_path" ]]; then
+            log "WARN" "脚本文件无执行权限: $script_path"
             validation_warnings=$((validation_warnings + 1))
+        elif ! bash -n "$script_path" 2>/dev/null; then
+            log "WARN" "脚本文件语法检查失败: $script_path"
+            validation_warnings=$((validation_warnings + 1))
+        else
+            log "INFO" "脚本文件存在: $script"
         fi
     done
     
-    # ========== 7. 检查镜像环境文件 ==========
+    # ========== 6. 检查镜像环境文件 ==========
     log "INFO" "检查镜像配置..."
     local image_env_count=$(find "${target_base}" -name "image.env" -type f 2>/dev/null | wc -l)
     if [[ "$image_env_count" -eq 0 ]]; then
@@ -273,25 +259,7 @@ validate_install_environment() {
         log "INFO" "找到 $image_env_count 个 image.env 文件"
     fi
     
-    # ========== 8. 验证核心脚本语法 ==========
-    log "INFO" "验证核心脚本语法..."
-    local syntax_check_scripts=(
-        "${target_base}/configure.sh"
-        "${target_base}/tpl-resolve.sh"
-    )
-    
-    for script in "${syntax_check_scripts[@]}"; do
-        if [[ -f "$script" ]]; then
-            if bash -n "$script" 2>/dev/null; then
-                log "INFO" "$(basename "$script") 语法检查通过"
-            else
-                log "WARN" "$(basename "$script") 语法检查失败"
-                validation_warnings=$((validation_warnings + 1))
-            fi
-        fi
-    done
-    
-    # ========== 9. 检查CPU核心数 ==========
+    # ========== 7. 检查CPU核心数 ==========
     log "INFO" "检查CPU核心数..."
     if command -v nproc >/dev/null 2>&1; then
         local cpu_cores=$(nproc)
@@ -307,7 +275,7 @@ validate_install_environment() {
         validation_warnings=$((validation_warnings + 1))
     fi
     
-    # ========== 10. 检查内存大小 ==========
+    # ========== 8. 检查内存大小 ==========
     log "INFO" "检查内存大小..."
     if command -v free >/dev/null 2>&1; then
         local total_mem_mb=$(free -m | awk '/^Mem:/ {print $2}')
@@ -324,7 +292,7 @@ validate_install_environment() {
         validation_warnings=$((validation_warnings + 1))
     fi
     
-    # ========== 11. 检查磁盘空间 ==========
+    # ========== 9. 检查磁盘空间 ==========
     log "INFO" "检查磁盘空间..."
     if command -v df >/dev/null 2>&1; then
         local min_space_gb=10
@@ -337,7 +305,7 @@ validate_install_environment() {
         fi
     fi
     
-    # ========== 12. 验证报告 ==========
+    # ========== 10. 验证报告 ==========
     log "INFO" "安装环境验证完成"
     echo ""
     log "INFO" "======================================"

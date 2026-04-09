@@ -33,15 +33,15 @@
 # ==================== 根目录脚本 ====================
 # 安装和部署脚本 
 configure.sh
-tpl-resolve.sh
+utils.sh
 check.sh
-docker-download-images.sh
 deploy-to.sh
 init.sh
 cleanup.sh
 run.sh
 backup.sh
 restore.sh
+costrict-admin.env
 costrict.env.in
 MANIFEST
 

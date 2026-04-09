@@ -6,8 +6,12 @@
     {
       "os": "linux",
       "arch": "amd64"
+    },
+    {
+      "os": "windows",
+      "arch": "amd64"
     }
   ],
-  "version": "1.0.83",
+  "version": "1.0.108",
   "description": "Utilities for backend management of Costrict"
 }

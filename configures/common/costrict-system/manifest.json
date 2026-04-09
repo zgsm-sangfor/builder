@@ -30,37 +30,37 @@
     {
       "name": "costrict-daemon",
       "subsystem": "root",
-      "version": "1.0.49"
+      "version": "1.0.55"
     },
     {
       "name": "costrict-admin",
       "subsystem": "root",
-      "version": "1.0.81"
+      "version": "1.0.108"
     },
     {
       "name": "firmware",
       "subsystem": "root",
-      "version": "1.0.58"
+      "version": "1.0.83"
     },
     {
       "name": "backend",
       "subsystem": "root",
-      "version": "1.0.35"
+      "version": "1.0.42"
     },
     {
       "name": "frontend",
       "subsystem": "root",
-      "version": "1.0.5"
+      "version": "1.0.6"
     },
     {
       "name": "costrict-admin-backend",
       "subsystem": "backend",
-      "version": "1.0.64"
+      "version": "1.0.82"
     },
     {
       "name": "costrict-admin-frontend",
       "subsystem": "backend",
-      "version": "1.0.43"
+      "version": "1.0.47"
     },
     {
       "name": "costrict-license-sdk",
@@ -70,12 +70,12 @@
     {
       "name": "casdoor",
       "subsystem": "backend",
-      "version": "1.0.6"
+      "version": "1.0.23"
     },
     {
       "name": "oidc-auth",
       "subsystem": "backend",
-      "version": "1.0.0"
+      "version": "1.0.3"
     },
     {
       "name": "oneapi",
@@ -95,12 +95,12 @@
     {
       "name": "postgres",
       "subsystem": "backend",
-      "version": "1.0.4"
+      "version": "1.0.5"
     },
     {
       "name": "apisix",
       "subsystem": "backend",
-      "version": "1.0.3"
+      "version": "1.0.4"
     },
     {
       "name": "portal",
@@ -108,29 +108,9 @@
       "version": "1.0.7"
     },
     {
-      "name": "cotund",
-      "subsystem": "backend",
-      "version": "1.0.1"
-    },
-    {
-      "name": "codebase-querier",
-      "subsystem": "backend",
-      "version": "1.0.5"
-    },
-    {
-      "name": "codebase-embedder",
-      "subsystem": "backend",
-      "version": "1.0.6"
-    },
-    {
       "name": "chat-rag",
       "subsystem": "backend",
-      "version": "1.0.4"
-    },
-    {
-      "name": "codereview",
-      "subsystem": "backend",
-      "version": "1.0.4"
+      "version": "1.0.5"
     },
     {
       "name": "credit-manager",
@@ -155,12 +135,12 @@
     {
       "name": "grafana",
       "subsystem": "backend",
-      "version": "1.0.0"
+      "version": "1.0.1"
     },
     {
-      "name": "user-indicator-for-es",
+      "name": "user-indicator",
       "subsystem": "backend",
-      "version": "1.0.3"
+      "version": "1.0.8"
     },
     {
       "name": "quota-manager",
@@ -173,19 +153,9 @@
       "version": "1.0.7"
     },
     {
-      "name": "weaviate",
-      "subsystem": "backend",
-      "version": "1.0.5"
-    },
-    {
       "name": "costrict",
       "subsystem": "frontend",
       "version": "1.1.34"
-    },
-    {
-      "name": "cotun",
-      "subsystem": "frontend",
-      "version": "1.3.12"
     },
     {
       "name": "completion-agent",

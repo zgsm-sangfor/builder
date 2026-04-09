@@ -33,11 +33,12 @@ usage() {
     echo "  --key <key>          Private key file (default: costrict-private.pem)"
     echo "  -h, --help           Help information"
     echo "Actions:"
-    echo "  --clean              Need clean first"
-    echo "  --build              Need build packages"
-    echo "  --pack               Need pack packages"
-    echo "  --index              Need index packages"
-    echo "  --def                Execute default steps (build, pack, index)"
+    echo "  --update             Automatically update component versions"
+    echo "  --clean              Clean the earlier versions"
+    echo "  --build              Compile or build the module to be packaged"
+    echo "  --pack               Package and sign the module"
+    echo "  --index              Create an index for the constructed package"
+    echo "  --def                Execute default steps (update, build, pack, index)"
     echo "  --upload <env>       Upload package to <env> (comma-separated env list)"
     echo "                       Supported envs: names from .env ENV_NAMES array (${ENV_NAMES[*]})"
     echo "                       Keywords: def (${ENV_NAMES[0]}), all (${ENV_NAMES[*]})"
@@ -80,6 +81,7 @@ enable_upload() {
 KEY_FILE="costrict-private.pem"
 
 # 默认参数值
+NEED_UPDATE=false
 NEED_CLEAN=false
 NEED_BUILD=false
 NEED_PACK=false
@@ -91,7 +93,7 @@ PACKAGE_TYPE=""
 PACKAGES=""
 
 # Parse command line options
-args=$(getopt -o hp:K: --long help,packages:,kind:,type:,key:,clean,build,pack,index,def,upload:,upload-packages: -n 'build-components.sh' -- "$@")
+args=$(getopt -o hp:K: --long help,packages:,kind:,type:,key:,update,clean,build,pack,index,def,upload:,upload-packages: -n 'build-components.sh' -- "$@")
 [ $? -ne 0 ] && usage
 
 eval set -- "$args"
@@ -101,11 +103,12 @@ while true; do
         -p|--packages) PACKAGES="$2"; shift 2;;
         --type) PACKAGE_TYPE="$2"; shift 2;;
         --key) KEY_FILE="$2"; shift 2;;
+        --update) NEED_UPDATE=true; shift;;
         --clean) NEED_CLEAN=true; shift;;
         --build) NEED_BUILD=true; shift;;
         --pack) NEED_PACK=true; shift;;
         --index) NEED_INDEX=true; shift;;
-        --def) NEED_BUILD=true; NEED_PACK=true; NEED_INDEX=true; shift;;
+        --def) NEED_UPDATE=true; NEED_BUILD=true; NEED_PACK=true; NEED_INDEX=true; shift;;
         --upload) enable_upload "$2"; shift 2;;
         --upload-packages) enable_upload "$2"; NEED_UPLOAD_PACKAGES=true; shift 2;;
         -h|--help) usage; exit 0;;
@@ -672,10 +675,21 @@ process_package() {
     mkdir -p "packages/${package_name}"
 
     if [ "$NEED_CLEAN" = true ]; then
-        echo "Cleaning up old versions for package: $package_name"
-        cleanup_old_versions "$package_name"
+        echo "Cleaning up old versions for package: ${package_name}"
+        cleanup_old_versions "${package_name}"
     else
         echo "Skipping clean step for ${package_name}..."
+    fi
+
+    if [ "$NEED_UPDATE" = true ]; then
+        echo "Updating version for ${package_name}..."
+        ./check-update.sh -p "${package_name}" -u
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to update version for package '${package_name}'"
+            exit 1
+        fi
+    else
+        echo "Skipping update step for ${package_name}..."
     fi
 
     if [ "$NEED_BUILD" = true ]; then

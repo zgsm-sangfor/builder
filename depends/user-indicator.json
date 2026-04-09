@@ -1,5 +1,5 @@
 {
-  "name": "user-indicator-for-es",
+  "name": "user-indicator",
   "repo": "zgsm",
   "version": "0.0.6",
   "type": "exec",
@@ -7,8 +7,8 @@
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",
   "component": {
-    "workdir": "./configures/common/user-indicator-for-es",
-    "command": "echo IMAGE_USER_INDICATOR_FOR_ES={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
+    "workdir": "./configures/common/user-indicator",
+    "command": "echo IMAGE_USER_INDICATOR={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
   },
   "description": "user indicator"
 }

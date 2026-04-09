@@ -1,11 +1,11 @@
 {
   "name": "casdoor",
   "repo": "zgsm",
-  "version": "2.1.5",
+  "version": "2.2.1",
   "type": "exec",
   "path": "../../source/casdoor",
-  "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:{{.version}}",
-  "tag": "{{.version}}",
+  "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
+  "tag": "v{{.version}}",
   "enabled": false,
   "component": {
     "workdir": "./configures/common/casdoor",

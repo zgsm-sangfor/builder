@@ -65,6 +65,25 @@ gen_services() {
         result+="${lead}${indent}extends:\n"
         result+="${lead}${indent}${indent}file: ./${component_name}/${component_name}.yml\n"
         result+="${lead}${indent}${indent}service: ${service_name}\n"
+        
+        # 检查是否有dependencies字段
+        local has_dependencies=$(jq -r ".services[$i].dependencies // empty" "$spec_file")
+        if [[ -n "$has_dependencies" ]] && [[ "$has_dependencies" != "null" ]]; then
+            # 获取dependencies数组长度
+            local deps_count=$(jq -r ".services[$i].dependencies | length" "$spec_file")
+            if [[ "$deps_count" -gt 0 ]]; then
+                result+="${lead}${indent}depends_on:\n"
+                for ((j=0; j<deps_count; j++)); do
+                    local dep_service=$(jq -r ".services[$i].dependencies[$j].service" "$spec_file")
+                    local dep_condition=$(jq -r ".services[$i].dependencies[$j].condition" "$spec_file")
+                    if [[ -n "$dep_service" ]] && [[ -n "$dep_condition" ]]; then
+                        result+="${lead}${indent}${indent}${dep_service}:\n"
+                        result+="${lead}${indent}${indent}${indent}condition: ${dep_condition}\n"
+                    fi
+                done
+            fi
+        fi
+        
         result+="\n"
     done
     

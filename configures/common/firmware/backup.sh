@@ -1,30 +1,25 @@
 #!/bin/bash
 
-################################################################################
 # 备份costrict后端系统
 #
-# 功能：备份整个costrict后端系统，包括docker compose环境、工作目录和Docker镜像
+# 功能：备份整个costrict后端系统，包括docker compose环境、数据目录和Docker镜像
 #
 # 使用方法：
 #   ./backup.sh [OPTIONS]
 #   或
-#   bash backup.sh --backend /path/to/backend --data /path/to/costrict --output /path/to/output
+#   bash backup.sh --output /path/to/output
 #
 # 支持的选项：
-#   --backend     backend所在目录，即启动costrict backend的docker compose环境目录
-#                 默认值: /usr/local/costrict
-#   --data        costrict软件的数据目录，即从cloud下载安装组件的位置，
-#                 也是costrict-admin保存数据的位置
-#                 默认值: /root/.costrict
 #   --output      备份输出目录，备份文件将保存在此目录下
 #                 默认值: ./backup_YYYY-MM-DD_HH-MM-SS
 #
 # 备份步骤：
-#   1. 调用 $backend/run.sh stop 停止docker compose服务
-#   2. 调用 service costrict-daemon stop 停止costrict-daemon服务
-#   3. 拷贝目录 $backend 的所有内容到 $output/backend 下
-#   4. 拷贝目录 $data 的所有内容到 $output/data 下
-#   5. 调用 $backend/scripts/save-images.sh 将Docker镜像备份到 $output/images 下
+#   1. 从安装环境配置文件加载 COSTRICT_BACKEND_DIR 和 COSTRICT_DATA_DIR
+#   2. 调用 $COSTRICT_BACKEND_DIR/run.sh stop 停止docker compose服务
+#   3. 调用 service costrict-daemon stop 停止costrict-daemon服务
+#   4. 拷贝目录 $COSTRICT_BACKEND_DIR 的所有内容到 $output/backend 下
+#   5. 拷贝目录 $COSTRICT_DATA_DIR 的所有内容到 $output/data 下
+#   6. 调用 $COSTRICT_BACKEND_DIR/scripts/save-images.sh 将Docker镜像备份到 $output/images 下
 #
 # 输出结构：
 #   $output/
@@ -33,14 +28,11 @@
 #   └── images/           # Docker镜像备份（tar文件）
 #
 # 示例：
-#   # 使用默认路径进行备份
+#   # 使用默认设置进行备份
 #   ./backup.sh
 #
 #   # 指定输出目录
 #   ./backup.sh --output /mnt/backup/costrict_backup_2024
-#
-#   # 指定所有路径
-#   ./backup.sh --backend /opt/costrict --data /data/costrict --output /backup/latest
 #
 # 注意事项：
 #   - 本脚本需要root权限执行，因为涉及服务停止和系统目录复制
@@ -50,8 +42,9 @@
 #   - 备份完成后可以通过restore.sh脚本将系统恢复到备份时的状态
 #
 # 依赖脚本：
-#   - $backend/run.sh: 用于停止/启动docker compose服务
-#   - $backend/scripts/save-images.sh: 用于备份Docker镜像
+#   - $COSTRICT_BACKEND_DIR/run.sh: 用于停止/启动docker compose服务
+#   - $COSTRICT_BACKEND_DIR/scripts/save-images.sh: 用于备份Docker镜像
+#
 #
 ################################################################################
 
@@ -64,43 +57,21 @@ SCRIPT_NAME=$(basename "$0")
 LOG_FILE="${SCRIPT_NAME%.*}.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
-# -------------------------- Constants Definition --------------------------
-declare -r SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-declare -r DEFAULT_BACKEND_DIR="/usr/local/costrict"
-declare -r DEFAULT_DATA_DIR="/root/.costrict"
-declare -r DEFAULT_OUTPUT_DIR="./backup_$(date +%Y-%m-%d_%H-%M-%S)"
-
-# -------------------------- Function Definitions --------------------------
-docker-compose() {
-    # Check if docker has compose subcommand
-    if docker compose version >/dev/null 2>&1; then
-        command docker compose "$@"
-    else
-        command docker-compose "$@"
-    fi
-}
-
-log() {
-    local level=$1
-    local message=$2
-    local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-    echo -e "[${timestamp}] [${level}] ${message}"
-}
+. ./utils.sh
 
 show_usage() {
     cat << EOF
 用法: $0 [选项]
 
 选项:
-    --backend <path>   backend所在目录，默认为 /usr/local/costrict
-    --data <path>      costrict数据目录，默认为 /root/.costrict
     --output <path>    输出目录，默认为 ./backup_YYYY-MM-DD_HH-MM-SS
+    -f, --force        跳过确认提示，默认为 false
     -h, --help         显示帮助信息
 
 示例:
     $0                                          # 使用默认设置备份
     $0 --output /mnt/backup/costrict_2024        # 指定输出目录
-    $0 --backend /opt/costrict --output /backup  # 指定所有路径
+    $0 --force                                   # 跳过确认提示
 
 说明:
     本脚本用于备份costrict后端系统，包括：
@@ -108,31 +79,31 @@ show_usage() {
     - costrict数据目录
     - Docker镜像
 
+    后端目录和数据目录通过安装环境配置文件自动加载。
+
     备份完成后可通过 restore.sh 脚本恢复。
 
 EOF
 }
 
+# -------------------------- Constants Definition --------------------------
+declare -r DEFAULT_OUTPUT_DIR="./backup_$(date +%Y-%m-%d_%H-%M-%S)"
+
 parse_arguments() {
     # 默认值
-    BACKEND_DIR="$DEFAULT_BACKEND_DIR"
-    DATA_DIR="$DEFAULT_DATA_DIR"
     OUTPUT_DIR="$DEFAULT_OUTPUT_DIR"
+    SKIP_CONFIRM=false
     
     # 解析参数
     while [[ $# -gt 0 ]]; do
         case $1 in
-            --backend)
-                BACKEND_DIR="$2"
-                shift 2
-                ;;
-            --data)
-                DATA_DIR="$2"
-                shift 2
-                ;;
             --output)
                 OUTPUT_DIR="$2"
                 shift 2
+                ;;
+            -f|--force)
+                SKIP_CONFIRM=true
+                shift
                 ;;
             -h|--help)
                 show_usage
@@ -145,13 +116,9 @@ parse_arguments() {
                 ;;
         esac
     done
-    
-    # 转换为绝对路径
-    BACKEND_DIR="$(cd "$BACKEND_DIR" 2>/dev/null && echo "$BACKEND_DIR" || echo "$BACKEND_DIR")"
-    DATA_DIR="$(cd "$DATA_DIR" 2>/dev/null && echo "$DATA_DIR" || echo "$DATA_DIR")"
-    
-    log "INFO" "Backend目录: $BACKEND_DIR"
-    log "INFO" "数据目录: $DATA_DIR"
+
+    log "INFO" "后端目录: $COSTRICT_BACKEND_DIR"
+    log "INFO" "数据目录: $COSTRICT_DATA_DIR"
     log "INFO" "输出目录: $OUTPUT_DIR"
 }
 
@@ -168,22 +135,22 @@ check_prerequisites() {
     local missing_items=()
     
     # 检查backend目录
-    if [[ ! -d "$BACKEND_DIR" ]]; then
-        missing_items+=("Backend目录: $BACKEND_DIR")
+    if [[ ! -d "$COSTRICT_BACKEND_DIR" ]]; then
+        missing_items+=("后端目录: $COSTRICT_BACKEND_DIR")
     fi
     
     # 检查数据目录
-    if [[ ! -d "$DATA_DIR" ]]; then
-        missing_items+=("数据目录: $DATA_DIR")
+    if [[ ! -d "$COSTRICT_DATA_DIR" ]]; then
+        missing_items+=("数据目录: $COSTRICT_DATA_DIR")
     fi
     
     # 检查必要脚本
-    if [[ ! -f "$BACKEND_DIR/run.sh" ]]; then
-        missing_items+=("脚本: $BACKEND_DIR/run.sh")
+    if [[ ! -f "$COSTRICT_BACKEND_DIR/run.sh" ]]; then
+        missing_items+=("脚本: $COSTRICT_BACKEND_DIR/run.sh")
     fi
     
-    if [[ ! -f "$BACKEND_DIR/scripts/save-images.sh" ]]; then
-        missing_items+=("脚本: $BACKEND_DIR/scripts/save-images.sh")
+    if [[ ! -f "$COSTRICT_BACKEND_DIR/scripts/save-images.sh" ]]; then
+        missing_items+=("脚本: $COSTRICT_BACKEND_DIR/scripts/save-images.sh")
     fi
     
     if [[ ${#missing_items[@]} -gt 0 ]]; then
@@ -198,9 +165,27 @@ check_prerequisites() {
     return 0
 }
 
+confirm_backup() {
+    if [ "$SKIP_CONFIRM" = true ]; then
+        return 0
+    fi
+    
+    log "WARN" "备份 CoStrict 系统需要先停止所有服务！"
+    log "WARN" "继续备份将: "
+    log "WARN" "  1. 停止所有相关 Docker Compose 运行的服务"
+    log "WARN" "  2. 停止所有相关的系统服务，如costrict-daemon"
+    
+    echo ""
+    read -p "确认继续备份吗？请输入 'yes' 继续: " confirm
+    
+    if [[ "$confirm" != "yes" ]]; then
+        log "INFO" "备份操作已取消"
+        exit 0
+    fi
+}
+
 stop_docker_compose_services() {
     log "INFO" "停止docker compose服务..."
-    cd "$BACKEND_DIR" || return 1
     if bash run.sh stop; then
         log "INFO" "docker compose服务已停止"
         return 0
@@ -224,37 +209,49 @@ stop_costrict_daemon_service() {
     return 0
 }
 
-create_output_directory() {
-    log "INFO" "创建输出目录: $OUTPUT_DIR"
-    if mkdir -p "$OUTPUT_DIR"; then
-        log "INFO" "输出目录创建成功"
-        return 0
-    else
-        log "ERROR" "输出目录创建失败"
-        return 1
+init_output_directory() {
+    # 检查输出目录是否不存在或为空
+    if [[ -d "$OUTPUT_DIR" ]]; then
+        local file_count
+        file_count=$(find "$OUTPUT_DIR" -maxdepth 1 -mindepth 1 | wc -l)
+        if [[ "$file_count" -gt 0 ]]; then
+            log "ERROR" "输出目录已存在且不为空: $OUTPUT_DIR"
+            exit 1
+        fi
     fi
+
+    # 创建输出目录
+    if ! mkdir -p "$OUTPUT_DIR"; then
+        log "ERROR" "输出目录创建失败: $OUTPUT_DIR"
+        exit 1
+    fi
+    # 转为绝对路径（目录已存在，可直接cd进入）
+    OUTPUT_DIR="$(cd "$OUTPUT_DIR" && pwd)"
+    
+    log "INFO" "创建输出目录: $OUTPUT_DIR"
 }
 
 backup_backend_directory() {
     log "INFO" "备份backend目录..."
-    log "INFO" "源目录: $BACKEND_DIR"
+    log "INFO" "源目录: $COSTRICT_BACKEND_DIR"
     log "INFO" "目标目录: $OUTPUT_DIR/backend"
     
-    if cp -rp "$BACKEND_DIR" "$OUTPUT_DIR/backend"; then
+    if cp -rp "$COSTRICT_BACKEND_DIR" "$OUTPUT_DIR/backend"; then
         log "INFO" "backend目录备份完成"
         return 0
     else
         log "ERROR" "backend目录备份失败"
         return 1
     fi
+    cp "$COSTRICT_BACKEND_DIR/.costrict.env" "$OUTPUT_DIR/backend/"
 }
 
 backup_data_directory() {
     log "INFO" "备份costrict数据目录..."
-    log "INFO" "源目录: $DATA_DIR"
+    log "INFO" "源目录: $COSTRICT_DATA_DIR"
     log "INFO" "目标目录: $OUTPUT_DIR/data"
     
-    if cp -rp "$DATA_DIR" "$OUTPUT_DIR/data"; then
+    if cp -rp "$COSTRICT_DATA_DIR" "$OUTPUT_DIR/data"; then
         log "INFO" "数据目录备份完成"
         return 0
     else
@@ -273,7 +270,7 @@ backup_docker_images() {
     fi
     mkdir -p "$images_dir"
     
-    cd "$BACKEND_DIR" || return 1
+    cd "$COSTRICT_BACKEND_DIR" || return 1
     if bash scripts/save-images.sh -f .images.list -s "$images_dir"; then
         log "INFO" "Docker镜像备份完成"
         return 0
@@ -290,17 +287,17 @@ Costrict后端系统备份清单
 ========================
 备份时间: $(date)
 备份服务器: $(hostname)
-Backend目录: $BACKEND_DIR
-数据目录: $DATA_DIR
+后端目录: $COSTRICT_BACKEND_DIR
+数据目录: $COSTRICT_DATA_DIR
 
 目录结构:
-  backend/  - 后端docker compose环境
-  data/     - 数据工作目录
+  backend/  - 后端目录的备份，包含后端docker compose的运行环境
+  data/     - 数据目录的备份，包含各服务的持久化数据，比如下载包
   images/   - Docker镜像备份（tar文件）
 
 恢复方法:
-  cd $OUTPUT_DIR/backend
-  bash restore.sh --input $OUTPUT_DIR
+  # 假设已经把 $OUTPUT_DIR 目录内容完整拷贝到目标机器的  $OUTPUT_DIR 目录
+  costrict-admin restore --source $OUTPUT_DIR
 
 注意事项:
   - 恢复前确保满足系统和硬件要求
@@ -323,7 +320,7 @@ show_backup_summary() {
     log "INFO" ""
     log "INFO" "后续操作:"
     log "INFO" "  可以将 $OUTPUT_DIR 目录传输到备份服务器"
-    log "INFO" "  或者使用以下命令恢复: cd $OUTPUT_DIR/backend; bash restore.sh --input=$OUTPUT_DIR"
+    log "INFO" "  或者使用以下命令恢复: costrict-admin restore --source $OUTPUT_DIR"
     log "INFO" "======================================"
 }
 
@@ -333,9 +330,11 @@ main() {
     log "INFO" "开始备份 costrict 后端系统"
     log "INFO" "======================================"
     
+    # 加载安装环境配置
+    load_install_env
     # 解析参数
     parse_arguments "$@"
-    
+    confirm_backup
     # 检查root权限
     if ! check_root_permission; then
         exit 1
@@ -345,11 +344,14 @@ main() {
     if ! check_prerequisites; then
         exit 1
     fi
+
+    init_output_directory
+
+    cd "$COSTRICT_BACKEND_DIR" || return 1
     
     # 执行备份
     stop_docker_compose_services
     stop_costrict_daemon_service
-    create_output_directory
     backup_backend_directory
     backup_data_directory
     backup_docker_images

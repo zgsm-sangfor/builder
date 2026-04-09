@@ -30,22 +30,7 @@ SCRIPT_NAME=$(basename "$0")
 LOG_FILE="${SCRIPT_NAME%.*}.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
-# -------------------------- Function Definitions --------------------------
-docker-compose() {
-    # Check if docker has compose subcommand
-    if docker compose version >/dev/null 2>&1; then
-        command docker compose "$@"
-    else
-        command docker-compose "$@"
-    fi
-}
-
-log() {
-    local level=$1
-    local message=$2
-    local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-    echo -e "[${timestamp}] [${level}] ${message}"
-}
+. ./utils.sh
 
 show_usage() {
     cat << EOF
@@ -54,15 +39,11 @@ show_usage() {
 用法: $0 [选项]
 
 选项:
-    --backend <path>   安装目录，默认为 /usr/local/costrict
-    --data <path>      数据存储路径，默认为 $HOME/.costrict
-    --force            强制重新初始化，跳过初始化标识检查
+    -f, --force       强制重新初始化，跳过初始化标识检查
     -h, --help        显示帮助信息
 
 示例:
     $0                                            # 使用默认设置安装
-    $0 --backend /opt/costrict                    # 安装目录为 /opt/costrict
-    $0 --data /data/costrict                      # 数据存储路径为 /data/costrict
     $0 --force                                    # 强制重新初始化系统
 
 EOF
@@ -70,22 +51,11 @@ EOF
 
 parse_arguments() {
     # 默认值
-    BACKEND_DIR="/usr/local/costrict"
-    DATA_DIR="${HOME}/.costrict"
     FORCE_REINIT=false
-    
     # 解析参数
     while [[ $# -gt 0 ]]; do
         case $1 in
-            --backend)
-                BACKEND_DIR="$2"
-                shift 2
-                ;;
-            --data)
-                DATA_DIR="$2"
-                shift 2
-                ;;
-            --force)
+            -f|--force)
                 FORCE_REINIT=true
                 shift
                 ;;
@@ -101,23 +71,6 @@ parse_arguments() {
         esac
     done
     
-    # 检查是否为绝对路径
-    if [[ ! "$BACKEND_DIR" = /* ]]; then
-        log "ERROR" "安装目录必须是绝对路径: $BACKEND_DIR"
-        log "ERROR" "请使用绝对路径，例如: /usr/local/costrict"
-        show_usage
-        exit 1
-    fi
-    
-    if [[ ! "$DATA_DIR" = /* ]]; then
-        log "ERROR" "数据存储路径必须是绝对路径: $DATA_DIR"
-        log "ERROR" "请使用绝对路径，例如: /data/costrict"
-        show_usage
-        exit 1
-    fi
-    
-    log "INFO" "安装目录: $BACKEND_DIR"
-    log "INFO" "数据存储路径: $DATA_DIR"
     if [ "$FORCE_REINIT" = true ]; then
         log "INFO" "强制重新初始化模式：跳过初始化标识检查"
     fi
@@ -126,11 +79,11 @@ parse_arguments() {
 fix_permissions() {
     # 需要修正权限的目录（相对于安装目录）
     declare -a dirs=(
-        "${BACKEND_DIR}/portal/data"
-        "${BACKEND_DIR}/postgres/initdb.d"
-        "${DATA_DIR}/data/etcd/data"
-        "${DATA_DIR}/data/es/data"
-        "${DATA_DIR}/data/oneapi/data"
+        "${COSTRICT_BACKEND_DIR}/portal/data"
+        "${COSTRICT_BACKEND_DIR}/postgres/initdb.d"
+        "${COSTRICT_DATA_DIR}/data/etcd/data"
+        "${COSTRICT_DATA_DIR}/data/es/data"
+        "${COSTRICT_DATA_DIR}/data/oneapi/data"
     )
     
     log "INFO" "开始修正目录权限..."
@@ -166,7 +119,7 @@ fix_permissions() {
     
     # 设置脚本文件的执行权限
     log "INFO" "设置脚本文件执行权限..."
-    find "${BACKEND_DIR}" -type f -name "*.sh" -exec sudo chmod +x {} \; 2>/dev/null || true
+    find "${COSTRICT_BACKEND_DIR}" -type f -name "*.sh" -exec sudo chmod +x {} \; 2>/dev/null || true
     
     log "INFO" "权限修正完成"
     return 0
@@ -174,7 +127,7 @@ fix_permissions() {
 
 process_template_files() {
     log "INFO" "开始处理模板文件..."
-    if bash tpl-resolve.sh; then
+    if bash scripts/tpl-resolve.sh; then
         log "INFO" "模板文件处理成功"
     else
         log "WARN" "模板文件处理失败，但继续安装"
@@ -194,7 +147,7 @@ gen_docker_compose_yml() {
 }
 
 register_services() {
-    local initd_dir="${BACKEND_DIR}/init.d"
+    local initd_dir="${COSTRICT_BACKEND_DIR}/init.d"
     
     # 检查 init.d 目录是否存在
     if [[ ! -d "$initd_dir" ]]; then
@@ -241,6 +194,13 @@ register_services() {
             fi
             
             log "INFO" "服务 $service_name 注册成功"
+
+            if service "$service_name" start; then
+                log "INFO" "$service_name服务已启动"
+            else
+                log "WARN" "$service_name服务启动失败"
+            fi
+
         else
             log "ERROR" "服务 $service_name 注册失败"
         fi
@@ -250,7 +210,7 @@ register_services() {
 
 download_docker_images() {
     log "INFO" "开始下载Docker镜像..."
-    if bash docker-download-images.sh; then
+    if bash scripts/docker-download-images.sh; then
         log "INFO" "Docker镜像下载成功"
     else
         log "WARN" "Docker镜像下载失败，但继续安装"
@@ -320,7 +280,7 @@ configure_apisix_routes() {
 }
 
 is_system_initialized() {
-    local initialized_flag="${BACKEND_DIR}/.system-initialized"
+    local initialized_flag="${COSTRICT_BACKEND_DIR}/.system-initialized"
     # 检查系统初始化完成标记文件
     # 文件存在 = 系统已初始化，文件不存在 = 首次运行
     if [[ -f "$initialized_flag" ]]; then
@@ -330,7 +290,7 @@ is_system_initialized() {
 }
 
 mark_system_initialized() {
-    local initialized_flag="${BACKEND_DIR}/.system-initialized"
+    local initialized_flag="${COSTRICT_BACKEND_DIR}/.system-initialized"
     # 创建系统初始化完成标记文件
     touch "$initialized_flag"
     log "INFO" "已创建系统初始化完成标记文件: $initialized_flag"
@@ -338,7 +298,7 @@ mark_system_initialized() {
 
 gen_costrict_env() {
     local source_file="costrict.env.in"
-    local target_file="costrict.env"
+    local target_file=".costrict.env"
     
     # 检查目标文件是否已存在
     if [[ -f "$target_file" ]]; then
@@ -363,32 +323,15 @@ gen_costrict_env() {
     fi
 }
 
-save_install_env() {
-    local env_file="${BACKEND_DIR}/.install.env"
-    
-    log "INFO" "保存安装环境变量到: $env_file"
-    
-    # 确保安装目录存在
-    if [[ ! -d "$BACKEND_DIR" ]]; then
-        log "ERROR" "安装目录不存在: $BACKEND_DIR"
-        return 1
-    fi
-    
-    # 写入环境变量到文件
-    cat > "$env_file" << EOF
-COSTRICT_BACKEND_DIR=${BACKEND_DIR}
-COSTRICT_DATA_DIR=${DATA_DIR}
-EOF
-    
-    if [[ -f "$env_file" ]]; then
-        log "INFO" "安装环境变量已成功保存"
-        return 0
-    else
-        log "ERROR" "安装环境变量保存失败"
-        return 1
-    fi
-}
+show_guide_help() {
+    . ./configure.sh
 
+    log "INFO" "系统初始化完成！"
+    log "INFO" "安装位置: ${COSTRICT_BACKEND_DIR}"
+    log "INFO" "后续步骤："
+    log "INFO" "  1. 启动服务: costrict-admin start"
+    log "INFO" "  2. 访问管理界面: ${COSTRICT_BASEURL}/costrict-admin/ (默认账号: admin, 密码: admin)"
+}
 # -------------------------- Main Logic --------------------------
 main() {
     log "INFO" "安装脚本启动，日志文件: $LOG_FILE"
@@ -396,9 +339,10 @@ main() {
     # 解析命令行参数
     parse_arguments "$@"
     
+    load_install_env
     # 切换到安装目录
-    cd "${BACKEND_DIR}" || {
-        log "ERROR" "无法切换到安装目录: ${BACKEND_DIR}"
+    cd "${COSTRICT_BACKEND_DIR}" || {
+        log "ERROR" "无法切换到安装目录: ${COSTRICT_BACKEND_DIR}"
         exit 1
     }
 
@@ -415,18 +359,20 @@ main() {
     fi
     # 验证安装环境
     log "INFO" "执行环境检查脚本..."
-    if ! bash check.sh --dir "${BACKEND_DIR}"; then
+    if ! bash check.sh --dir "${COSTRICT_BACKEND_DIR}"; then
         log "ERROR" "安装环境验证发现问题，请排除问题后重新安装"
         exit 1
     fi
 
-
+    # 根据costrict.env.in生成.costrict.env，初始化密码信息等
     gen_costrict_env
-    save_install_env
+    # 生成.images.env,.images.list,.env等，供后续
+    gen_env_files
     
     register_services
     fix_permissions
     download_docker_images
+    # 处理各个.tpl文件中的模板变量
     process_template_files
     gen_docker_compose_yml
     
@@ -443,15 +389,9 @@ main() {
         log "WARN" "APISIX路由配置失败，但系统已启动"
     fi
     
-    # 标记系统已初始化完成
     mark_system_initialized
-    
-    local server_ip=$(hostname -I | awk '{ print $1 }')
-    log "INFO" "系统初始化完成！"
-    log "INFO" "安装位置: ${BACKEND_DIR}"
-    log "INFO" "后续步骤："
-    log "INFO" "  1. 启动服务: cd ${BACKEND_DIR} && bash run.sh"
-    log "INFO" "  2. 访问管理界面: http://${server_ip}:39080/costrict-admin/ (默认账号: admin, 密码: admin)"
+
+    show_guide_help
 }
 
 main "$@"

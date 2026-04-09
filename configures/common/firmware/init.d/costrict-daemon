@@ -84,7 +84,7 @@ start() {
 }
 
 stop() {
-    echo -n $"停止 $NAME: "
+    echo -n "停止 $NAME: "
     
     # 检查PID文件
     if [ ! -f "$PIDFILE" ]; then

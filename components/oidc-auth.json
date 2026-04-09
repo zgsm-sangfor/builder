@@ -2,6 +2,6 @@
   "name": "oidc-auth",
   "type": "zip",
   "path": "./configures",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Casdoor Authentication Client"
 }

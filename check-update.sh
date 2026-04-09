@@ -423,11 +423,10 @@ main() {
     
     # 遍历每个包
     local modified_packages=()
-    
-    # 如果指定了packages选项，则将逗号分隔的字符串转换为数组
+    local skip_packages=()
     local target_packages=()
     if [ -n "$PACKAGES" ]; then
-        # 将逗号分隔的字符串转换为数组
+        # 如果指定了packages选项，则将逗号分隔的字符串转换为数组
         IFS=',' read -ra target_packages <<< "$PACKAGES"
         log "INFO" "Checking only specified packages: ${target_packages[*]}"
     fi
@@ -452,7 +451,8 @@ main() {
         else
             # 检查模块是否启用，如果禁用则跳过
             if ! is_module_enabled "$json_file"; then
-                log "INFO" "Module '$package_name' is disabled, skipping..."
+                # log "INFO" "Module '$package_name' is disabled, skipping..."
+                skip_packages+=("$package_name")
                 continue
             fi
         fi
@@ -466,12 +466,25 @@ main() {
     done
     
     prompt "=============================================="
-    prompt "Total packages: $package_count, Checked packages: $checked_count"
     if [ ${#modified_packages[@]} -gt 0 ]; then
         prompt "Check completed. $LATEST_JSON has been updated."
+        prompt ""
+        prompt "Modified packages (${#modified_packages[@]}):"
+        for pkg in "${modified_packages[@]}"; do
+            prompt "  - $pkg"
+        done
     else
         prompt "Check completed. No updates found."
     fi
+    if [ ${#skip_packages[@]} -gt 0 ]; then
+        prompt ""
+        prompt "Disabled packages (${#skip_packages[@]}):"
+        for pkg in "${skip_packages[@]}"; do
+            prompt "  - $pkg"
+        done
+    fi
+    prompt ""
+    prompt "Total packages: $package_count, Checked packages: $checked_count"
     prompt "=============================================="
     
     # 输出所有发生变化的包名到标准输出（以逗号分隔）

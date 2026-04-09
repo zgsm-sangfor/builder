@@ -18,8 +18,8 @@
   },
   "casdoor": {
     "enabled": true,
-    "client_id": "3b215b8c312b0c47ccd7",
-    "client_secret": "e2f78c894cafc828a0b0161059d2c0b8d81deac5",
+    "client_id": "{{CASDOOR_BUILTIN_CLIENTID}}",
+    "client_secret": "{{CASDOOR_BUILTIN_CLIENTSECRET}}",
     "application_id": "app-built-in",
     "organization": "built-in",
     "login_app": "loginApp"

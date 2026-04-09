@@ -8,11 +8,6 @@
             "description": "CoStrict Client Program Manager"
         },
         {
-            "component_name": "cotun",
-            "allowed_versions": "~1.0.0",
-            "description": "Client of the CoStrict tunnel service"
-        },
-        {
             "component_name": "completion-agent",
             "allowed_versions": "~1.0.0",
             "description": "Agent for code completion service"
@@ -25,10 +20,6 @@
         },
         {
             "component_name": "system",
-            "allowed_versions": "~1.0.0"
-        },
-        {
-            "component_name": "cotun-options",
             "allowed_versions": "~1.0.0"
         }
     ]
