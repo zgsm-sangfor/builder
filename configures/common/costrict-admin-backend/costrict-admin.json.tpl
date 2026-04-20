@@ -37,6 +37,15 @@
     "username": "root",
     "password": "r!65Gq7@4acYsB"
   },
+  "es": {
+    "enabled": true,
+    "addresses": "",
+    "username": "elastic",
+    "password": "{{PASSWORD_ELASTIC}}",
+    "index_name": "costrict_metrics",
+    "ca_path": "",
+    "max_retries": 3
+  },
   "upgrade": {
     "verify_tls": false
   }

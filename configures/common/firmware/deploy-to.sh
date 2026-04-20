@@ -203,7 +203,7 @@ install_files() {
     local installed_count=0
     local failed_count=0
     
-    log "INFO" "开始部署文件"
+    log "INFO" "开始安装文件"
     
     # 创建目标根目录
     if ! sudo mkdir -p "$target_base"; then
@@ -326,8 +326,7 @@ install_files() {
         installed_count=$((installed_count + 1))
     done < "$MANIFEST_FILE"
     
-    log "INFO" "文件部署完成"
-    log "INFO" "成功: $installed_count 个文件/目录"
+    log "INFO" "文件安装完成，成功复制 $installed_count 个文件/目录"
     if [[ $failed_count -gt 0 ]]; then
         log "WARN" "失败: $failed_count 个文件/目录"
     fi
@@ -356,14 +355,13 @@ main() {
         exit 1
     fi
     
-    # 复制文件
+    # 安装文件
     if ! install_files; then
-        log "ERROR" "文件部署失败"
+        log "ERROR" "文件安装失败"
         exit 1
     fi
     
-    log "INFO" "部署完成！"
-    log "INFO" "部署位置: ${INSTALL_TO}"
+    log "INFO" "部署完成！已部署到: ${INSTALL_TO}"
     log "INFO" "后续步骤："
     log "INFO" "  1. 完成数据初始化: cd ${INSTALL_TO} && bash init.sh"
     log "INFO" "  2. 启动服务: cd ${INSTALL_TO} && bash run.sh"

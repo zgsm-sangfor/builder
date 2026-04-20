@@ -30,22 +30,22 @@
     {
       "name": "costrict-daemon",
       "subsystem": "root",
-      "version": "1.0.55"
+      "version": "1.0.58"
     },
     {
       "name": "costrict-admin",
       "subsystem": "root",
-      "version": "1.0.108"
+      "version": "1.0.111"
     },
     {
       "name": "firmware",
       "subsystem": "root",
-      "version": "1.0.83"
+      "version": "1.0.97"
     },
     {
       "name": "backend",
       "subsystem": "root",
-      "version": "1.0.42"
+      "version": "1.0.43"
     },
     {
       "name": "frontend",
@@ -55,12 +55,12 @@
     {
       "name": "costrict-admin-backend",
       "subsystem": "backend",
-      "version": "1.0.82"
+      "version": "1.0.90"
     },
     {
       "name": "costrict-admin-frontend",
       "subsystem": "backend",
-      "version": "1.0.47"
+      "version": "1.0.51"
     },
     {
       "name": "costrict-license-sdk",
@@ -70,7 +70,7 @@
     {
       "name": "casdoor",
       "subsystem": "backend",
-      "version": "1.0.23"
+      "version": "1.0.25"
     },
     {
       "name": "oidc-auth",
@@ -80,27 +80,27 @@
     {
       "name": "oneapi",
       "subsystem": "backend",
-      "version": "1.0.4"
+      "version": "1.0.5"
     },
     {
       "name": "etcd",
       "subsystem": "backend",
-      "version": "1.0.4"
+      "version": "1.0.5"
     },
     {
       "name": "redis",
       "subsystem": "backend",
-      "version": "1.0.5"
+      "version": "1.0.6"
     },
     {
       "name": "postgres",
       "subsystem": "backend",
-      "version": "1.0.5"
+      "version": "1.0.6"
     },
     {
       "name": "apisix",
       "subsystem": "backend",
-      "version": "1.0.4"
+      "version": "1.0.5"
     },
     {
       "name": "portal",
@@ -110,7 +110,7 @@
     {
       "name": "chat-rag",
       "subsystem": "backend",
-      "version": "1.0.5"
+      "version": "1.0.6"
     },
     {
       "name": "credit-manager",
@@ -125,17 +125,22 @@
     {
       "name": "es",
       "subsystem": "backend",
-      "version": "1.0.0"
+      "version": "1.0.1"
     },
     {
       "name": "prometheus",
       "subsystem": "backend",
-      "version": "1.0.0"
+      "version": "1.0.1"
     },
     {
       "name": "grafana",
       "subsystem": "backend",
-      "version": "1.0.1"
+      "version": "1.0.2"
+    },
+    {
+      "name": "kibana",
+      "subsystem": "backend",
+      "version": "1.0.5"
     },
     {
       "name": "user-indicator",
@@ -160,7 +165,7 @@
     {
       "name": "completion-agent",
       "subsystem": "frontend",
-      "version": "1.0.21"
+      "version": "1.0.20"
     }
   ]
 }

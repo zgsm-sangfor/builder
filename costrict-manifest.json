@@ -116,6 +116,10 @@
       "subsystem": "backend"
     },
     {
+      "name": "kibana",
+      "subsystem": "backend"
+    },
+    {
       "name": "user-indicator",
       "subsystem": "backend"
     },

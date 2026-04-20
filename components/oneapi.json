@@ -1,7 +1,7 @@
-﻿{
-    "name":  "oneapi",
-    "type":  "zip",
-    "path":  "./configures",
-    "version":  "1.0.4",
-    "description":  "LLM Management Gateway Service"
+{
+  "name": "oneapi",
+  "type": "zip",
+  "path": "./configures",
+  "version": "1.0.5",
+  "description": "LLM Management Gateway Service"
 }

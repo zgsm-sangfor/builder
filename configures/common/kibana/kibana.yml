@@ -1,0 +1,12 @@
+services:
+  kibana:
+    image: ${IMAGE_KIBANA}
+    ports:
+      - "${PORT_KIBANA}:5601"
+    environment:
+      - TZ="Asia/Shanghai"
+      - ELASTICSEARCH_HOSTS=http://es:9200
+      # - ELASTICSEARCH_USERNAME=elastic
+      # - ELASTICSEARCH_PASSWORD="${PASSWORD_ELASTIC}"
+    networks:
+      - shenma

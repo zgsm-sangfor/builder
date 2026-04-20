@@ -23,7 +23,7 @@ ContextCompressConfig:
 
 # Models supported by function calling
 LLM:
-  Endpoint: "http://higress:8080/v1/chat/completions"
+  Endpoint: "http://oneapi:3000/v1/chat/completions"
 
 
 Redis:

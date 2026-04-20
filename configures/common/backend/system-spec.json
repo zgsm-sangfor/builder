@@ -128,6 +128,12 @@
       "allowed_versions": ">=1.0.0"
     },
     {
+      "component_name": "kibana",
+      "display_name": "Kibana",
+      "description": "提供数据可视化功能",
+      "allowed_versions": ">=1.0.0"
+    },
+    {
       "component_name": "user-indicator",
       "display_name": "用户指标采集服务",
       "description": "采集各个客户端反馈的指标，存储到ES",
@@ -238,6 +244,12 @@
       "component_name": "grafana",
       "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_GRAFANA }}",
       "health_url": "http://localhost:{{ .PORT_GRAFANA }}/healthz"
+    },
+    {
+      "service_name": "kibana",
+      "component_name": "kibana",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_KIBANA }}",
+      "health_url": "http://localhost:{{ .PORT_KIBANA }}/healthz"
     },
     {
       "service_name": "es",

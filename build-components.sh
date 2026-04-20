@@ -33,12 +33,12 @@ usage() {
     echo "  --key <key>          Private key file (default: costrict-private.pem)"
     echo "  -h, --help           Help information"
     echo "Actions:"
-    echo "  --update             Automatically update component versions"
+    # echo "  --update             Automatically update component versions"
     echo "  --clean              Clean the earlier versions"
     echo "  --build              Compile or build the module to be packaged"
     echo "  --pack               Package and sign the module"
     echo "  --index              Create an index for the constructed package"
-    echo "  --def                Execute default steps (update, build, pack, index)"
+    echo "  --def                Execute default steps (build, pack, index)"
     echo "  --upload <env>       Upload package to <env> (comma-separated env list)"
     echo "                       Supported envs: names from .env ENV_NAMES array (${ENV_NAMES[*]})"
     echo "                       Keywords: def (${ENV_NAMES[0]}), all (${ENV_NAMES[*]})"
@@ -81,7 +81,7 @@ enable_upload() {
 KEY_FILE="costrict-private.pem"
 
 # 默认参数值
-NEED_UPDATE=false
+# NEED_UPDATE=false
 NEED_CLEAN=false
 NEED_BUILD=false
 NEED_PACK=false
@@ -93,7 +93,7 @@ PACKAGE_TYPE=""
 PACKAGES=""
 
 # Parse command line options
-args=$(getopt -o hp:K: --long help,packages:,kind:,type:,key:,update,clean,build,pack,index,def,upload:,upload-packages: -n 'build-components.sh' -- "$@")
+args=$(getopt -o hp:K: --long help,packages:,kind:,type:,key:,clean,build,pack,index,def,upload:,upload-packages: -n 'build-components.sh' -- "$@")
 [ $? -ne 0 ] && usage
 
 eval set -- "$args"
@@ -103,12 +103,12 @@ while true; do
         -p|--packages) PACKAGES="$2"; shift 2;;
         --type) PACKAGE_TYPE="$2"; shift 2;;
         --key) KEY_FILE="$2"; shift 2;;
-        --update) NEED_UPDATE=true; shift;;
+        # --update) NEED_UPDATE=true; shift;;
         --clean) NEED_CLEAN=true; shift;;
         --build) NEED_BUILD=true; shift;;
         --pack) NEED_PACK=true; shift;;
         --index) NEED_INDEX=true; shift;;
-        --def) NEED_UPDATE=true; NEED_BUILD=true; NEED_PACK=true; NEED_INDEX=true; shift;;
+        --def) NEED_BUILD=true; NEED_PACK=true; NEED_INDEX=true; shift;;
         --upload) enable_upload "$2"; shift 2;;
         --upload-packages) enable_upload "$2"; NEED_UPLOAD_PACKAGES=true; shift 2;;
         -h|--help) usage; exit 0;;
@@ -563,42 +563,6 @@ cleanup_old_versions() {
     echo "Cleanup completed for package: $package_name"
 }
 
-# Function to clean up old versions for all packages
-cleanup_all_old_versions() {
-    # 从components目录读取包信息
-    echo "Reading package information from components directory for clean..."
-    
-    # 遍历components目录中的所有JSON文件
-    local package_count=0
-    for json_file in components/*.json; do
-        if [ -f "$json_file" ]; then
-            local package_name=$(basename "$json_file" .json)
-            # 检查模块是否启用，如果禁用则跳过
-            if ! is_module_enabled "$json_file"; then
-                echo "Module '$package_name' is disabled, skipping clean..."
-                continue
-            fi
-            
-            echo "=============================================="
-            echo "Cleaning up package: $package_name"
-            echo "=============================================="
-            cleanup_old_versions "$package_name"
-            if [ $? -ne 0 ]; then
-                echo "Cleanup failed for package: $package_name"
-                exit 1
-            fi
-            echo ""
-            
-            ((package_count++))
-        fi
-    done
-    
-    echo "Found $package_count packages to clean"
-    echo ""
-    
-    echo "All packages clean completed!"
-}
-
 upload_package() {
     local source_dir=$1
     local package=$2
@@ -681,17 +645,6 @@ process_package() {
         echo "Skipping clean step for ${package_name}..."
     fi
 
-    if [ "$NEED_UPDATE" = true ]; then
-        echo "Updating version for ${package_name}..."
-        ./check-update.sh -p "${package_name}" -u
-        if [ $? -ne 0 ]; then
-            echo "Error: Failed to update version for package '${package_name}'"
-            exit 1
-        fi
-    else
-        echo "Skipping update step for ${package_name}..."
-    fi
-
     if [ "$NEED_BUILD" = true ]; then
         echo "Building target for ${package_name}..."
         build_package "${package_name}"
@@ -762,8 +715,10 @@ process_packages() {
         process_package "$pkg"
         echo ""
     done
-    
-    echo "All packages processed successfully!"
+    echo "Successfully processed ${#package_list[@]} package(s):"
+    for pkg in "${package_list[@]}"; do
+        echo "  - $pkg"
+    done
 }
 
 # Function to process packages by type
@@ -779,30 +734,32 @@ process_type() {
     echo ""
     
     # 遍历components目录中的所有JSON文件
-    local processed_count=0
+    local package_list=()
     for json_file in components/*.json; do
-        if [ -f "$json_file" ]; then
-            local package_name=$(basename "$json_file" .json)
-            # 检查模块是否启用，如果禁用则跳过
-            if ! is_module_enabled "$json_file"; then
-                echo "Module '$package_name' is disabled, skipping..."
-                continue
-            fi
-            
-            local package_type=$(jq -r ".type // empty" "$json_file")
-            
-            if [ "$package_type" = "$target_type" ]; then
-                echo "=============================================="
-                echo "Processing package: $package_name (type: $package_type)"
-                echo "=============================================="
-                process_package "$package_name"
-                echo ""
-                ((processed_count++))
-            fi
+        [ -f "$json_file" ] || continue
+
+        local package_name=$(basename "$json_file" .json)
+        local package_type=$(jq -r ".type // empty" "$json_file")            
+
+        [ "$package_type" = "$target_type" ] || continue
+
+        # 检查模块是否启用，如果禁用则跳过
+        if ! is_module_enabled "$json_file"; then
+            echo "Module '$package_name' is disabled, skipping..."
+            continue
         fi
+        echo "=============================================="
+        echo "Processing package: $package_name (type: $package_type)"
+        echo "=============================================="
+        process_package "$package_name"
+        echo ""
+        package_list+=("$package_name")
     done
     
-    echo "Processed $processed_count package(s) of type '$target_type'"
+    echo "Successfully processed ${#package_list[@]} package(s) of type '$target_type':"
+    for pkg in "${package_list[@]}"; do
+        echo "  - $pkg"
+    done
 }
 
 # 检查jq工具是否可用

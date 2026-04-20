@@ -6,7 +6,7 @@ services:
       TZ: "Asia/Shanghai"
     volumes:
       - ${COSTRICT_DATA_DIR}/data/redis/data:/data
-    ports:
-      - "${PORT_REDIS}:6379"
+    # ports:
+    #   - "${PORT_REDIS}:6379"
     networks:
       - shenma

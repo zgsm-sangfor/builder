@@ -306,11 +306,8 @@ validate_install_environment() {
     fi
     
     # ========== 10. 验证报告 ==========
-    log "INFO" "安装环境验证完成"
-    echo ""
     log "INFO" "======================================"
-    log "INFO" "验证报告"
-    log "INFO" "======================================"
+    log "INFO" "安装环境验证完成,验证结果:"
     log "INFO" "错误: $validation_errors"
     log "INFO" "警告: $validation_warnings"
     log "INFO" "======================================"

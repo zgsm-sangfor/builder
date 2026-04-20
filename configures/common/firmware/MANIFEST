@@ -41,7 +41,7 @@ cleanup.sh
 run.sh
 backup.sh
 restore.sh
-costrict-admin.env
+costrict-admin.env.sample
 costrict.env.in
 MANIFEST
 

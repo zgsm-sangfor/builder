@@ -22,14 +22,6 @@
     },
     "components": [
         {
-            "name": "codebase-indexer",
-            "version": "^1.0.0"
-        },
-        {
-            "name": "cotun",
-            "version": "~1.0.0"
-        },
-        {
             "name": "completion-agent",
             "version": "~1.0.0"
         }
@@ -49,19 +41,6 @@
         }
     ],
     "services": [
-        {
-            "name": "codebase-indexer",
-            "startup": "always",
-            "command": "{{.ProcessPath}}",
-            "args": [
-                "-http",
-                "localhost:{{.LocalPort}}"
-            ],
-            "protocol": "http",
-            "port": 9001,
-            "metrics": "",
-            "accessible": "remote"
-        },
         {
             "name": "completion-agent",
             "startup": "always",

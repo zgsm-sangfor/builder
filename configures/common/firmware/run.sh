@@ -85,48 +85,49 @@ check_core_dependencies() {
 
 start_docker() {
     log "INFO" "检查Docker服务状态..."
-    if ! docker info >/dev/null 2>&1; then
-        log "WARN" "Docker服务尚未启动，正在尝试启动..."
+    if docker info >/dev/null 2>&1; then
+        log "INFO" "Docker服务已启动"
+        return 0
+    fi
+    log "WARN" "Docker服务尚未启动，正在尝试启动..."
         
-        # 尝试启动 Docker 服务（支持 systemctl 和 service 命令）
-        if command -v systemctl >/dev/null 2>&1; then
-            if sudo systemctl start docker; then
-                log "INFO" "Docker服务已通过systemctl启动"
-            else
-                log "ERROR" "Docker服务启动失败，请手动启动Docker服务"
-                return 1
-            fi
-        elif command -v service >/dev/null 2>&1; then
-            if sudo service docker start; then
-                log "INFO" "Docker服务已通过service命令启动"
-            else
-                log "ERROR" "Docker服务启动失败，请手动启动Docker服务"
-                return 1
-            fi
+    # 尝试启动 Docker 服务（支持 systemctl 和 service 命令）
+    if command -v service >/dev/null 2>&1; then
+        if sudo service docker start; then
+            log "INFO" "Docker服务已通过service命令启动"
         else
-            log "ERROR" "无法找到Docker服务启动命令，请手动启动Docker服务"
-            return 1
+            log "ERROR" "Docker服务启动失败，请手动启动Docker服务"
+            exit 1
         fi
-        
-        # 等待Docker服务启动
-        local max_wait=30
-        local count=0
-        while [[ $count -lt $max_wait ]]; do
-            if docker info >/dev/null 2>&1; then
-                log "INFO" "Docker服务已就绪"
-                break
-            fi
-            sleep 1
-            count=$((count + 1))
-        done
-        
-        if ! docker info >/dev/null 2>&1; then
-            log "ERROR" "Docker服务启动超时，请手动启动Docker服务"
-            return 1
+    elif command -v systemctl >/dev/null 2>&1; then
+        if sudo systemctl start docker; then
+            log "INFO" "Docker服务已通过systemctl启动"
+        else
+            log "ERROR" "Docker服务启动失败，请手动启动Docker服务"
+            exit 1
         fi
     else
-        log "INFO" "Docker服务已启动"
+        log "ERROR" "无法找到Docker服务启动命令，请手动启动Docker服务"
+        exit 1
     fi
+    
+    # 等待Docker服务启动
+    local max_wait=30
+    local count=0
+    while [[ $count -lt $max_wait ]]; do
+        if docker info >/dev/null 2>&1; then
+            log "INFO" "Docker服务已就绪"
+            break
+        fi
+        sleep 1
+        count=$((count + 1))
+    done
+    
+    if ! docker info >/dev/null 2>&1; then
+        log "ERROR" "Docker服务启动超时，请手动启动Docker服务"
+        exit 1
+    fi
+
     return 0
 }
 
@@ -141,9 +142,7 @@ prepare() {
         return 1
     fi
 
-    if ! start_docker; then
-        return 1
-    fi
+    start_docker
     return 0
 }
 

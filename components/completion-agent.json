@@ -2,7 +2,7 @@
   "name": "completion-agent",
   "type": "exec",
   "path": "../../middles/completion-agent",
-  "version": "1.0.21",
+  "version": "1.0.20",
   "platforms": [
     {
       "os": "windows",
@@ -25,5 +25,6 @@
       "arch": "arm64"
     }
   ],
+  "enabled": false,
   "description": "Client agent for code completion"
 }

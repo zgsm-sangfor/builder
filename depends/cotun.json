@@ -10,5 +10,6 @@
     "workdir": "./configures/common/cotund",
     "command": "echo IMAGE_COTUN={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
   },
+  "enabled": false,
   "description": "Stream transfer tools"
 }

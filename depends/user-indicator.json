@@ -1,7 +1,7 @@
 {
   "name": "user-indicator",
   "repo": "zgsm",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "type": "exec",
   "path": "../../zgsm-ai/user-indicator-for-es",
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",

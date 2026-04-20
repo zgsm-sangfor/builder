@@ -11,6 +11,7 @@ packages
 !packages.json
 !costrict-manifest.json
 !README.md
+!developer.md
 !configures/
 !configures/**
 !components/

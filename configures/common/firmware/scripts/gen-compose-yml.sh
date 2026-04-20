@@ -97,11 +97,11 @@ replace_in_file() {
     local spec_file=$3
     
     if [[ ! -f "$source_file" ]]; then
-        log "ERROR" "源文件不存在: $source_file"
+        log "ERROR" "模板源文件不存在: $source_file"
         return 1
     fi
     
-    log "INFO" "开始处理源文件: $source_file"
+    log "INFO" "开始处理模板源文件: $source_file"
     
     # 清空目标文件（如果存在）
     > "$target_file"
@@ -151,12 +151,11 @@ replace_in_file() {
     done < "$source_file"
     
     if [[ $replaced_count -eq 0 ]]; then
-        log "INFO" "文件中未找到替换标记"
+        log "INFO" "文件转换 [$source_file -> $target_file] 已完成, 未找到替换标记"
     else
-        log "INFO" "已替换 $replaced_count 个标记"
+        log "INFO" "文件转换 [$source_file -> $target_file] 已完成, 成功替换 $replaced_count 个标记"
     fi
     
-    log "INFO" "文本替换完成，结果已写入: $target_file"
     return 0
 }
 
@@ -231,7 +230,7 @@ if [[ ! "$SPEC_FILE" == "system-spec.json" && ! -f "$SPEC_FILE" ]]; then
 fi
 
 # 输出使用的规格定义文件
-log "INFO" "使用服务规格定义文件: $SPEC_FILE"
+log "INFO" "使用服务规格定义文件 $SPEC_FILE 构建 docker-compose.yml..."
 
 # 检查目标文件是否存在，如果已存在且未启用 force 选项则退出
 if [[ -f "$TARGET_FILE" && "$FORCE" != "true" ]]; then

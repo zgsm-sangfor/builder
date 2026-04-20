@@ -76,6 +76,85 @@ parse_arguments() {
     fi
 }
 
+check_environment() {
+    log "INFO" "执行环境检查脚本..."
+    if ! bash check.sh --dir "${COSTRICT_BACKEND_DIR}"; then
+        log "ERROR" "安装环境验证发现问题，请排除问题后重新安装"
+        exit 1
+    fi
+}
+
+start_docker() {
+    log "INFO" "检查Docker服务状态..."
+    if docker info >/dev/null 2>&1; then
+        log "INFO" "Docker服务已启动"
+        return 0
+    fi
+    log "WARN" "Docker服务尚未启动，正在尝试启动..."
+        
+    # 尝试启动 Docker 服务（支持 systemctl 和 service 命令）
+    if command -v service >/dev/null 2>&1; then
+        if sudo service docker start; then
+            log "INFO" "Docker服务已通过service命令启动"
+        else
+            log "ERROR" "Docker服务启动失败，请手动启动Docker服务"
+            exit 1
+        fi
+    elif command -v systemctl >/dev/null 2>&1; then
+        if sudo systemctl start docker; then
+            log "INFO" "Docker服务已通过systemctl启动"
+        else
+            log "ERROR" "Docker服务启动失败，请手动启动Docker服务"
+            exit 1
+        fi
+    else
+        log "ERROR" "无法找到Docker服务启动命令，请手动启动Docker服务"
+        exit 1
+    fi
+    
+    # 等待Docker服务启动
+    local max_wait=30
+    local count=0
+    while [[ $count -lt $max_wait ]]; do
+        if docker info >/dev/null 2>&1; then
+            log "INFO" "Docker服务已就绪"
+            break
+        fi
+        sleep 1
+        count=$((count + 1))
+    done
+    
+    if ! docker info >/dev/null 2>&1; then
+        log "ERROR" "Docker服务启动超时，请手动启动Docker服务"
+        exit 1
+    fi
+
+    return 0
+}
+
+stop_docker_services() {
+    if [[ ! -f "docker-compose.yml" ]]; then
+        return 0
+    fi
+    log "INFO" "停止Docker Compose服务..."
+    if ! docker-compose -f docker-compose.yml down; then
+        log "ERROR" "Docker Compose服务停止失败"
+        exit 1
+    fi
+    log "INFO" "Docker Compose服务已停止"
+    return 0
+}
+
+start_docker_services() {
+    # 启动Docker Compose服务
+    log "INFO" "启动Docker Compose服务..."
+    if ! docker-compose -f docker-compose.yml up -d; then
+        log "ERROR" "Docker Compose服务启动失败"
+        exit 1
+    fi
+    log "INFO" "Docker Compose服务启动完成"
+}
+
 fix_permissions() {
     # 需要修正权限的目录（相对于安装目录）
     declare -a dirs=(
@@ -279,6 +358,19 @@ configure_apisix_routes() {
     return 0
 }
 
+confirm_init() {
+    if [ "$FORCE_REINIT" = false ] ; then
+        if is_system_initialized; then
+            log "WARN" "系统已初始化，无需重复执行初始化"
+            log "INFO" "如需重新初始化系统，请使用 --force 选项"
+            log "INFO" "可以使用以下命令强制重新初始化: bash init.sh --force"
+            exit 0
+        fi
+    else
+        log "INFO" "强制重新初始化模式，跳过初始化检查..."
+    fi
+}
+
 is_system_initialized() {
     local initialized_flag="${COSTRICT_BACKEND_DIR}/.system-initialized"
     # 检查系统初始化完成标记文件
@@ -346,43 +438,19 @@ main() {
         exit 1
     }
 
-    # 检查系统是否已初始化（非强制模式）
-    if [ "$FORCE_REINIT" = false ] ; then
-        if is_system_initialized; then
-            log "WARN" "系统已初始化，无需重复执行初始化"
-            log "INFO" "如需重新初始化系统，请使用 --force 选项"
-            log "INFO" "可以使用以下命令强制重新初始化: bash init.sh --force"
-            exit 0
-        fi
-    else
-        log "INFO" "强制重新初始化模式，跳过初始化检查..."
-    fi
-    # 验证安装环境
-    log "INFO" "执行环境检查脚本..."
-    if ! bash check.sh --dir "${COSTRICT_BACKEND_DIR}"; then
-        log "ERROR" "安装环境验证发现问题，请排除问题后重新安装"
-        exit 1
-    fi
-
-    # 根据costrict.env.in生成.costrict.env，初始化密码信息等
+    confirm_init
+    check_environment
+    stop_docker_services
     gen_costrict_env
-    # 生成.images.env,.images.list,.env等，供后续
     gen_env_files
-    
     register_services
     fix_permissions
+    start_docker
     download_docker_images
-    # 处理各个.tpl文件中的模板变量
     process_template_files
     gen_docker_compose_yml
     
-    # 启动Docker Compose服务
-    log "INFO" "启动Docker Compose服务..."
-    if ! docker-compose -f docker-compose.yml up -d; then
-        log "ERROR" "Docker Compose服务启动失败"
-        exit 1
-    fi
-    log "INFO" "Docker Compose服务启动完成"
+    start_docker_services
     
     # 配置APISIX路由
     if ! configure_apisix_routes; then

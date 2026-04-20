@@ -63,7 +63,7 @@ function resolve_file() {
 #
 function resolve_dir() {
     dir="$1"
-    echo generate $dir ...
+    # echo generate $dir ...
 
     for entry in "$dir"/*; do
         if [ -d "$entry" ]; then

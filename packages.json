@@ -24,6 +24,7 @@
     "es",
     "prometheus",
     "grafana",
+    "kibana",
     "quota-manager",
     "redis",
     "weaviate",
