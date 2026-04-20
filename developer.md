@@ -627,6 +627,74 @@ configures/
 
 ## 构建和发布
 
+### build-costrict.sh 详解 - 全自动构建发布包
+
+[`build-costrict.sh`](build-costrict.sh:1) 是一个全自动构建发布包的脚本，能够自动检测变更、维护版本号变化、编译需要的组件以及发布。
+
+**执行流程**:
+
+该脚本按照以下 5 个步骤自动执行：
+
+1. **Step 1 - 检查依赖更新**: 调用 [`check-update.sh`](check-update.sh:1) 使用 `--build-type dependency` 参数检查需要构建镜像的包，自动递增被更新模块的版本号
+
+2. **Step 2 - 构建依赖镜像**: 如果 Step 1 检测到有更新，调用 [`build-depends.sh`](build-depends.sh:1) 构建镜像包（可选推送），否则跳过此步骤
+
+3. **Step 3 - 更新系统清单**: 调用 [`update-manifest.sh`](update-manifest.sh:1) 更新 `configures/costrict-system/manifest.json`
+
+4. **Step 4 - 检查组件更新**: 调用 [`check-update.sh`](check-update.sh:1) 使用 `--build-type component` 参数检查需要构建组件的包，自动递增被更新模块的版本号
+
+5. **Step 5 - 构建发布包**: 如果 Step 4 检测到有更新，调用 [`build-components.sh`](build-components.sh:1) 构建包并上传到云环境（如果指定了 `--upload` 参数），否则跳过此步骤
+
+**支持参数**:
+
+| 参数 | 说明 |
+|------|------|
+| `--push [env]` | 推送镜像到指定环境（传递给 build-depends.sh）<br>• 如果 env 为空或 'def'，推送到 Docker Hub<br>• 否则推送到指定环境（如 'test,prod' 或 'all'）<br>注意：构建镜像始终执行，此选项只控制是否推送 |
+| `--upload <env>` | 指定包上传的环境（传递给 build-components.sh） |
+| `--help, -h` | 显示帮助信息 |
+
+**关键特性**:
+
+- **自动变更检测**: 脚本会自动检测依赖和组件的变更，只构建和发布有变更的部分
+- **自动版本管理**: 检测到变更时，会自动递增相应模块的版本号
+- **智能跳过机制**: 如果没有变更，会自动跳过不必要的构建步骤，提高效率
+- **完整构建链路**: 从依赖镜像构建到应用组件发布，一次性完成整个构建流程
+
+**使用示例**:
+
+```bash
+# 构建镜像（不推送），然后构建包
+./build-costrict.sh
+
+# 构建镜像并推送到 Docker Hub
+./build-costrict.sh --push
+
+# 构建镜像并推送到 test 和 prod 环境
+./build-costrict.sh --push test,prod
+
+# 构建包并上传到 prod 环境
+./build-costrict.sh --upload prod
+
+# 组合使用：构建镜像推送并上传包
+./build-costrict.sh --push test --upload prod
+```
+
+**适用场景**:
+
+- 日常开发后的快速构建和发布
+- CI/CD 流水线中的自动化构建
+- 批量更新多个组件和依赖
+- 需要确保构建流程完整性的场景
+
+**注意事项**:
+
+- 脚本依赖于 [`check-update.sh`](check-update.sh:1) 来检测变更
+- 版本号变更会自动写入对应的 `.json` 配置文件
+- 建议在执行前确认 Git 仓库已提交所有必要的更改
+- 使用 `--push` 和 `--upload` 参数前，请确保网络连接正常
+
+---
+
 ### build-components.sh 详解
 
 **完整命令**:
