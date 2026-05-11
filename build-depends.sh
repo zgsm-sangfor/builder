@@ -549,7 +549,7 @@ if [ -n "$PACKAGES" ]; then
     # 处理指定的包列表
     process_packages "$PACKAGES"
 else
-    process_package ""
+    process_packages ""
 fi
 
 echo "Build completed."

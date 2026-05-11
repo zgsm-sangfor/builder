@@ -1,7 +1,7 @@
 {
   "name": "oidc-auth",
   "repo": "zgsm",
-  "version": "1.2.15",
+  "version": "1.2.17",
   "type": "exec",
   "path": "../../zgsm-ai/oidc-auth",
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",

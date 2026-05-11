@@ -55,12 +55,12 @@
     {
       "name": "costrict-admin-backend",
       "subsystem": "backend",
-      "version": "1.0.90"
+      "version": "1.0.92"
     },
     {
       "name": "costrict-admin-frontend",
       "subsystem": "backend",
-      "version": "1.0.51"
+      "version": "1.0.52"
     },
     {
       "name": "costrict-license-sdk",
@@ -75,7 +75,7 @@
     {
       "name": "oidc-auth",
       "subsystem": "backend",
-      "version": "1.0.3"
+      "version": "1.0.4"
     },
     {
       "name": "oneapi",
