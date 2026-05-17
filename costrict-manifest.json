@@ -72,6 +72,10 @@
       "subsystem": "backend"
     },
     {
+      "name": "nacos",
+      "subsystem": "backend"
+    },
+    {
       "name": "etcd",
       "subsystem": "backend"
     },

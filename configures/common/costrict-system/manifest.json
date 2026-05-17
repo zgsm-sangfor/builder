@@ -73,6 +73,11 @@
       "version": "1.0.25"
     },
     {
+      "name": "nacos",
+      "subsystem": "backend",
+      "version": "1.0.0"
+    },
+    {
       "name": "oidc-auth",
       "subsystem": "backend",
       "version": "1.0.4"

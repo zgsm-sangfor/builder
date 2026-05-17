@@ -56,6 +56,12 @@
       "allowed_versions": ">=1.0.0"
     },
     {
+      "component_name": "nacos",
+      "display_name": "Nacos",
+      "description": "配置管理中心",
+      "allowed_versions": ">=1.0.0"
+    },
+    {
       "component_name": "etcd",
       "display_name": "ETCD",
       "description": "分布式键值存储，用于配置管理和服务发现",
@@ -188,6 +194,17 @@
       "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_CASDOOR }}",
       "health_url": "http://localhost:39009/healthz",
       "log_file": "{{ .COSTRICT_DATA_DIR }}/logs/casdoor.log",
+      "dependencies":[{
+        "service": "postgres",
+        "condition": "service_healthy"
+      }]
+    },
+    {
+      "service_name": "nacos",
+      "component_name": "nacos",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_NACOS }}",
+      "health_url": "http://localhost:8848/healthz",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/logs/nacos.log",
       "dependencies":[{
         "service": "postgres",
         "condition": "service_healthy"
