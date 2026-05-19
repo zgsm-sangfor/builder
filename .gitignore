@@ -6,6 +6,7 @@ packages
 !build-components.sh
 !build-depends.sh
 !check-update.sh
+!check-packaged.sh
 !update-manifest.sh
 !start-local-site.sh
 !packages.json
