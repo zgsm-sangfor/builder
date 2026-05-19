@@ -72,6 +72,10 @@
       "subsystem": "backend"
     },
     {
+      "name": "new-api",
+      "subsystem": "backend"
+    },
+    {
       "name": "nacos",
       "subsystem": "backend"
     },

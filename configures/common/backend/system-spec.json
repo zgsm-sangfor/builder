@@ -56,6 +56,12 @@
       "allowed_versions": ">=1.0.0"
     },
     {
+      "component_name": "new-api",
+      "display_name": "NewAPI-增强版ONEAPI",
+      "description": "大语言模型管理服务，聚合多来源多类型大语言模型API",
+      "allowed_versions": ">=1.0.0"
+    },
+    {
       "component_name": "nacos",
       "display_name": "Nacos",
       "description": "配置管理中心",
@@ -227,6 +233,13 @@
       "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_ONEAPI }}",
       "health_url": "http://localhost:39000/healthz",
       "log_file": "{{ .COSTRICT_DATA_DIR }}/logs/oneapi.log"
+    },
+    {
+      "service_name": "new-api",
+      "component_name": "new-api",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_NEW_API }}",
+      "health_url": "http://new-api:3000/healthz",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/logs/new-api.log"
     },
     {
       "service_name": "chat-rag",

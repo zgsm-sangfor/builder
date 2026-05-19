@@ -1,0 +1,12 @@
+services:
+  new-api:
+    image: ${IMAGE_NEW_API}
+    restart: always
+    environment:
+      TZ: "Asia/Shanghai"
+    volumes:
+      - ${COSTRICT_DATA_DIR}/data/new-api/data:/data
+    ports:
+      - "${PORT_NEW_API}:3000"
+    networks:
+      - shenma

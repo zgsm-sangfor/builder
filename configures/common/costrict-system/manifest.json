@@ -35,7 +35,7 @@
     {
       "name": "costrict-admin",
       "subsystem": "root",
-      "version": "1.0.111"
+      "version": "1.0.112"
     },
     {
       "name": "firmware",
@@ -45,7 +45,7 @@
     {
       "name": "backend",
       "subsystem": "root",
-      "version": "1.0.43"
+      "version": "1.0.45"
     },
     {
       "name": "frontend",
@@ -73,11 +73,6 @@
       "version": "1.0.25"
     },
     {
-      "name": "nacos",
-      "subsystem": "backend",
-      "version": "1.0.0"
-    },
-    {
       "name": "oidc-auth",
       "subsystem": "backend",
       "version": "1.0.4"
@@ -86,6 +81,16 @@
       "name": "oneapi",
       "subsystem": "backend",
       "version": "1.0.5"
+    },
+    {
+      "name": "new-api",
+      "subsystem": "backend",
+      "version": "1.0.1"
+    },
+    {
+      "name": "nacos",
+      "subsystem": "backend",
+      "version": "1.0.0"
     },
     {
       "name": "etcd",
@@ -100,7 +105,7 @@
     {
       "name": "postgres",
       "subsystem": "backend",
-      "version": "1.0.6"
+      "version": "1.0.7"
     },
     {
       "name": "apisix",
