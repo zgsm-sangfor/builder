@@ -4,6 +4,11 @@
 # 功能：
 #   build-depends.sh为指定的模块(package)构建依赖内容(一般是镜像)，并推送到指定环境。
 #
+#   构建成功后，会在 images/{packageName}/versions.json 中记录版本信息。
+#   对于type为"exec"的依赖包（需要构建可执行docker镜像），还会：
+#   1. 将构建好的镜像导出为tar文件，保存到 images/{packageName}/ 目录下
+#   2. 在versions.json中额外记录镜像的platforms和导出文件路径(file字段)
+#
 #   待构建的内容，由depends/{package}.json进行定义，该文件内容如下所示：
 #
 #     {
@@ -230,6 +235,143 @@ build_dependency() {
     return 0
 }
 
+# Function to save dependency version info and export image (for exec-type)
+# 对所有类型的依赖包记录版本信息到versions.json；
+# 对于type为exec的依赖包，还会导出镜像tar文件到本地目录。
+# 参数: $1 - package name
+save_dependency_version() {
+    local package="$1"
+    local depend_config_file="depends/${package}.json"
+    
+    # 获取依赖类型
+    local depend_type=$(jq -r ".type // empty" "$depend_config_file")
+    
+    # 获取配置信息
+    local depend_name=$(jq -r ".name // empty" "$depend_config_file")
+    local depend_version=$(jq -r ".version // empty" "$depend_config_file")
+    local depend_repo=$(jq -r ".repo // empty" "$depend_config_file")
+    local depend_tag=$(jq -r ".tag // empty" "$depend_config_file")
+    
+    # tag字段为可选的，默认值为 '{{ .version }}'
+    if [ -z "$depend_tag" ] || [ "$depend_tag" = "null" ] || [ "$depend_tag" = "" ]; then
+        depend_tag="{{ .version }}"
+    fi
+    
+    # 渲染tag模板
+    local rendered_tag=$(render_template "$depend_tag" "$depend_config_file")
+    
+    # 创建输出目录
+    local image_dir="images/${depend_name}"
+    mkdir -p "$image_dir"
+    
+    # 仅exec类型：导出镜像tar文件并检测平台架构
+    local tar_file=""
+    local platforms_json="[]"
+    
+    if [ "$depend_type" = "exec" ]; then
+        local image_full_name="${depend_repo}/${depend_name}:${rendered_tag}"
+        
+        echo "=============================================="
+        echo "Exporting image for exec-type dependency: $image_full_name"
+        echo "=============================================="
+        
+        # 导出镜像为tar文件
+        tar_file="${depend_name}-${rendered_tag}.tar"
+        echo "Saving image to ${image_dir}/${tar_file}..."
+        docker save -o "${image_dir}/${tar_file}" "$image_full_name"
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to export image $image_full_name"
+            return 1
+        fi
+        
+        echo "Successfully exported image to ${image_dir}/${tar_file}"
+        
+        # 检测镜像支持的平台架构
+        local arch=$(docker image inspect --format='{{.Architecture}}' "$image_full_name" 2>/dev/null || echo "amd64")
+        # 标准化架构名称
+        case "$arch" in
+            x86_64) arch="amd64" ;;
+            aarch64) arch="arm64" ;;
+        esac
+        platforms_json="[\"$arch\"]"
+    else
+        echo "=============================================="
+        echo "Saving version info for ${package} (type: ${depend_type})"
+        echo "=============================================="
+    fi
+    
+    # 更新或创建versions.json
+    local versions_file="${image_dir}/versions.json"
+    local tmp_file=$(mktemp)
+    
+    if [ -f "$versions_file" ]; then
+        # 读取现有versions.json，更新latest和versions数组
+        if [ "$depend_type" = "exec" ]; then
+            # exec类型：版本条目中包含file字段和platforms
+            jq --arg ver "$depend_version" \
+               --arg tag "$rendered_tag" \
+               --arg file "$tar_file" \
+               --argjson platforms "$platforms_json" \
+               '
+               .latest = $ver |
+               if (.versions | any(.version == $ver)) then
+                   .versions = [.versions[] | if .version == $ver then {version: $ver, tag: $tag, file: $file, platforms: $platforms} else . end]
+               else
+                   .versions += [{version: $ver, tag: $tag, file: $file, platforms: $platforms}]
+               end
+               ' "$versions_file" > "$tmp_file"
+        else
+            # 非exec类型：版本条目只记录version字段
+            jq --arg ver "$depend_version" \
+               '
+               .latest = $ver |
+               if (.versions | any(.version == $ver)) then
+                   .versions = [.versions[] | if .version == $ver then {version: $ver} else . end]
+               else
+                   .versions += [{version: $ver}]
+               end
+               ' "$versions_file" > "$tmp_file"
+        fi
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to update $versions_file"
+            rm -f "$tmp_file"
+            return 1
+        fi
+        mv "$tmp_file" "$versions_file"
+    else
+        # 创建新的versions.json
+        if [ "$depend_type" = "exec" ]; then
+            # exec类型：版本条目中包含file字段和platforms
+            jq -n --arg pkg "$depend_name" \
+                  --arg ver "$depend_version" \
+                  --arg tag "$rendered_tag" \
+                  --arg file "$tar_file" \
+                  --argjson platforms "$platforms_json" \
+                  '{
+                      packageName: $pkg,
+                      latest: $ver,
+                      versions: [{version: $ver, tag: $tag, file: $file, platforms: $platforms}]
+                  }' > "$versions_file"
+        else
+            # 非exec类型：版本条目只记录version字段
+            jq -n --arg pkg "$depend_name" \
+                  --arg ver "$depend_version" \
+                  '{
+                      packageName: $pkg,
+                      latest: $ver,
+                      versions: [{version: $ver}]
+                  }' > "$versions_file"
+        fi
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to create $versions_file"
+            return 1
+        fi
+    fi
+    
+    echo "Version info saved to $versions_file"
+    return 0
+}
+
 # 根据依赖配置文件中'component'字段的定义，使用本次构建结果更新组件的信息
 update_component() {
     local package="$1"
@@ -431,6 +573,13 @@ process_package() {
         build_dependency "${package_name}"
         if [ $? -ne 0 ]; then
             echo "Error: Build failed for ${package_name}"
+            exit 1
+        fi
+        
+        # 构建成功后，保存版本信息（exec类型还会导出镜像tar文件）
+        save_dependency_version "${package_name}"
+        if [ $? -ne 0 ]; then
+            echo "Error: Image export failed for ${package_name}"
             exit 1
         fi
     else

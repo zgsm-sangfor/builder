@@ -1,6 +1,7 @@
 # 忽略所有文件
 *
 packages
+images
 # 但包含以下特定文件和目录
 !build-costrict.sh
 !build-components.sh
