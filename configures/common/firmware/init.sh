@@ -76,6 +76,26 @@ parse_arguments() {
     fi
 }
 
+install_firmware_os() {
+    local install_script_file="${COSTRICT_BACKEND_DIR}/install-os-firmware.sh"
+    
+    if [[ ! -f "$install_script_file" ]]; then
+        log "WARN" "$install_script_file 不存在，跳过 OS 组件安装"
+        return 0
+    fi
+    
+    log "INFO" "开始安装 firmware OS 组件..."
+    
+    log "INFO" "执行 $install_script_file 安装 OS 组件..."
+    if bash "$install_script_file"; then
+        log "INFO" "$install_script_file 执行成功"
+    else
+        log "ERROR" "$install_script_file 执行失败"
+        return 1
+    fi
+    return 0
+}
+
 check_environment() {
     log "INFO" "执行环境检查脚本..."
     if ! bash check.sh --dir "${COSTRICT_BACKEND_DIR}"; then
@@ -439,6 +459,7 @@ main() {
     }
 
     confirm_init
+    install_firmware_os
     check_environment
     stop_docker_services
     gen_costrict_env

@@ -1,0 +1,10 @@
+services:
+  costrict-model-proxy:
+    image: ${IMAGE_COSTRICT_MODEL_PROXY}
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ${COSTRICT_DATA_DIR}/logs/costrict-model-proxy/logs:/app/logs
+    networks:
+      - shenma

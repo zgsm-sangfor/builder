@@ -158,7 +158,6 @@ validate_install_environment() {
         "${target_base}/es"
         "${target_base}/prometheus"
         "${target_base}/grafana"
-        "${target_base}/oneapi"
         "${target_base}/portal"
         "${target_base}/portal/data/costrict-admin"
         "${target_base}/postgres"

@@ -40,12 +40,12 @@
     {
       "name": "firmware",
       "subsystem": "root",
-      "version": "1.0.98"
+      "version": "1.0.102"
     },
     {
       "name": "backend",
       "subsystem": "root",
-      "version": "1.0.45"
+      "version": "1.0.48"
     },
     {
       "name": "frontend",
@@ -63,9 +63,9 @@
       "version": "1.0.52"
     },
     {
-      "name": "costrict-license-sdk",
+      "name": "license-manager",
       "subsystem": "backend",
-      "version": "1.0.2"
+      "version": "1.0.0"
     },
     {
       "name": "casdoor",
@@ -78,14 +78,9 @@
       "version": "1.0.4"
     },
     {
-      "name": "oneapi",
+      "name": "costrict-model-proxy",
       "subsystem": "backend",
-      "version": "1.0.5"
-    },
-    {
-      "name": "new-api",
-      "subsystem": "backend",
-      "version": "1.0.1"
+      "version": "1.0.2"
     },
     {
       "name": "nacos",
@@ -155,7 +150,7 @@
     {
       "name": "user-indicator",
       "subsystem": "backend",
-      "version": "1.0.8"
+      "version": "1.0.9"
     },
     {
       "name": "quota-manager",

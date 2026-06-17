@@ -3,11 +3,19 @@
 set -e
 
 #
-# Step 1: 调用check-update.sh，使用--build-type dependency检查需要构建镜像的包，自动递增被更新模块的版本；
-# Step 2: 如果Step 1有更新，调用build-depends.sh构建镜像包（可选推送），否则跳过；
-# Step 3: 调用update-manifest.sh，更新costrict-system/manifest.json；
-# Step 4: 调用check-update.sh，使用--build-type component检查需要构建组件的包，自动递增被更新模块的版本；
-# Step 5: 如果Step 4有更新，调用build-components.sh构建包并上传到云环境（如果指定了--upload参数），否则跳过。
+# Step 1: 调用check-update.sh，自动递增dependency包的版本号；
+# Step 2: 调用check-packaged.sh检查哪些依赖包当前版本还没构建，需要构建；
+#         如果有，调用build-depends.sh构建镜像（可选推送），否则跳过；
+#         注意：build-depends.sh的--update操作可能修改component包的配置文件（如image.env），
+#         因此component包的版本递增必须在此步骤之后执行；
+# Step 3: 调用check-update.sh，自动递增component包的版本号；
+# Step 4: 调用update-manifest.sh，更新costrict-system/manifest.json；
+#         update-manifest.sh可能修改了costrict-system的内容，因此再次检查并递增其版本；
+# Step 5: 调用check-packaged.sh检查哪些组件包当前版本还没打包，需要打包；
+#         如果有，调用build-components.sh构建包并上传到云环境（如果指定了--upload参数），否则跳过。
+#
+# 说明：check-update.sh 只负责自动递增包的版本号，不再用于获取待构建的包列表；
+#       待构建的包列表统一由 check-packaged.sh 获取。
 #
 
 # build-costrict.sh支持以下可选参数：
@@ -29,11 +37,11 @@ show_help() {
     echo "  --help, -h      显示此帮助信息"
     echo ""
     echo "执行步骤:"
-    echo "  1. 调用 check-update.sh 检查 dependency 类型更新的包"
-    echo "  2. 若Step1有更新，调用 build-depends.sh 构建镜像 (可选推送)，否则跳过"
-    echo "  3. 调用 update-manifest.sh 更新 manifest"
-    echo "  4. 调用 check-update.sh 检查 component 类型更新的包"
-    echo "  5. 若Step4有更新，调用 build-components.sh 构建包并可选上传，否则跳过"
+    echo "  1. 调用 check-update.sh 自动递增 dependency 包的版本号"
+    echo "  2. 调用 check-packaged.sh 检查尚未构建的 dependency 包，若有则调用 build-depends.sh 构建"
+    echo "  3. 调用 check-update.sh 自动递增 component 包的版本号"
+    echo "  4. 调用 update-manifest.sh 更新 manifest，并重新检查 costrict-system 版本"
+    echo "  5. 调用 check-packaged.sh 检查尚未打包的 component 包，若有则调用 build-components.sh 构建"
     echo ""
     echo "示例:"
     echo "  $0                    # 构建镜像（不推送），然后构建包"
@@ -75,71 +83,73 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Step 1: 调用check-update.sh，获取已经更新需要重新构建镜像的模块列表
+# Step 1: 调用check-update.sh，自动递增dependency包的版本号
 echo "----------------------------------------------------------------"
-echo "Step 1: Checking updates..."
+echo "Step 1: Updating dependency versions..."
 echo "----------------------------------------------------------------"
-updated_packages=$(./check-update.sh --update --build-type dependency)
-echo "Updated 'dependency' packages: $updated_packages"
+./check-update.sh --update --build-type dependency
 
-# Step 2: 调用build-depends.sh，构建镜像（如果Step 1有更新）
-if [ -n "$updated_packages" ]; then
+# Step 2: 调用check-packaged.sh，获取尚未构建的依赖包列表，然后构建
+echo "----------------------------------------------------------------"
+echo "Step 2: Checking packaged dependencies..."
+echo "----------------------------------------------------------------"
+# check-packaged.sh 以未构建包的数量作为退出码，当存在未构建包时返回非0，
+# 此处使用 '|| true' 防止 set -e 中断脚本执行
+need_build_packages=$(./check-packaged.sh --build-type dependency || true)
+echo "Need build 'dependency' packages: $need_build_packages"
+
+if [ -n "$need_build_packages" ]; then
     echo "----------------------------------------------------------------"
-    echo "Step 2: Building depends..."
+    echo "Building depends..."
     echo "----------------------------------------------------------------"
     if [ "$NEED_PUSH" = true ]; then
-        ./build-depends.sh --build --update --push $PUSH_ENV --packages $updated_packages
+        ./build-depends.sh --build --update --push $PUSH_ENV --packages $need_build_packages
     else
-        ./build-depends.sh --build --update --packages $updated_packages
+        ./build-depends.sh --build --update --packages $need_build_packages
     fi
 else
-    echo "Step 2: No 'dependency' packages updated, skipping..."
+    echo "No 'dependency' packages need building, skipping..."
 fi
 
-# Step 3: 调用check-update.sh，获取被更新的模块列表
+# Step 3: 调用check-update.sh，自动递增component包的版本号
+# 注意：需要在build-depends.sh之后执行，因为其--update操作可能修改component包的配置文件
 echo "----------------------------------------------------------------"
-echo "Step 3: Checking updates..."
+echo "Step 3: Updating component versions..."
 echo "----------------------------------------------------------------"
-updated_packages=$(./check-update.sh --update --build-type component)
-echo "Updated 'component' packages: $updated_packages"
+./check-update.sh --update --build-type component
 
-# Step 4: 调用update-manifest.sh
+# Step 4: 调用update-manifest.sh，更新costrict-system/manifest.json
 echo "----------------------------------------------------------------"
 echo "Step 4: Updating manifest..."
 echo "----------------------------------------------------------------"
 ./update-manifest.sh
 
-# 检查costrict-system是否发生变更
-if [[ ",$updated_packages," != *",costrict-system,"* ]]; then
-    echo "----------------------------------------------------------------"
-    echo "Checking costrict-system for updates..."
-    echo "----------------------------------------------------------------"
-    costrict_system_update=$(./check-update.sh -u -p costrict-system --build-type component)
-    if [ -n "$costrict_system_update" ]; then
-        echo "costrict-system has been updated, adding to updated_packages"
-        if [ -n "$updated_packages" ]; then
-            updated_packages="$updated_packages,costrict-system"
-        else
-            updated_packages="costrict-system"
-        fi
-        echo "Updated 'component' packages (including costrict-system): $updated_packages"
-    else
-        echo "costrict-system has not changed"
-    fi
-fi
+# update-manifest.sh可能修改了costrict-system的内容，重新检查并递增其版本
+echo "----------------------------------------------------------------"
+echo "Checking costrict-system for updates..."
+echo "----------------------------------------------------------------"
+./check-update.sh --update --build-type component -p costrict-system
 
-# Step 5: 调用build-components.sh构建包（如果Step 4有更新）
-if [ -n "$updated_packages" ]; then
+# Step 5: 调用check-packaged.sh，获取尚未打包的组件包列表，然后构建
+echo "----------------------------------------------------------------"
+echo "Step 5: Checking packaged components..."
+echo "----------------------------------------------------------------"
+# check-packaged.sh 以未打包包的数量作为退出码，当存在未打包包时返回非0，
+# 此处使用 '|| true' 防止 set -e 中断脚本执行
+need_pack_packages=$(./check-packaged.sh --build-type component || true)
+echo "Need build 'component' packages: $need_pack_packages"
+
+if [ -n "$need_pack_packages" ]; then
     echo "----------------------------------------------------------------"
-    echo "Step 5: Building packages..."
+    echo "Building packages..."
     echo "----------------------------------------------------------------"
     if [ -n "$UPLOAD_ENV" ]; then
-        ./build-components.sh --packages "$updated_packages" --clean --build --pack --index --upload "$UPLOAD_ENV"
+        ./build-components.sh --packages "$need_pack_packages" --clean --build --pack --index --upload "$UPLOAD_ENV"
     else
-        ./build-components.sh --packages "$updated_packages" --clean --build --pack --index
+        ./build-components.sh --packages "$need_pack_packages" --clean --build --pack --index
     fi
 else
-    echo "Step 5: No 'component' packages updated, skipping..."
+    echo "No 'component' packages need building, skipping..."
 fi
 
 echo "Build costrict completed!"

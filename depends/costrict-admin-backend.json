@@ -1,10 +1,10 @@
 {
   "name": "costrict-admin-backend",
   "repo": "zgsm",
-  "version": "1.0.101",
+  "version": "1.0.102",
   "type": "exec",
   "path": "../../costrict-admin/backend",
-  "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
+  "command": "docker build -f ./Dockerfile --build-arg VERSION={{.version}} .. -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",
   "component": {
     "workdir": "./configures/common/costrict-admin-backend",

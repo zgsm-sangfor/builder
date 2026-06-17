@@ -56,7 +56,7 @@
       "subsystem": "backend"
     },
     {
-      "name": "costrict-license-sdk",
+      "name": "license-manager",
       "subsystem": "backend"
     },
     {
@@ -68,11 +68,7 @@
       "subsystem": "backend"
     },
     {
-      "name": "oneapi",
-      "subsystem": "backend"
-    },
-    {
-      "name": "new-api",
+      "name": "costrict-model-proxy",
       "subsystem": "backend"
     },
     {

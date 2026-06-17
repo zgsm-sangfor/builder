@@ -2,6 +2,6 @@
   "name": "backend",
   "type": "zip",
   "path": "./configures",
-  "version": "1.0.45",
+  "version": "1.0.48",
   "description": "Backend Subsystem Definition File"
 }

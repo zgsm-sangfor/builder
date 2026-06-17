@@ -2,12 +2,15 @@
 *
 packages
 images
+costrict-static
 # 但包含以下特定文件和目录
 !build-costrict.sh
 !build-components.sh
 !build-depends.sh
 !check-update.sh
 !check-packaged.sh
+!gen-component.sh
+!gen-depend.sh
 !update-manifest.sh
 !start-local-site.sh
 !packages.json

@@ -142,7 +142,7 @@ process_component_package() {
         log "INFO" "Package '$package_name' version $package_version is fully packaged"
         return 0
     else
-        log "NOT_PACKAGED" "Package '$package_name' version $package_version missing on: ${missing_platforms[*]}"
+        log "MISSING" "Package '$package_name' version $package_version missing on: ${missing_platforms[*]}"
         return 1
     fi
 }
@@ -265,7 +265,7 @@ process_dependency_package() {
 
     # 检查versions.json文件是否存在
     if [ ! -f "$versions_file" ]; then
-        log "NOT_BUILT" "Dependency '$package_name' version $depend_version: versions.json not found at $versions_file"
+        log "MISSING" "Dependency '$package_name' version $depend_version: versions.json not found at $versions_file"
         return 1
     fi
 
@@ -274,7 +274,7 @@ process_dependency_package() {
         '.versions | map(select(.version == $ver)) | length' "$versions_file" 2>/dev/null)
 
     if [ -z "$version_found" ] || [ "$version_found" = "null" ] || [ "$version_found" = "0" ]; then
-        log "NOT_BUILT" "Dependency '$package_name' version $depend_version not found in versions.json"
+        log "MISSING" "Dependency '$package_name' version $depend_version not found in versions.json"
         return 1
     fi
 
@@ -284,13 +284,13 @@ process_dependency_package() {
             '.versions | map(select(.version == $ver)) | .[0].file // empty' "$versions_file" 2>/dev/null)
 
         if [ -z "$tar_file" ] || [ "$tar_file" = "null" ] || [ "$tar_file" = "" ]; then
-            log "NOT_BUILT" "Dependency '$package_name' version $depend_version: tar file not recorded in versions.json"
+            log "MISSING" "Dependency '$package_name' version $depend_version: tar file not recorded in versions.json"
             return 1
         fi
 
         local tar_path="images/${depend_name}/${tar_file}"
         if [ ! -f "$tar_path" ]; then
-            log "NOT_BUILT" "Dependency '$package_name' version $depend_version: tar file not found at $tar_path"
+            log "MISSING" "Dependency '$package_name' version $depend_version: tar file not found at $tar_path"
             return 1
         fi
 

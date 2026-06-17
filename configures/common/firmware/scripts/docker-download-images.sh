@@ -24,9 +24,37 @@ status=$?
 if [ $status -eq 0 ]; then
     log "INFO" "所有镜像已存在，跳过拉取"
     exit 0
-else
-    log "INFO" "部分镜像不存在，开始拉取..."
+fi
+
+# 依次判断三种镜像来源设置，按优先级采用对应的方式加载镜像
+# 优先级1: COSTRICT_DOCKER_IMAGES - 从指定本地目录加载镜像文件
+if [ -n "${COSTRICT_DOCKER_IMAGES}" ]; then
+    log "INFO" "检测到 COSTRICT_DOCKER_IMAGES='${COSTRICT_DOCKER_IMAGES}'，从该路径加载镜像..."
+    bash scripts/load-images.sh -l "${COSTRICT_DOCKER_IMAGES}"
+    bash scripts/verify-images.sh -f .images.list
+    exit $?
+fi
+
+# 优先级2: COSTRICT_DOCKER_URL - 从HTTP服务器下载镜像到./images目录，然后加载
+if [ -n "${COSTRICT_DOCKER_URL}" ]; then
+    log "INFO" "检测到 COSTRICT_DOCKER_URL='${COSTRICT_DOCKER_URL}'，从HTTP服务器下载镜像..."
+    bash scripts/download-images.sh -b "${COSTRICT_DOCKER_URL}" -f .images.list -o ./images
+    log "INFO" "下载完成，从 ./images 目录加载镜像..."
+    bash scripts/load-images.sh -l ./images
+    bash scripts/verify-images.sh -f .images.list
+    exit $?
+fi
+
+# 优先级3: COSTRICT_DOCKER_HUB - 从Docker Hub/Harbor仓库拉取镜像
+if [ -n "${COSTRICT_DOCKER_HUB}" ]; then
+    log "INFO" "检测到 COSTRICT_DOCKER_HUB='${COSTRICT_DOCKER_HUB}'，从Docker仓库拉取镜像..."
     bash scripts/pull-images.sh -f .images.list
     bash scripts/verify-images.sh -f .images.list
     exit $?
 fi
+
+# 默认: 未设置任何镜像来源，从Docker仓库拉取
+log "INFO" "未设置镜像来源变量，默认从Docker仓库拉取..."
+bash scripts/pull-images.sh -f .images.list
+bash scripts/verify-images.sh -f .images.list
+exit $?

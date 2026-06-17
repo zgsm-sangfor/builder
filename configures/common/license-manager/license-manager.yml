@@ -1,0 +1,10 @@
+services:
+  license-manager:
+    image: ${IMAGE_LICENSE_MANAGER}
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ${COSTRICT_DATA_DIR}/logs/license-manager/logs:/app/logs
+    networks:
+      - shenma

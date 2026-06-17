@@ -1,0 +1,13 @@
+{
+  "name": "costrict-model-proxy",
+  "repo": "zgsm",
+  "version": "1.0.0",
+  "type": "exec",
+  "path": "../../zgsm-ai/costrict-model-proxy",
+  "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
+  "tag": "v{{.version}}",
+  "component": {
+    "workdir": "./configures/common/costrict-model-proxy",
+    "command": "echo IMAGE_COSTRICT_MODEL_PROXY={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
+  }
+}

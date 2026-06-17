@@ -20,7 +20,7 @@
       ]
     },
     {
-      "component_name": "costrict-license-sdk",
+      "component_name": "license-manager",
       "display_name": "CoStrict授权服务",
       "description": "CoStrict授权服务",
       "allowed_versions": ">=1.0.0"
@@ -50,15 +50,9 @@
       ]
     },
     {
-      "component_name": "oneapi",
-      "display_name": "OneAPI",
-      "description": "大语言模型管理服务，聚合多来源多类型大语言模型API",
-      "allowed_versions": ">=1.0.0"
-    },
-    {
-      "component_name": "new-api",
-      "display_name": "NewAPI-增强版ONEAPI",
-      "description": "大语言模型管理服务，聚合多来源多类型大语言模型API",
+      "component_name": "costrict-model-proxy",
+      "display_name": "大模型代理服务",
+      "description": "简化的大模型网关，聚合多来源多类型大语言模型API",
       "allowed_versions": ">=1.0.0"
     },
     {
@@ -228,18 +222,9 @@
       "health_url": "http://localhost:3000/healthz"
     },
     {
-      "service_name": "oneapi",
-      "component_name": "oneapi",
-      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_ONEAPI }}",
-      "health_url": "http://localhost:39000/healthz",
-      "log_file": "{{ .COSTRICT_DATA_DIR }}/logs/oneapi.log"
-    },
-    {
-      "service_name": "new-api",
-      "component_name": "new-api",
-      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_NEW_API }}",
-      "health_url": "http://new-api:3000/healthz",
-      "log_file": "{{ .COSTRICT_DATA_DIR }}/logs/new-api.log"
+      "service_name": "costrict-model-proxy",
+      "component_name": "costrict-model-proxy",
+      "health_url": "http://costrict-model-proxy:8080/healthz"
     },
     {
       "service_name": "chat-rag",
@@ -292,8 +277,8 @@
       "component_name": "user-indicator"
     },
     {
-      "service_name": "costrict-license-sdk",
-      "component_name": "costrict-license-sdk",
+      "service_name": "license-manager",
+      "component_name": "license-manager",
       "visible": false
     }
   ],
