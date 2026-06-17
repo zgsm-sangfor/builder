@@ -309,7 +309,7 @@ register_services() {
 
 download_docker_images() {
     log "INFO" "开始下载Docker镜像..."
-    if bash scripts/docker-download-images.sh; then
+    if bash docker-download-images.sh; then
         log "INFO" "Docker镜像下载成功"
     else
         log "WARN" "Docker镜像下载失败，但继续安装"
