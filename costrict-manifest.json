@@ -52,6 +52,10 @@
       "subsystem": "backend"
     },
     {
+      "name": "costrict-admin-dashboard",
+      "subsystem": "backend"
+    },
+    {
       "name": "costrict-admin-frontend",
       "subsystem": "backend"
     },

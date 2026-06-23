@@ -1,6 +1,7 @@
 {
   "name": "apisix",
   "type": "zip",
+  "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.5",
   "description": "Back-end API entry gateway"

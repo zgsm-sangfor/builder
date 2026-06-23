@@ -1,8 +1,8 @@
 {
   "name": "code-completion",
-  "repo": "zgsm",
-  "version": "1.7.100",
   "type": "exec",
+  "version": "1.7.100",
+  "repo": "zgsm",
   "path": "../../services/code-completions-go",
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",

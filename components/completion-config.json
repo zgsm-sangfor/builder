@@ -1,6 +1,7 @@
 ﻿{
   "name":  "completion-config",
   "type":  "conf",
+  "subsystem": "backend",
   "path":  "./configures",
   "target":  "completion-agent.json",
   "filename":  "config/completion-agent.json",

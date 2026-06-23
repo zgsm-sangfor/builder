@@ -1,7 +1,9 @@
 ﻿{
-    "name":  "code-completion",
-    "type":  "zip",
-    "path":  "./configures",
-    "version":  "1.7.100",
-    "description":  "Code completion service"
+  "name":  "code-completion",
+  "type":  "zip",
+  "subsystem": "backend",
+  "title": "代码补全服务",
+  "path":  "./configures",
+  "version":  "1.7.100",
+  "description":  "Code completion service"
 }

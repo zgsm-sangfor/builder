@@ -3,7 +3,7 @@ services:
     image: ${IMAGE_ETCD}
     restart: always
     volumes:
-      - ${COSTRICT_DATA_DIR}/data/etcd/data:/bitnami/etcd/data
+      - ${COSTRICT_DATA_DIR}/backend/etcd/data:/bitnami/etcd/data
     user: "1000:1000"
     environment:
       TZ: "Asia/Shanghai"

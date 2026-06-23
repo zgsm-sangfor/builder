@@ -30,22 +30,22 @@
     {
       "name": "costrict-daemon",
       "subsystem": "root",
-      "version": "1.0.58"
+      "version": "1.0.62"
     },
     {
       "name": "costrict-admin",
       "subsystem": "root",
-      "version": "1.0.113"
+      "version": "1.0.118"
     },
     {
       "name": "firmware",
       "subsystem": "root",
-      "version": "1.0.102"
+      "version": "1.0.108"
     },
     {
       "name": "backend",
       "subsystem": "root",
-      "version": "1.0.48"
+      "version": "1.0.50"
     },
     {
       "name": "frontend",
@@ -55,52 +55,57 @@
     {
       "name": "costrict-admin-backend",
       "subsystem": "backend",
-      "version": "1.0.92"
+      "version": "1.0.100"
+    },
+    {
+      "name": "costrict-admin-dashboard",
+      "subsystem": "backend",
+      "version": "1.0.98"
     },
     {
       "name": "costrict-admin-frontend",
       "subsystem": "backend",
-      "version": "1.0.52"
+      "version": "1.0.58"
     },
     {
       "name": "license-manager",
       "subsystem": "backend",
-      "version": "1.0.0"
+      "version": "1.0.8"
     },
     {
       "name": "casdoor",
       "subsystem": "backend",
-      "version": "1.0.25"
+      "version": "1.0.26"
     },
     {
       "name": "oidc-auth",
       "subsystem": "backend",
-      "version": "1.0.4"
+      "version": "1.0.5"
     },
     {
       "name": "costrict-model-proxy",
       "subsystem": "backend",
-      "version": "1.0.2"
+      "version": "1.0.4"
     },
     {
       "name": "nacos",
       "subsystem": "backend",
-      "version": "1.0.0"
+      "version": "1.0.1"
     },
     {
       "name": "etcd",
       "subsystem": "backend",
-      "version": "1.0.5"
+      "version": "1.0.6"
     },
     {
       "name": "redis",
       "subsystem": "backend",
-      "version": "1.0.6"
+      "version": "1.0.7"
     },
     {
       "name": "postgres",
       "subsystem": "backend",
-      "version": "1.0.7"
+      "version": "1.0.8"
     },
     {
       "name": "apisix",
@@ -115,7 +120,7 @@
     {
       "name": "chat-rag",
       "subsystem": "backend",
-      "version": "1.0.6"
+      "version": "1.0.7"
     },
     {
       "name": "credit-manager",
@@ -130,7 +135,7 @@
     {
       "name": "es",
       "subsystem": "backend",
-      "version": "1.0.1"
+      "version": "1.0.2"
     },
     {
       "name": "prometheus",
@@ -160,7 +165,7 @@
     {
       "name": "client-manager",
       "subsystem": "backend",
-      "version": "1.0.7"
+      "version": "1.0.8"
     },
     {
       "name": "costrict",

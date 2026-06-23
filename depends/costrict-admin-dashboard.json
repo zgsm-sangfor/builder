@@ -1,0 +1,17 @@
+{
+  "name": "costrict-admin-dashboard",
+  "type": "exec",
+  "version": "1.0.109",
+  "repo": "zgsm",
+  "path": "../../costrict-admin/dashboard",
+  "extras": [
+    "../../costrict-admin/common"
+  ],
+  "command": "export DOCKER_BUILDKIT=1 && docker build -f ./Dockerfile --build-arg VERSION={{.version}} .. -t {{.repo}}/{{.name}}:v{{.version}}",
+  "tag": "v{{.version}}",
+  "component": {
+    "workdir": "./configures/common/costrict-admin-dashboard",
+    "command": "echo IMAGE_COSTRICT_ADMIN_DASHBOARD={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
+  },
+  "description": "The dashboard docker-service of costrict"
+}

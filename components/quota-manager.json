@@ -1,6 +1,7 @@
 ﻿{
   "name":  "quota-manager",
   "type":  "zip",
+  "subsystem": "backend",
   "path":  "./configures",
   "version":  "1.0.3",
   "enabled": false,

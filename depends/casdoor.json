@@ -1,8 +1,8 @@
 {
   "name": "casdoor",
-  "repo": "zgsm",
-  "version": "2.2.1",
   "type": "exec",
+  "version": "2.2.1",
+  "repo": "zgsm",
   "path": "../../source/casdoor",
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",

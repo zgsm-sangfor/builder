@@ -1,6 +1,7 @@
 {
   "name": "user-indicator",
   "type": "zip",
+  "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.9",
   "description": "user indicator"

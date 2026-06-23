@@ -6,6 +6,6 @@ services:
       - TZ=Asia/Shanghai
     volumes:
       - ./config.yaml:/config/config.yaml:ro
-      - ${COSTRICT_DATA_DIR}/data/client-manager/data:/data
+      - ${COSTRICT_DATA_DIR}/backend/client-manager/data:/data
     networks:
       - shenma

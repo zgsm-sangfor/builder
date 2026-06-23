@@ -1,7 +1,8 @@
 {
   "name": "costrict-system",
   "type": "zip",
+  "subsystem": "root",
   "path": "./configures",
-  "version": "1.0.162",
+  "version": "1.0.180",
   "description": "CoStrict system"
 }

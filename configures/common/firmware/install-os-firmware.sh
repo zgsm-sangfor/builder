@@ -226,7 +226,9 @@ main() {
     # 优先检测插件形式 `docker compose`，其次检测独立命令 `docker-compose`
     local compose_version=""
     if docker compose version >/dev/null 2>&1; then
-        compose_version=$(get_version "docker compose")
+        # docker compose 插件的版本子命令为 "version" 而非 "--version"，
+        # 不能直接复用 get_version（其内部拼接 "--version"），需手动提取
+        compose_version=$(docker compose version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1 || true)
     elif command -v docker-compose >/dev/null 2>&1; then
         compose_version=$(get_version docker-compose)
     fi

@@ -1,6 +1,7 @@
 {
   "name": "system",
   "type": "conf",
+  "subsystem": "frontend",
   "path": "./configures",
   "target": "system-spec.json",
   "filename": "share/system-spec.json",

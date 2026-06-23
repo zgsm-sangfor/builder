@@ -1,7 +1,8 @@
 {
   "name": "casdoor",
   "type": "zip",
+  "subsystem": "backend",
   "path": "./configures",
-  "version": "1.0.25",
+  "version": "1.0.26",
   "description": "User Authentication Management System"
 }

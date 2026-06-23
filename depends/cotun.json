@@ -1,8 +1,8 @@
 {
   "name": "cotun",
-  "repo": "zgsm",
-  "version": "1.3.13",
   "type": "exec",
+  "version": "1.3.13",
+  "repo": "zgsm",
   "path": "../../services/cotun",
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",

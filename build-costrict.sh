@@ -19,8 +19,9 @@ set -e
 #
 
 # build-costrict.sh支持以下可选参数：
-#   --upload <env>  用于指定包上传的环境，该参数会传给build-components.sh
-#   --push [env]    用于指定镜像推送的环境，该参数会传给build-depends.sh（构建镜像始终执行）
+#   --upload <env>    用于指定包上传的环境，该参数会传给build-components.sh
+#   --push [env]      用于指定镜像推送的环境，该参数会传给build-depends.sh（构建镜像始终执行）
+#   --skip-depend     跳过依赖处理（Step 1 和 Step 2），不处理 dependency 包
 
 # 显示帮助信息
 show_help() {
@@ -29,12 +30,13 @@ show_help() {
     echo "构建 CoStrict 系统包"
     echo ""
     echo "选项:"
-    echo "  --push [env]    推送镜像到指定环境 (会传递给 build-depends.sh)"
-    echo "                  构建镜像始终执行，此选项只控制是否推送"
-    echo "                  如果 env 为空或 'def'，推送到 docker hub"
-    echo "                  否则推送到指定环境 (如 'test,prod' 或 'all')"
-    echo "  --upload <env>  指定包上传的环境 (会传递给 build-components.sh)"
-    echo "  --help, -h      显示此帮助信息"
+    echo "  --push [env]      推送镜像到指定环境 (会传递给 build-depends.sh)"
+    echo "                    构建镜像始终执行，此选项只控制是否推送"
+    echo "                    如果 env 为空或 'def'，推送到 docker hub"
+    echo "                    否则推送到指定环境 (如 'test,prod' 或 'all')"
+    echo "  --upload <env>    指定包上传的环境 (会传递给 build-components.sh)"
+    echo "  --skip-depend     跳过依赖处理（Step 1 和 Step 2），不处理 dependency 包"
+    echo "  --help, -h        显示此帮助信息"
     echo ""
     echo "执行步骤:"
     echo "  1. 调用 check-update.sh 自动递增 dependency 包的版本号"
@@ -55,6 +57,7 @@ show_help() {
 UPLOAD_ENV=""
 PUSH_ENV=""
 NEED_PUSH=false
+SKIP_DEPEND=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -73,6 +76,10 @@ while [[ $# -gt 0 ]]; do
             UPLOAD_ENV="$2"
             shift 2
             ;;
+        --skip-depend)
+            SKIP_DEPEND=true
+            shift
+            ;;
         --help|-h)
             show_help
             exit 0
@@ -82,33 +89,38 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
-
-# Step 1: 调用check-update.sh，自动递增dependency包的版本号
-echo "----------------------------------------------------------------"
-echo "Step 1: Updating dependency versions..."
-echo "----------------------------------------------------------------"
-./check-update.sh --update --build-type dependency
-
-# Step 2: 调用check-packaged.sh，获取尚未构建的依赖包列表，然后构建
-echo "----------------------------------------------------------------"
-echo "Step 2: Checking packaged dependencies..."
-echo "----------------------------------------------------------------"
-# check-packaged.sh 以未构建包的数量作为退出码，当存在未构建包时返回非0，
-# 此处使用 '|| true' 防止 set -e 中断脚本执行
-need_build_packages=$(./check-packaged.sh --build-type dependency || true)
-echo "Need build 'dependency' packages: $need_build_packages"
-
-if [ -n "$need_build_packages" ]; then
+if [ "$SKIP_DEPEND" = true ]; then
     echo "----------------------------------------------------------------"
-    echo "Building depends..."
+    echo "--skip-depend is set, skipping Step 1 and Step 2 (dependency processing)..."
     echo "----------------------------------------------------------------"
-    if [ "$NEED_PUSH" = true ]; then
-        ./build-depends.sh --build --update --push $PUSH_ENV --packages $need_build_packages
-    else
-        ./build-depends.sh --build --update --packages $need_build_packages
-    fi
 else
-    echo "No 'dependency' packages need building, skipping..."
+    # Step 1: 调用check-update.sh，自动递增dependency包的版本号
+    echo "----------------------------------------------------------------"
+    echo "Step 1: Updating dependency versions..."
+    echo "----------------------------------------------------------------"
+    ./check-update.sh --update --build-type dependency
+
+    # Step 2: 调用check-packaged.sh，获取尚未构建的依赖包列表，然后构建
+    echo "----------------------------------------------------------------"
+    echo "Step 2: Checking packaged dependencies..."
+    echo "----------------------------------------------------------------"
+    # check-packaged.sh 以未构建包的数量作为退出码，当存在未构建包时返回非0，
+    # 此处使用 '|| true' 防止 set -e 中断脚本执行
+    need_build_packages=$(./check-packaged.sh --build-type dependency || true)
+    echo "Need build 'dependency' packages: $need_build_packages"
+
+    if [ -n "$need_build_packages" ]; then
+        echo "----------------------------------------------------------------"
+        echo "Building depends..."
+        echo "----------------------------------------------------------------"
+        if [ "$NEED_PUSH" = true ]; then
+            ./build-depends.sh --build --update --push $PUSH_ENV --packages $need_build_packages
+        else
+            ./build-depends.sh --build --update --packages $need_build_packages
+        fi
+    else
+        echo "No 'dependency' packages need building, skipping..."
+    fi
 fi
 
 # Step 3: 调用check-update.sh，自动递增component包的版本号

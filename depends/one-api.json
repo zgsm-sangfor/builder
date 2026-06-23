@@ -1,8 +1,8 @@
 {
   "name": "one-api",
-  "repo": "zgsm",
-  "version": "1.0.4",
   "type": "exec",
+  "version": "1.0.4",
+  "repo": "zgsm",
   "path": "../../source/new-api",
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",

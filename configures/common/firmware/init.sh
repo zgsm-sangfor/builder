@@ -110,7 +110,7 @@ start_docker() {
         log "INFO" "Docker服务已启动"
         return 0
     fi
-    log "WARN" "Docker服务尚未启动，正在尝试启动..."
+    log "INFO" "Docker服务尚未启动，正在尝试启动..."
         
     # 尝试启动 Docker 服务（支持 systemctl 和 service 命令）
     if command -v service >/dev/null 2>&1; then
@@ -180,9 +180,9 @@ fix_permissions() {
     declare -a dirs=(
         "${COSTRICT_BACKEND_DIR}/portal/data"
         "${COSTRICT_BACKEND_DIR}/postgres/initdb.d"
-        "${COSTRICT_DATA_DIR}/data/etcd/data"
-        "${COSTRICT_DATA_DIR}/data/es/data"
-        "${COSTRICT_DATA_DIR}/data/oneapi/data"
+        "${COSTRICT_DATA_DIR}/backend/etcd/data"
+        "${COSTRICT_DATA_DIR}/backend/es/data"
+        "${COSTRICT_DATA_DIR}/backend/oneapi/data"
     )
     
     log "INFO" "开始修正目录权限..."
@@ -194,7 +194,7 @@ fix_permissions() {
         if [[ ! -d "$full_path" ]]; then
             log "INFO" "创建目录: $full_path"
             if ! sudo mkdir -p "$full_path"; then
-                log "ERROR" "创建目录失败: $full_path"
+                log "WARN" "创建目录失败: $full_path"
                 continue
             fi
         fi
@@ -346,7 +346,7 @@ configure_apisix_routes() {
     
     # 等待APISIX服务就绪
     if ! wait_for_apisix_ready; then
-        log "ERROR" "APISIX服务启动失败，无法继续配置"
+        log "WARN" "APISIX服务启动失败，无法继续配置"
         return 1
     fi
     

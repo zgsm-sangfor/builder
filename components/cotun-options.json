@@ -1,6 +1,7 @@
 ﻿{
   "name":  "cotun-options",
   "type":  "conf",
+  "subsystem": "frontend",
   "path":  "./configures",
   "target":  "cotun-options.json",
   "filename":  "config/cotun-options.json",

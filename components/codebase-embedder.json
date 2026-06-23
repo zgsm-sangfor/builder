@@ -1,6 +1,7 @@
 {
   "name": "codebase-embedder",
   "type": "zip",
+  "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.6",
   "enabled": false,

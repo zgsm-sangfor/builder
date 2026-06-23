@@ -1,7 +1,7 @@
 {
   "name": "costrict-admin-frontend",
-  "version": "1.0.55",
   "type": "frontend",
+  "version": "1.0.61",
   "path": "../../costrict-admin/frontend",
   "command": "bash build.sh",
   "enabled": true,

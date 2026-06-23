@@ -1,6 +1,7 @@
 ﻿{
   "name":  "tokenizer-config",
   "type":  "conf",
+  "subsystem": "frontend",
   "path":  "./configures",
   "target":  "tokenizer.json",
   "filename":  "config/tokenizer.json",

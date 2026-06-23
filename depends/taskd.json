@@ -1,8 +1,8 @@
 {
   "name": "taskd",
-  "repo": "zgsm",
-  "version": "1.0.3",
   "type": "exec",
+  "version": "1.0.3",
+  "repo": "zgsm",
   "path": "../../services/taskd",
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",

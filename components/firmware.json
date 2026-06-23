@@ -1,7 +1,8 @@
 {
   "name": "firmware",
   "type": "zip",
+  "subsystem": "root",
   "path": "./configures",
-  "version": "1.0.102",
+  "version": "1.0.108",
   "description": "The firmware of the backend system"
 }

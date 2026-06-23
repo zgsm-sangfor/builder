@@ -1,8 +1,8 @@
 {
   "name": "tagd",
-  "repo": "zgsm",
-  "version": "1.0.4",
   "type": "exec",
+  "version": "1.0.4",
+  "repo": "zgsm",
   "path": "../../services/tagd",
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",

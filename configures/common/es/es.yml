@@ -18,6 +18,6 @@ services:
     ports:
       - "${PORT_ES}:9200"
     volumes:
-      - ${COSTRICT_DATA_DIR}/data/es/data:/usr/share/elasticsearch/data
+      - ${COSTRICT_DATA_DIR}/backend/es/data:/usr/share/elasticsearch/data
     networks:
       - shenma

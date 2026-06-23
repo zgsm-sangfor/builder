@@ -1,8 +1,8 @@
 {
   "name": "costrict-model-proxy",
-  "repo": "zgsm",
-  "version": "1.0.0",
   "type": "exec",
+  "version": "1.0.0",
+  "repo": "zgsm",
   "path": "../../zgsm-ai/costrict-model-proxy",
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",

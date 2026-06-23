@@ -5,6 +5,7 @@ services:
     environment:
       - TZ=Asia/Shanghai
     volumes:
-      - ${COSTRICT_DATA_DIR}/logs/costrict-model-proxy/logs:/app/logs
+      - ${COSTRICT_DATA_DIR}/backend/costrict-model-proxy/logs:/app/logs
+      - ./config.yaml:/app/config.yaml:ro
     networks:
       - shenma

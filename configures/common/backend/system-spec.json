@@ -8,6 +8,12 @@
       "allowed_versions": ">=1.0.0"
     },
     {
+      "component_name": "costrict-admin-dashboard",
+      "display_name": "costrict-admin后端仪表盘",
+      "description": "CoStrict管理服务的仪表盘",
+      "allowed_versions": ">=1.0.0"
+    },
+    {
       "component_name": "costrict-admin-frontend",
       "display_name": "costrict-admin前端页面",
       "description": "CoStrict管理服务的前端页面",
@@ -165,7 +171,7 @@
       "display_name": "CoStrict后端管理",
       "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_APISIX_ENTRY }}",
       "health_url": "http://localhost:8080/healthz",
-      "log_file": "{{ .COSTRICT_DATA_DIR }}/logs/costrict-admin.log"
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/costrict-admin/logs/costrict-admin.log"
     },
     {
       "service_name": "etcd",
@@ -186,14 +192,14 @@
       "service_name": "apisix",
       "component_name": "apisix",
       "health_url": "http://localhost:39180/healthz",
-      "log_file": "{{ .COSTRICT_DATA_DIR }}/logs/apisix.log"
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/apisix/logs/apisix.log"
     },
     {
       "service_name": "casdoor",
       "component_name": "casdoor",
       "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_CASDOOR }}",
       "health_url": "http://localhost:39009/healthz",
-      "log_file": "{{ .COSTRICT_DATA_DIR }}/logs/casdoor.log",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/casdoor/logs/casdoor.log",
       "dependencies":[{
         "service": "postgres",
         "condition": "service_healthy"
@@ -204,7 +210,7 @@
       "component_name": "nacos",
       "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_NACOS }}",
       "health_url": "http://localhost:8848/healthz",
-      "log_file": "{{ .COSTRICT_DATA_DIR }}/logs/nacos.log",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/nacos/logs/nacos.log",
       "dependencies":[{
         "service": "postgres",
         "condition": "service_healthy"
@@ -214,7 +220,7 @@
       "service_name": "oidc-auth",
       "component_name": "oidc-auth",
       "health_url": "http://localhost:8085/healthz",
-      "log_file": "{{ .COSTRICT_DATA_DIR }}/logs/oidc-auth.log"
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/oidc-auth/logs/oidc-auth.log"
     },
     {
       "service_name": "portal",
@@ -230,7 +236,7 @@
       "service_name": "chat-rag",
       "component_name": "chat-rag",
       "health_url": "http://localhost:8093/healthz",
-      "log_file": "{{ .COSTRICT_DATA_DIR }}/logs/chat-rag.log"
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/chat-rag/logs/chat-rag.log"
     },
     {
       "service_name": "credit-manager",
@@ -246,7 +252,7 @@
       "service_name": "code-completion",
       "component_name": "code-completion",
       "health_url": "http://localhost:8099/healthz",
-      "log_file": "{{ .COSTRICT_DATA_DIR }}/logs/code-completion.log"
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/code-completion/logs/code-completion.log"
     },
     {
       "service_name": "prometheus",

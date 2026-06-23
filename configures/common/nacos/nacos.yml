@@ -9,8 +9,8 @@ services:
       SPRING_DATASOURCE_PLATFORM: postgresql
       JAVA_OPT: "-Ddb.num=1 -Ddb.url.0=jdbc:postgresql://postgres:5432/nacos -Ddb.user.0=${POSTGRES_USER} -Ddb.password.0=${PASSWORD_POSTGRES}"
     volumes:
-      - ${COSTRICT_DATA_DIR}/data/nacos/logs:/home/nacos/logs
-      - ${COSTRICT_DATA_DIR}/data/nacos/data:/home/nacos/data
+      - ${COSTRICT_DATA_DIR}/backend/nacos/logs:/home/nacos/logs
+      - ${COSTRICT_DATA_DIR}/backend/nacos/data:/home/nacos/data
     ports:
       - "${PORT_NACOS}:8848"
     networks:

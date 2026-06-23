@@ -22,7 +22,7 @@
 #
 # 注意事项:
 #   - 卸载操作不可逆，请谨慎操作
-#   - 默认删除数据存储目录，如需保留请使用 --keep-data 或单独保留数据库 --keep-db 
+#   - 默认删除数据存储目录，如需保留请使用 --keep-data
 #   - 建议在卸载前使用 backup.sh 备份数据
 # ============================================================================
 
@@ -45,7 +45,6 @@ show_usage() {
     
     选项:
         --keep-data        保留数据存储目录，不删除数据
-        --keep-db          保留数据存储目录下的数据库文件，仅保留 costrict-admin.db
         -f, --force        跳过确认提示，直接执行卸载
         -h, --help         显示帮助信息
     
@@ -55,7 +54,6 @@ show_usage() {
     示例:
         $0                                          # 卸载系统
         $0 --keep-data                              # 保留数据存储目录
-        $0 --keep-db                                # 保留数据库文件
         $0 -f                                       # 跳过确认，直接卸载
     
 EOF
@@ -63,7 +61,6 @@ EOF
 
 parse_arguments() {
     KEEP_DATA=false
-    KEEP_DB=false
     SKIP_CONFIRM=false
     
     # 解析参数
@@ -71,10 +68,6 @@ parse_arguments() {
         case $1 in
             --keep-data)
                 KEEP_DATA=true
-                shift
-                ;;
-            --keep-db)
-                KEEP_DB=true
                 shift
                 ;;
             -f|--force)
@@ -105,13 +98,9 @@ confirm_uninstall() {
     log "WARN" "  2. 移除所有系统服务"
     log "WARN" "  3. 删除安装目录: $COSTRICT_BACKEND_DIR"
     if [ "$KEEP_DATA" = false ]; then
-        if [ "$KEEP_DB" = true ]; then
-            log "INFO" "  6. 删除数据存储目录（保留 costrict-admin.db）: $COSTRICT_DATA_DIR"
-        else
-            log "WARN" "  6. 删除数据存储目录: $COSTRICT_DATA_DIR"
-        fi
+        log "WARN" "  6. 删除数据存储目录: $COSTRICT_DATA_DIR/backend"
     else
-        log "INFO" "  6. 保留数据存储目录: $COSTRICT_DATA_DIR"
+        log "INFO" "  6. 保留数据存储目录: $COSTRICT_DATA_DIR/backend"
     fi
     
     echo ""
@@ -239,60 +228,18 @@ remove_backend_dir() {
 
 remove_data_dir() {
     if [ "$KEEP_DATA" = true ]; then
-        log "INFO" "根据 --keep-data 选项，保留数据存储目录: $COSTRICT_DATA_DIR"
+        log "INFO" "根据 --keep-data 选项，保留数据存储目录: $COSTRICT_DATA_DIR/backend"
         return 0
-    fi
-    
-    # 备份数据库文件（如果启用 --keep-db 选项）
-    local db_file="${COSTRICT_DATA_DIR}/data/costrict-admin/costrict-admin.db"
-    local bak_file="${COSTRICT_BACKEND_DIR}/costrict-admin.db.bak"
-    
-    if [ "$KEEP_DB" = true ]; then
-        if [[ -f "$db_file" ]]; then
-            log "INFO" "准备备份数据库文件 $db_file 到 $bak_file"
-            sudo cp "$db_file" "$bak_file"
-            if [ $? -eq 0 ]; then
-                log "INFO" "数据库文件备份成功"
-            else
-                log "ERROR" "数据库文件备份失败"
-                return 1
-            fi
-        else
-            log "WARN" "数据库文件不存在: $db_file，跳过备份"
-        fi
     fi
     
     log "INFO" "检查并删除数据存储目录..."
     
-    if [[ -d "$COSTRICT_DATA_DIR" ]]; then
-        log "INFO" "删除目录: $COSTRICT_DATA_DIR"
-        sudo rm -rf "$COSTRICT_DATA_DIR"
-        log "INFO" "已删除: $COSTRICT_DATA_DIR"
-        
-        # 恢复数据库文件（如果启用 --keep-db 选项）
-        if [ "$KEEP_DB" = true ]; then
-            if [[ -f "$bak_file" ]]; then
-                log "INFO" "恢复数据库文件: $bak_file"
-                # 创建目标目录
-                sudo mkdir -p "$(dirname "$db_file")"
-                # 恢复数据库文件
-                sudo cp "$bak_file" "$db_file"
-                if [ $? -eq 0 ]; then
-                    log "INFO" "数据库文件恢复成功"
-                    # 设置文件权限
-                    sudo chmod 644 "$db_file"
-                else
-                    log "ERROR" "数据库文件恢复失败"
-                fi
-                # 清理备份目录
-                sudo rm -f "$bak_file"
-                log "INFO" "已清理备份目录: $bak_file"
-            else
-                log "WARN" "备份的数据库文件 $bak_file 不存在，无法恢复"
-            fi
-        fi
+    if [[ -d "$COSTRICT_DATA_DIR/backend" ]]; then
+        log "INFO" "删除目录: $COSTRICT_DATA_DIR/backend"
+        sudo rm -rf "$COSTRICT_DATA_DIR/backend"
+        log "INFO" "已删除: $COSTRICT_DATA_DIR/backend"
     else
-        log "INFO" "目录不存在: $COSTRICT_DATA_DIR"
+        log "INFO" "目录不存在: $COSTRICT_DATA_DIR/backend"
     fi
 }
 
@@ -326,14 +273,9 @@ main() {
     log "INFO" "  - 系统服务已注销"
     log "INFO" "  - 系统安装目录已删除: $COSTRICT_BACKEND_DIR"
     if [ "$KEEP_DATA" = false ]; then
-        if [ "$KEEP_DB" = true ]; then
-            log "INFO" "  - 数据存储目录已删除（已保留 costrict-admin.db）: $COSTRICT_DATA_DIR"
-            log "INFO" "  - 数据库文件已恢复到: ${COSTRICT_DATA_DIR}/data/costrict-admin/costrict-admin.db"
-        else
-            log "INFO" "  - 数据存储目录已删除: $COSTRICT_DATA_DIR"
-        fi
+        log "INFO" "  - 数据存储目录已删除: $COSTRICT_DATA_DIR/backend"
     else
-        log "INFO" "  - 数据存储目录已保留: $COSTRICT_DATA_DIR"
+        log "INFO" "  - 数据存储目录已保留: $COSTRICT_DATA_DIR/backend"
     fi
 }
 

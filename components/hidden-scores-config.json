@@ -1,6 +1,7 @@
 ﻿{
   "name":  "hidden-scores-config",
   "type":  "conf",
+  "subsystem": "frontend",
   "path":  "./configures",
   "target":  "hidden-scores.json",
   "filename":  "config/hidden-scores.json",

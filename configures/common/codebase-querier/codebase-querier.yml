@@ -9,6 +9,6 @@ services:
       - TZ=Asia/Shanghai
     volumes:
       - ./conf.yaml:/app/conf/conf.yaml:ro
-      - ${COSTRICT_DATA_DIR}/logs/codebase-querier/logs:/app/logs
+      - ${COSTRICT_DATA_DIR}/backend/codebase-querier/logs:/app/logs
     networks:
       - shenma

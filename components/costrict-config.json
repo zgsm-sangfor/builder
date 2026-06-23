@@ -1,6 +1,7 @@
 ﻿{
   "name":  "costrict-config",
   "type":  "conf",
+  "subsystem": "frontend",
   "path":  "./configures",
   "target":  "costrict.json",
   "filename":  "config/costrict.json",

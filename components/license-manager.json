@@ -1,7 +1,8 @@
 {
   "name": "license-manager",
   "type": "zip",
+  "subsystem": "backend",
   "path": "./configures",
-  "version": "1.0.0",
+  "version": "1.0.8",
   "description": "license-manager package component"
 }

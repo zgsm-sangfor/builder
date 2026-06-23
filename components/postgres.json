@@ -1,7 +1,8 @@
 {
   "name": "postgres",
   "type": "zip",
+  "subsystem": "backend",
   "path": "./configures",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "A universal database for storing critical user data"
 }

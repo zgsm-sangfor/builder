@@ -1,6 +1,7 @@
 {
   "name": "frontend",
   "type": "zip",
+  "subsystem": "root",
   "path": "./configures",
   "version": "1.0.6",
   "description": "Frontend Subsystem Definition File"

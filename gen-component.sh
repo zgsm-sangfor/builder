@@ -397,7 +397,7 @@ services:
     environment:
       - TZ=Asia/Shanghai
     volumes:
-      - \${COSTRICT_DATA_DIR}/logs/${NAME}/logs:/app/logs
+      - \${COSTRICT_DATA_DIR}/backend/${NAME}/logs:/app/logs
     networks:
       - shenma
 EOF

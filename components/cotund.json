@@ -1,6 +1,7 @@
 {
   "name": "cotund",
   "type": "zip",
+  "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.1",
   "enabled": false,

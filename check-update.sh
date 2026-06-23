@@ -302,6 +302,7 @@ process_package() {
     local package_path=$(jq -r ".path // empty" "$json_file")
     local package_type=$(jq -r ".type // empty" "$json_file")
     local package_target=$(jq -r ".target // empty" "$json_file")
+    local extras_count=$(jq -r '.extras | length // 0' "$json_file" 2>/dev/null)
     
     # 检查version字段是否存在
     if [ -z "$package_version" ] || [ "$package_version" = "null" ] || [ "$package_version" = "" ]; then
@@ -353,6 +354,41 @@ process_package() {
     if [ -z "$new_checksum" ]; then
         log "ERROR" "Failed to calculate checksum for package '$package_name' at path '$package_path'"
         return 1
+    fi
+    
+    # 处理extras目录（附属源码目录），将其文件纳入checksum计算范围
+    if [ "$extras_count" -gt 0 ]; then
+        local combined_checksum="$new_checksum"
+        local combined_file_count=$new_file_count
+        
+        for ((i=0; i<extras_count; i++)); do
+            local extra_dir=$(jq -r ".extras[$i] // empty" "$json_file")
+            if [ -z "$extra_dir" ] || [ "$extra_dir" = "null" ]; then
+                continue
+            fi
+            
+            prompt_verbose "Processing extras directory: $extra_dir"
+            
+            local extra_result=""
+            if [ "$package_type" = "exec" ]; then
+                extra_result=$(calculate_go_directory_checksum "$extra_dir")
+            elif [ "$package_type" = "frontend" ]; then
+                extra_result=$(calculate_frontend_checksum "$extra_dir" "$json_file")
+            else
+                extra_result=$(calculate_directory_checksum "$extra_dir")
+            fi
+            
+            local extra_checksum=$(echo "$extra_result" | head -n1)
+            local extra_count=$(echo "$extra_result" | tail -n1)
+            
+            if [ -n "$extra_checksum" ]; then
+                combined_checksum=$(echo "${combined_checksum}${extra_checksum}" | sha256sum | awk '{print $1}')
+                combined_file_count=$((combined_file_count + extra_count))
+            fi
+        done
+        
+        new_checksum="$combined_checksum"
+        new_file_count=$combined_file_count
     fi
     
     # 从latest.json中读取之前的版本和checksum

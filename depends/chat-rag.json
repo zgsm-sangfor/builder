@@ -1,8 +1,8 @@
 {
   "name": "chat-rag",
-  "repo": "zgsm",
-  "version": "1.2.8",
   "type": "exec",
+  "version": "1.2.8",
+  "repo": "zgsm",
   "path": "../../zgsm-ai/chat-rag",
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",

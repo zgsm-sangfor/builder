@@ -4,7 +4,7 @@ services:
     command: ["/app/chat-rag", "-f", "/app/etc/chat-api.yaml"]
     restart: always
     volumes:
-      - ${COSTRICT_DATA_DIR}/logs:/data/logs
+      - ${COSTRICT_DATA_DIR}/backend/chat-rag/logs:/data/logs
       - ./chat-api.yaml:/app/etc/chat-api.yaml:ro
       - ./rules.yaml:/app/etc/rules.yaml:ro
     networks:

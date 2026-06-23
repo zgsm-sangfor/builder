@@ -1,6 +1,7 @@
 {
   "name": "portal",
   "type": "zip",
+  "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.7",
   "description": "Unified static resource entry point"

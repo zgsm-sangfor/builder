@@ -3,8 +3,13 @@ services:
     image: ${IMAGE_LICENSE_MANAGER}
     restart: always
     environment:
+      - SF_LICENSE_PRODUCT_KEY_NAME=GENERAL1
+      - SF_LICENSE_FILE_PREFIX=/usr/local/platos/app/sf_license/licenses
       - TZ=Asia/Shanghai
     volumes:
-      - ${COSTRICT_DATA_DIR}/logs/license-manager/logs:/app/logs
+      - ./scripts/startup.sh:/startup.sh:ro
+      - ${COSTRICT_DATA_DIR}/backend/license-manager/logs:/usr/local/platos/app/sf_license/log
+      - ${COSTRICT_DATA_DIR}/backend/license-manager/licenses:/usr/local/platos/app/sf_license/licenses
+      - /etc/machine-id:/etc/machine-id:ro
     networks:
       - shenma

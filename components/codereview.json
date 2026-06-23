@@ -1,6 +1,7 @@
 ﻿{
   "name":  "codereview",
   "type":  "zip",
+  "subsystem": "backend",
   "path":  "./configures",
   "version":  "1.0.4",
   "enabled": false,

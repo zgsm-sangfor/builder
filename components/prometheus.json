@@ -1,6 +1,7 @@
 {
   "name": "prometheus",
   "type": "zip",
+  "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.1",
   "description": "Open-source monitoring system for metrics and alerting"
