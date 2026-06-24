@@ -37,6 +37,7 @@ utils.sh
 check.sh
 deploy-to.sh
 init.sh
+upgrade.sh
 cleanup.sh
 run.sh
 backup.sh

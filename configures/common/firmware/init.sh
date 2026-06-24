@@ -352,18 +352,18 @@ configure_apisix_routes() {
     
     # 配置APISIX路由
     local apisix_scripts=(
-        "apisix-casdoor.sh"
-        "apisix-chatrag.sh"
-        "apisix-codereview.sh"
-        "apisix-completion-v2.sh"
+        # "apisix-casdoor.sh"
+        # "apisix-chatrag.sh"
+        # "apisix-codereview.sh"
+        # "apisix-completion-v2.sh"
         "apisix-costrict-apps.sh"
         "apisix-costrict-admin.sh"
-        "apisix-cotun.sh"
-        "apisix-credit-manager.sh"
-        "apisix-embedder.sh"
-        "apisix-grafana.sh"
-        "apisix-issue.sh"
-        "apisix-oidc-auth.sh"
+        # "apisix-cotun.sh"
+        # "apisix-credit-manager.sh"
+        # "apisix-embedder.sh"
+        # "apisix-grafana.sh"
+        # "apisix-issue.sh"
+        # "apisix-oidc-auth.sh"
     )
     
     for script in "${apisix_scripts[@]}"; do
@@ -375,6 +375,30 @@ configure_apisix_routes() {
     done
     
     log "INFO" "APISIX路由配置完成"
+    return 0
+}
+
+upgrade_envs() {
+    log "INFO" "开始升级环境配置..."
+
+    for subdir in */; do
+        if [[ ! -d "$subdir" ]]; then
+            continue
+        fi
+
+        local upgrade_script="${subdir}do-upgrade-env.sh"
+        if [[ -f "$upgrade_script" ]]; then
+            log "INFO" "执行 $upgrade_script ..."
+            if bash "$upgrade_script"; then
+                log "INFO" "$upgrade_script 执行成功"
+            else
+                log "ERROR" "$upgrade_script 执行失败"
+                return 1
+            fi
+        fi
+    done
+
+    log "INFO" "环境配置升级完成"
     return 0
 }
 
@@ -474,9 +498,8 @@ main() {
     start_docker_services
     
     # 配置APISIX路由
-    if ! configure_apisix_routes; then
-        log "WARN" "APISIX路由配置失败，但系统已启动"
-    fi
+    configure_apisix_routes
+    upgrade_envs
     
     mark_system_initialized
 

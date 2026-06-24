@@ -1,7 +1,7 @@
 {
   "name": "costrict-admin-backend",
   "type": "exec",
-  "version": "1.0.112",
+  "version": "1.0.114",
   "repo": "zgsm",
   "path": "../../costrict-admin/backend",
   "extras": [

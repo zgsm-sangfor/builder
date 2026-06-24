@@ -1,7 +1,7 @@
 {
   "name": "costrict-admin-frontend",
   "type": "frontend",
-  "version": "1.0.61",
+  "version": "1.0.62",
   "path": "../../costrict-admin/frontend",
   "command": "bash build.sh",
   "enabled": true,
@@ -12,7 +12,7 @@
   ],
   "component": {
     "workdir": "../../costrict-admin/frontend",
-    "command": "bash publish.sh"
+    "command": "bash update.sh"
   },
   "description": "Build the front-end page to be released for the costrict system."
 }

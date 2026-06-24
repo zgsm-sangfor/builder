@@ -4,5 +4,12 @@
   "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.58",
+  "dependences": [
+    {
+      "depend_component": "portal",
+      "depend_versions": ">=1.0.0"
+    }
+  ],
+  "display_name": "costrict-admin前端页面",
   "description": "The front-end page of the costrict-admin service"
 }

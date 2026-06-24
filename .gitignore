@@ -15,6 +15,7 @@ costrict-static
 !start-local-site.sh
 !packages.json
 !costrict-manifest.json
+!costrict-backend-spec.json
 !README.md
 !developer.md
 !configures/

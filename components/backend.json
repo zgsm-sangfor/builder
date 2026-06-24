@@ -3,6 +3,6 @@
   "type": "zip",
   "subsystem": "root",
   "path": "./configures",
-  "version": "1.0.50",
+  "version": "1.0.51",
   "description": "Backend Subsystem Definition File"
 }

@@ -2,18 +2,25 @@ database:
   type: postgres
   host: postgres
   port: 5432
-  user: {{POSTGRES_USER}}
-  password: {{PASSWORD_POSTGRES}}
-  dbname: codereview
+  user: ${POSTGRES_USER}
+  password: ${PASSWORD_POSTGRES}
+  dbname: ${POSTGRES_DB:-codereview}
+  pool:
+    max_idle_conns: 3
+    max_open_conns: 5
+    conn_max_lifetime: 500
+    conn_max_idle_time: 300
 redis:
   host: redis
   port: 6379
   db: 0
-kbcenter:
-  skip_repository_check: false 
+git_repo:
+  gitlab_token: ""
+merge_request:
+  max_diff_lines: 1000000
+  max_file_count: 50
 http_client:
+  max_retries: 0
   services:
     issueManager:
       base_url: "http://issue-manager:8080/issue-manager/api/v1"
-    kbCenter:
-      base_url: "http://codebase-querier:8888/codebase-indexer/api/v1"

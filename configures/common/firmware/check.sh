@@ -219,18 +219,18 @@ validate_install_environment() {
         "scripts/save-images.sh"
         "scripts/verify-images.sh"
 
-        "apisix-casdoor.sh"
-        "apisix-chatrag.sh"
-        "apisix-codereview.sh"
-        "apisix-completion-v2.sh"
+        # "apisix-casdoor.sh"
+        # "apisix-chatrag.sh"
+        # "apisix-codereview.sh"
+        # "apisix-completion-v2.sh"
         "apisix-costrict-apps.sh"
         "apisix-costrict-admin.sh"
-        "apisix-cotun.sh"
-        "apisix-credit-manager.sh"
-        "apisix-embedder.sh"
-        "apisix-grafana.sh"
-        "apisix-issue.sh"
-        "apisix-oidc-auth.sh"
+        # "apisix-cotun.sh"
+        # "apisix-credit-manager.sh"
+        # "apisix-embedder.sh"
+        # "apisix-grafana.sh"
+        # "apisix-issue.sh"
+        # "apisix-oidc-auth.sh"
     )
     
     for script in "${required_scripts[@]}"; do

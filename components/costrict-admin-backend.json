@@ -4,6 +4,6 @@
   "subsystem": "backend",
   "title": "CoStrict后端管理",
   "path": "./configures",
-  "version": "1.0.100",
+  "version": "1.0.102",
   "description": "The back-end docker-service of costrict"
 }
