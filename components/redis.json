@@ -4,5 +4,6 @@
   "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.7",
-  "description": "General data caching service"
+  "description": "内存数据结构存储，用作缓存和消息代理",
+  "display_name": "Redis"
 }

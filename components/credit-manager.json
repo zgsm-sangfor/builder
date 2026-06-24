@@ -1,8 +1,9 @@
-﻿{
-  "name":  "credit-manager",
-  "type":  "zip",
+{
+  "name": "credit-manager",
+  "type": "zip",
   "subsystem": "backend",
-  "path":  "./configures",
-  "version":  "1.0.3",
-  "description":  "Credit Management Service"
+  "path": "./configures",
+  "version": "1.0.3",
+  "description": "提供用户额度和配额管理功能",
+  "display_name": "Credit-Manager"
 }

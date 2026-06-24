@@ -4,5 +4,6 @@
   "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.10",
-  "description": "license-manager package component"
+  "description": "CoStrict授权服务",
+  "display_name": "CoStrict授权服务"
 }

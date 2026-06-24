@@ -5,5 +5,6 @@
   "title": "CoStrict后端管理",
   "path": "./configures",
   "version": "1.0.102",
-  "description": "The back-end docker-service of costrict"
+  "description": "CoStrict管理服务的后端服务",
+  "display_name": "costrict-admin后端服务"
 }

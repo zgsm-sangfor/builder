@@ -4,5 +4,12 @@
   "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.26",
-  "description": "User Authentication Management System"
+  "description": "身份认证和授权平台",
+  "display_name": "Casdoor",
+  "dependences": [
+    {
+      "depend_component": "postgres",
+      "depend_versions": ">=1.0.0"
+    }
+  ]
 }

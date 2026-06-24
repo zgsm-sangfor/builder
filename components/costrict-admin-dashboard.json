@@ -5,5 +5,6 @@
   "title": "CoStrict后端仪表盘",
   "path": "./configures",
   "version": "1.0.100",
-  "description": "The dashboard docker-service of costrict"
+  "description": "CoStrict管理服务的仪表盘",
+  "display_name": "costrict-admin后端仪表盘"
 }

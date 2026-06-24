@@ -4,5 +4,6 @@
   "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.8",
-  "description": "A universal database for storing critical user data"
+  "description": "关系型数据库，存储业务数据",
+  "display_name": "PostgreSQL"
 }

@@ -4,5 +4,6 @@
   "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.7",
-  "description": "Unified static resource entry point"
+  "description": "前端门户网站服务",
+  "display_name": "Portal"
 }

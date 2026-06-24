@@ -1,9 +1,10 @@
-﻿{
-  "name":  "quota-manager",
-  "type":  "zip",
+{
+  "name": "quota-manager",
+  "type": "zip",
   "subsystem": "backend",
-  "path":  "./configures",
-  "version":  "1.0.3",
+  "path": "./configures",
+  "version": "1.0.3",
   "enabled": false,
-  "description":  "LLM Quota Management Service"
+  "description": "提供资源配额和限流管理功能",
+  "display_name": "Quota-Manager"
 }

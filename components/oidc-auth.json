@@ -4,5 +4,12 @@
   "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.5",
-  "description": "Casdoor Authentication Client"
+  "description": "Casdoor认证客户端",
+  "display_name": "Casdoor认证客户端",
+  "dependences": [
+    {
+      "depend_component": "casdoor",
+      "depend_versions": ">=1.0.0"
+    }
+  ]
 }

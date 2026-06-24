@@ -4,5 +4,6 @@
   "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.8",
-  "description": "Client Management Support Service"
+  "description": "客户端管理支撑服务",
+  "display_name": "Client-Manager"
 }

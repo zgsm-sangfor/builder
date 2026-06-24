@@ -4,5 +4,12 @@
   "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.5",
-  "description": "Back-end API entry gateway"
+  "description": "云原生 API 网关，提供 API 网关和负载均衡功能",
+  "display_name": "APISIX",
+  "dependences": [
+    {
+      "depend_component": "etcd",
+      "depend_versions": ">=1.0.0"
+    }
+  ]
 }

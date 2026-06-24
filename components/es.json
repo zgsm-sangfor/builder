@@ -4,5 +4,6 @@
   "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.2",
-  "description": "Distributed search and analytics engine for fast data retrieval"
+  "description": "提供运营数据的采集和存储",
+  "display_name": "ElasticSearch运营数据存储"
 }
