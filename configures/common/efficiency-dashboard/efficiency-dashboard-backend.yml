@@ -1,0 +1,17 @@
+services:
+  efficiency-dashboard-backend:
+    image: ${IMAGE_EFFICIENCY_DASHBOARD_BACKEND}
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ${COSTRICT_DATA_DIR}/backend/efficiency-dashboard/backend/logs:/app/logs
+      - ./config/server:/app/config
+    networks:
+      - shenma
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9990/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

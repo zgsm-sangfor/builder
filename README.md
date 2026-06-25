@@ -81,7 +81,7 @@
 ./check-update.sh --update --packages backend,frontend
 
 # 步骤3: 更新发布清单
-./update-manifest.sh
+./gen-manifest.sh
 
 # 步骤4: 构建部署包（可选上传）
 ./build-packages.sh --packages "backend,frontend,costrict-system" --def
@@ -98,7 +98,7 @@ builder/
 ├── build-packages.sh        # 部署包构建脚本
 ├── build-costrict.sh        # 完整构建脚本（自动化流程）
 ├── check-update.sh          # 更新检测脚本
-├── update-manifest.sh       # 发布清单更新脚本
+├── gen-manifest.sh       # 发布清单更新脚本
 ├── start-local-site.sh      # 本地测试站点脚本
 ├── costrict-manifest.json   # CoStrict 组件清单模板
 ├── latest.json              # 包版本和 checksum 记录
@@ -271,7 +271,7 @@ builder/
 1. 读取 `costrict-manifest.json` 获取组件列表
 2. 调用 `build-depends.sh` 构建镜像（可选推送）
 3. 调用 `check-update.sh` 检测更新的模块
-4. 调用 `update-manifest.sh` 更新 `manifest.json`
+4. 调用 `gen-manifest.sh` 更新 `manifest.json`
 5. 调用 `build-packages.sh` 构建并上传
 
 **示例**：
@@ -337,7 +337,7 @@ builder/
 
 **用法**：
 ```bash
-./update-manifest.sh
+./gen-manifest.sh
 ```
 
 **无参数**
@@ -447,7 +447,7 @@ vim configures/common/casdoor/casdoor.yml
 ./build-packages.sh --package casdoor --def --upload prod
 
 # 4. 更新 manifest
-./update-manifest.sh
+./gen-manifest.sh
 ```
 
 ### 场景 3: 构建并推送 Docker 镜像

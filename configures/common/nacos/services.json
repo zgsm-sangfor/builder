@@ -1,0 +1,17 @@
+{
+  "component_name": "nacos",
+  "services": [
+    {
+      "service_name": "nacos",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_NACOS }}",
+      "health_url": "http://localhost:8848/healthz",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/nacos/logs/nacos.log",
+      "dependencies": [
+        {
+          "service": "postgres",
+          "condition": "service_healthy"
+        }
+      ]
+    }
+  ]
+}

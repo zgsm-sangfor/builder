@@ -1,0 +1,42 @@
+services:
+  review-worker:
+    image: ${IMAGE_REVIEW_MANAGER}
+    command: ["/bin/sh", "-c", "./review-manager worker"]
+    restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${PASSWORD_POSTGRES}
+      DATABASE_NAME: codereview
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    volumes:
+      - ${COSTRICT_DATA_DIR}/backend/review-worker/logs:/app/logs
+      - ${COSTRICT_DATA_DIR}/backend/codereview/workspaces:/home/appuser/Workspaces
+      - ./config/review-manager:/app/config
+    depends_on:
+      review-manager:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    networks:
+      - shenma
+    healthcheck:
+      test: ["CMD-SHELL", "ps aux | grep '[r]eview-manager worker' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

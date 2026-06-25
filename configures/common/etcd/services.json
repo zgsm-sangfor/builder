@@ -1,0 +1,9 @@
+{
+  "component_name": "etcd",
+  "services": [
+    {
+      "service_name": "etcd",
+      "health_url": "http://localhost:32382/health"
+    }
+  ]
+}

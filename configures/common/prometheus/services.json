@@ -1,0 +1,10 @@
+{
+  "component_name": "prometheus",
+  "services": [
+    {
+      "service_name": "prometheus",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_PROMETHEUS }}",
+      "health_url": "http://localhost:{{ .PORT_PROMETHEUS }}/healthz"
+    }
+  ]
+}

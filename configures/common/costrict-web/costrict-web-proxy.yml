@@ -1,0 +1,24 @@
+services:
+  costrict-web-proxy:
+    image: ${IMAGE_COSTRICT_WEB_PROXY}
+    restart: always
+    environment:
+      TZ: "Asia/Shanghai"
+      LISTEN_ADDR: ":8090"
+      SERVER_URL: "http://costrict-web-api:8080"
+      LOG_LEVEL: "info"
+      FILTER_FAILURE_MODE: "block"
+      AUDIT_RETENTION_DAYS: "90"
+    ports:
+      - "${PORT_COSTRICT_WEB_PROXY:-30290}:8090/tcp"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - shenma
+    depends_on:
+      costrict-web-api:
+        condition: service_healthy

@@ -25,7 +25,7 @@ CoStrict 包管理系统采用模块化设计，支持多种类型的应用组�
 
 - **build-components.sh**: 构建应用组件包
 - **build-depends.sh**: 构建依赖（Docker镜像）
-- **update-manifest.sh**: 更新系统清单文件
+- **gen-manifest.sh**: 更新系统清单文件
 
 ### 包管理系统目录结构
 
@@ -44,7 +44,7 @@ builder/
 │               └── {ver}/
 ├── build-components.sh
 ├── build-depends.sh
-└── update-manifest.sh
+└── gen-manifest.sh
 ```
 
 ---
@@ -386,10 +386,10 @@ Docker镜像包定义在`depends/`目录下。
 
 新增模块需要在`costrict-manifest.json`添加模块定义。
 
-然后调用`update-manifest.sh`生成costrict系统的描述文件`configures/common/costrict-system/manifest.json`。
+然后调用`gen-manifest.sh`生成costrict系统的描述文件`configures/common/costrict-system/manifest.json`。
 
 ```bash
-./update-manifest.sh
+./gen-manifest.sh
 ```
 
 此脚本会：
@@ -639,7 +639,7 @@ configures/
 
 2. **Step 2 - 构建依赖镜像**: 如果 Step 1 检测到有更新，调用 [`build-depends.sh`](build-depends.sh:1) 构建镜像包（可选推送），否则跳过此步骤
 
-3. **Step 3 - 更新系统清单**: 调用 [`update-manifest.sh`](update-manifest.sh:1) 更新 `configures/costrict-system/manifest.json`
+3. **Step 3 - 更新系统清单**: 调用 [`gen-manifest.sh`](gen-manifest.sh:1) 更新 `configures/costrict-system/manifest.json`
 
 4. **Step 4 - 检查组件更新**: 调用 [`check-update.sh`](check-update.sh:1) 使用 `--build-type component` 参数检查需要构建组件的包，自动递增被更新模块的版本号
 

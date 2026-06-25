@@ -14,7 +14,7 @@
 #
 #   组件定义 JSON 字段（对应 build-components.sh 的读取逻辑）：
 #     - name       : 包名（必填）
-#     - type       : exec(可执行程序) / conf(配置文件) / zip(目录打包)，默认 exec
+#     - type       : exec(可执行程序) / conf(配置文件) / zip(目录打包)，默认 zip
 #     - path       : 源目录（exec 默认 ./sources/<NAME>，conf/zip 默认 ./configures）
 #     - version    : 版本号（默认 1.0.0）
 #     - platforms  : 支持平台数组，格式见 --platforms（exec 默认 linux/amd64,windows/amd64；
@@ -31,13 +31,15 @@
 #
 # 选项说明：
 #   --name <NAME>                  组件名（必填）。决定输出文件名 components/<NAME>.json
-#   --type <TYPE>                  组件类型：exec（默认）/ conf / zip
+#   --type <TYPE>                  组件类型：zip（默认）/ conf / exec
 #   --path <PATH>                  源目录（默认按 type 推导）
 #   --version <VERSION>            版本号（默认：1.0.0）
 #   --platforms <SPEC>             平台规格，逗号分隔的 os/arch（如 linux/amd64,windows/amd64），
 #                                  或 common（默认按 type 推导）
 #   --target <TARGET>              conf 类型的目标文件名（默认：<NAME>.json）
 #   --filename <FILENAME>          打包安装路径（conf 默认：config/<target>）
+#   --service <SERVICES>           逗号分隔的服务名列表；
+#                                    为 configures/common/<NAME>/services.json 生成服务定义
 #   --description <DESC>           描述信息（默认按 name 生成）
 #   --disabled                     将 enabled 置为 false
 #   --no-scaffold                  不创建源目录骨架与待构建元件，仅生成 JSON
@@ -45,17 +47,20 @@
 #   -h, --help                     帮助信息
 #
 # 用法示例：
-#   # 最简方式：生成一个 exec 组件（自动创建 ./sources/my-app/build.py）
-#   ./gen-component.sh --name my-app
+#   # 最简方式：生成一个 zip 组件（自动在 ./configures/common/my-pkg/ 下创建骨架）
+#   ./gen-component.sh --name my-pkg
 #
 #   # 生成一个 conf 配置组件（自动在 ./configures/common/ 下创建占位配置）
 #   ./gen-component.sh --name my-config --type conf
 #
-#   # 生成一个 zip 目录打包组件（自动在 ./configures/common/my-pkg/ 下创建骨架）
-#   ./gen-component.sh --name my-pkg --type zip
+#   # 生成一个 exec 可执行组件（自动创建 ./sources/my-app/build.py）
+#   ./gen-component.sh --name my-app --type exec
 #
 #   # 指定多平台与版本
 #   ./gen-component.sh --name my-app --version 2.1.0 --platforms linux/amd64,linux/arm64,darwin/arm64
+#
+#   # 生成 zip 组件并附带服务列表
+#   ./gen-component.sh --name my-module --service "svc-a,svc-b,svc-c"
 #
 
 set -e
@@ -69,7 +74,7 @@ usage() {
     echo "  --name <NAME>                  Component name (also defines output filename)"
     echo ""
     echo "Optional (auto-derived when omitted):"
-    echo "  --type <TYPE>                  Component type: exec (default) / conf / zip"
+    echo "  --type <TYPE>                  Component type: zip (default) / conf / exec"
     echo "  --path <PATH>                  Source directory (auto-derived by type)"
     echo "  --version <VERSION>            Version string (default: 1.0.0)"
     echo "  --platforms <SPEC>             Platforms: comma-separated os/arch (e.g. linux/amd64,windows/amd64)"
@@ -77,6 +82,8 @@ usage() {
     echo "                                  conf/zip=common)"
     echo "  --target <TARGET>              Target filename for conf type (default: <NAME>.json)"
     echo "  --filename <FILENAME>          Install path in package (conf default: config/<target>)"
+    echo "  --service <SERVICES>           Comma-separated service names; generates"
+    echo "                                  configures/common/<NAME>/services.json"
     echo "  --description <DESC>           Description"
     echo "  --disabled                     Set enabled to false"
     echo "  --no-scaffold                  Only generate the JSON, skip directory skeleton"
@@ -84,9 +91,10 @@ usage() {
     echo "  -h, --help                     Show this help"
     echo ""
     echo "Examples:"
-    echo "  ./gen-component.sh --name my-app"
+    echo "  ./gen-component.sh --name my-pkg"
     echo "  ./gen-component.sh --name my-config --type conf"
-    echo "  ./gen-component.sh --name my-pkg --type zip"
+    echo "  ./gen-component.sh --name my-app --type exec"
+    echo "  ./gen-component.sh --name my-module --service \"svc-a,svc-b,svc-c\""
     exit 1
 }
 
@@ -98,7 +106,7 @@ fi
 
 # 默认参数
 NAME=""
-TYPE="exec"
+TYPE="zip"
 PATH_VALUE=""
 VERSION="1.0.0"
 PLATFORMS=""
@@ -107,6 +115,7 @@ FILENAME=""
 DESCRIPTION=""
 ENABLED=""          # 空=不输出 enabled 字段；"false"=输出 enabled:false
 NO_SCAFFOLD=false
+SERVICES=""
 FORCE=false
 
 # 解析命令行参数
@@ -122,6 +131,7 @@ while [ $# -gt 0 ]; do
         --description) DESCRIPTION="$2"; shift 2;;
         --disabled) ENABLED="false"; shift;;
         --no-scaffold) NO_SCAFFOLD=true; shift;;
+        --service) SERVICES="$2"; shift 2;;
         --force) FORCE=true; shift;;
         -h|--help) usage; exit 0;;
         *) echo "Unknown option: $1"; echo ""; usage;;
@@ -419,6 +429,30 @@ EOF
             fi
             ;;
     esac
+fi
+
+# ---- 生成 services.json（--service 选项） ----
+if [ -n "$SERVICES" ]; then
+    SERVICES_DIR="configures/common/${NAME}"
+    SERVICES_FILE="${SERVICES_DIR}/services.json"
+
+    if [ -f "$SERVICES_FILE" ] && [ "$FORCE" != true ]; then
+        echo "Error: services.json already exists: $SERVICES_FILE"
+        echo "Use --force to overwrite."
+        exit 1
+    fi
+
+    # 将逗号分隔的服务名列表转为 JSON 数组
+    SERVICES_JSON=$(echo "$SERVICES" | jq -Rsc \
+        'split(",") | map(gsub("^\\s+|\\s+$";"")) | map({service_name: .})')
+
+    jq -n \
+        --arg component_name "$NAME" \
+        --argjson services_arr "$SERVICES_JSON" \
+        '{component_name: $component_name, services: $services_arr}' \
+        > "$SERVICES_FILE"
+
+    echo "Created services.json: $SERVICES_FILE"
 fi
 
 # ---- 输出结果 ----

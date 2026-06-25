@@ -1,0 +1,36 @@
+services:
+  issue-manager:
+    image: ${IMAGE_ISSUE_MANAGER}
+    restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${PASSWORD_POSTGRES}
+      DATABASE_NAME: codereview
+    volumes:
+      - ${COSTRICT_DATA_DIR}/backend/issue-manager/logs:/app/logs
+      - ./config/issue-manager:/app/config
+    depends_on:
+      postgres:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    networks:
+      shenma:
+        aliases:
+          - issue-manager
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

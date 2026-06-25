@@ -1,0 +1,23 @@
+services:
+  costrict-web-gateway:
+    image: ${IMAGE_COSTRICT_WEB_GATEWAY}
+    restart: always
+    environment:
+      TZ: "Asia/Shanghai"
+      GATEWAY_PORT: "8081"
+      SERVER_URL: "http://costrict-web-api:8080"
+      GATEWAY_REGION: "default"
+      GATEWAY_CAPACITY: "100"
+    ports:
+      - "${PORT_COSTRICT_WEB_GATEWAY:-30276}:8081/tcp"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - shenma
+    depends_on:
+      costrict-web-api:
+        condition: service_healthy

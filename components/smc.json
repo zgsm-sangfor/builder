@@ -14,5 +14,6 @@
       "arch": "amd64"
     }
   ],
+  "enabled": false,
   "description": "System management console"
 }

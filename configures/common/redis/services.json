@@ -1,0 +1,9 @@
+{
+  "component_name": "redis",
+  "services": [
+    {
+      "service_name": "redis",
+      "health_url": "http://localhost:36379/ping"
+    }
+  ]
+}

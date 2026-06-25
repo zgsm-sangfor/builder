@@ -1,0 +1,24 @@
+services:
+  costrict-web-worker:
+    image: ${IMAGE_COSTRICT_WEB_WORKER}
+    restart: always
+    environment:
+      TZ: "Asia/Shanghai"
+      LOG_LEVEL: "info"
+      CONCURRENCY: "5"
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: costrict_db
+      DB_USER: "${POSTGRES_USER}"
+      DB_PASSWORD: "${PASSWORD_POSTGRES}"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    volumes:
+      - ${COSTRICT_DATA_DIR}/backend/costrict-web/worker/logs:/app/logs
+    networks:
+      - shenma
+    depends_on:
+      postgres:
+        condition: service_healthy
+      costrict-web-api:
+        condition: service_healthy

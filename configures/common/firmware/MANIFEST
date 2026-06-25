@@ -37,11 +37,11 @@ utils.sh
 check.sh
 deploy-to.sh
 init.sh
-upgrade.sh
 cleanup.sh
 run.sh
 backup.sh
 restore.sh
+docker-download-images.sh
 install-os-firmware.sh
 costrict-admin.env.sample
 costrict.env.in
@@ -53,19 +53,8 @@ api6-restore.sh
 api6-save.sh
 
 # APISIX 服务管理脚本
-apisix-casdoor.sh
-apisix-chatrag.sh
-apisix-codebase-indexer.sh
-apisix-codereview.sh
-apisix-completion-v2.sh
 apisix-costrict-admin.sh
 apisix-costrict-apps.sh
-apisix-cotun.sh
-apisix-credit-manager.sh
-apisix-embedder.sh
-apisix-grafana.sh
-apisix-issue.sh
-apisix-oidc-auth.sh
 
 # ==================== 子目录（递归拷贝） ====================
 init.d

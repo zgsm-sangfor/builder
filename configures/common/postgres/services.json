@@ -1,0 +1,9 @@
+{
+  "component_name": "postgres",
+  "services": [
+    {
+      "service_name": "postgres",
+      "health_url": "http://localhost:35432/healthz"
+    }
+  ]
+}

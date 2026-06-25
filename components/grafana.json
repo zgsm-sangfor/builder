@@ -3,7 +3,8 @@
   "type": "zip",
   "subsystem": "backend",
   "path": "./configures",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "提供数据可视化功能",
+  "enabled": false,
   "display_name": "Grafana数据可视化服务"
 }

@@ -1,0 +1,49 @@
+{
+  "component_name": "codereview",
+  "services": [
+    {
+      "service_name": "gitlab",
+      "display_name": "GitLab CE (Omnibus 包含所有依赖服务)",
+      "health_url": "http://gitlab:8080/healthz",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/codereview/logs/gitlab.log"
+    },
+    {
+      "service_name": "review-manager",
+      "display_name": "codereview管理服务",
+      "health_url": "http://review-manager:8080/healthz",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/codereview/logs/review-manager.log"
+    },
+    {
+      "service_name": "review-worker",
+      "display_name": "codereview工作进程",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/codereview/logs/review-worker.log"
+    },
+    {
+      "service_name": "issue-manager",
+      "health_url": "http://issue-manager:8080/healthz"
+    },
+    {
+      "service_name": "review-checker",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/codereview/logs/review-checker.log"
+    },
+    {
+      "service_name": "security-backend",
+      "display_name": "Security 后端服务 (Django)",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/codereview/logs/security-backend.log",
+      "dependencies":[{
+        "service": "postgres",
+        "condition": "service_healthy"
+      }]
+    },
+    {
+      "service_name": "security-frontend",
+      "display_name": "Security 前端服务 (Nginx)",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/codereview/logs/security-frontend.log"
+    },
+    {
+      "service_name": "security-agent-pipeline",
+      "display_name": "Security Agent Pipeline (FastAPI)",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/codereview/logs/security-agent-pipeline.log"
+    }
+  ]
+}

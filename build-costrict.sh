@@ -9,8 +9,9 @@ set -e
 #         注意：build-depends.sh的--update操作可能修改component包的配置文件（如image.env），
 #         因此component包的版本递增必须在此步骤之后执行；
 # Step 3: 调用check-update.sh，自动递增component包的版本号；
-# Step 4: 调用update-manifest.sh，更新costrict-system/manifest.json；
-#         update-manifest.sh可能修改了costrict-system的内容，因此再次检查并递增其版本；
+# Step 4: 调用gen-manifest.sh更新costrict-system/manifest.json，
+#         调用gen-backend-spec.sh更新backend/system-spec.json；
+#         gen-manifest.sh可能修改了costrict-system的内容，因此再次检查并递增其版本；
 # Step 5: 调用check-packaged.sh检查哪些组件包当前版本还没打包，需要打包；
 #         如果有，调用build-components.sh构建包并上传到云环境（如果指定了--upload参数），否则跳过。
 #
@@ -42,7 +43,7 @@ show_help() {
     echo "  1. 调用 check-update.sh 自动递增 dependency 包的版本号"
     echo "  2. 调用 check-packaged.sh 检查尚未构建的 dependency 包，若有则调用 build-depends.sh 构建"
     echo "  3. 调用 check-update.sh 自动递增 component 包的版本号"
-    echo "  4. 调用 update-manifest.sh 更新 manifest，并重新检查 costrict-system 版本"
+    echo "  4. 调用 gen-manifest.sh 更新 manifest，调用 gen-backend-spec.sh 更新 backend spec，并重新检查 costrict-system 版本"
     echo "  5. 调用 check-packaged.sh 检查尚未打包的 component 包，若有则调用 build-components.sh 构建"
     echo ""
     echo "示例:"
@@ -128,15 +129,16 @@ fi
 echo "----------------------------------------------------------------"
 echo "Step 3: Updating component versions..."
 echo "----------------------------------------------------------------"
+./gen-backend-spec.sh
 ./check-update.sh --update --build-type component
 
-# Step 4: 调用update-manifest.sh，更新costrict-system/manifest.json
+# Step 4: 调用gen-manifest.sh，更新costrict-system/manifest.json
 echo "----------------------------------------------------------------"
-echo "Step 4: Updating manifest..."
+echo "Step 4: Updating system manifest & backend specific..."
 echo "----------------------------------------------------------------"
-./update-manifest.sh
+./gen-manifest.sh
 
-# update-manifest.sh可能修改了costrict-system的内容，重新检查并递增其版本
+# gen-manifest.sh 可能修改了costrict-system的内容，重新检查并递增其版本
 echo "----------------------------------------------------------------"
 echo "Checking costrict-system for updates..."
 echo "----------------------------------------------------------------"

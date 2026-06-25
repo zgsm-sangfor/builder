@@ -2,94 +2,9 @@
   "subsystem": "backend",
   "components": [
     {
-      "component_name": "costrict-admin-backend",
-      "display_name": "costrict-admin后端服务",
-      "description": "CoStrict管理服务的后端服务",
-      "allowed_versions": ">=1.0.0"
-    },
-    {
-      "component_name": "costrict-admin-dashboard",
-      "display_name": "costrict-admin后端仪表盘",
-      "description": "CoStrict管理服务的仪表盘",
-      "allowed_versions": ">=1.0.0"
-    },
-    {
-      "component_name": "costrict-admin-frontend",
-      "display_name": "costrict-admin前端页面",
-      "description": "CoStrict管理服务的前端页面",
-      "allowed_versions": ">=1.0.0",
-      "dependences": [
-        {
-          "depend_component": "portal",
-          "depend_versions": ">=1.0.0"
-        }
-      ]
-    },
-    {
-      "component_name": "license-manager",
-      "display_name": "CoStrict授权服务",
-      "description": "CoStrict授权服务",
-      "allowed_versions": ">=1.0.0"
-    },
-    {
-      "component_name": "casdoor",
-      "display_name": "Casdoor",
-      "description": "身份认证和授权平台",
-      "allowed_versions": ">=1.0.0",
-      "dependences": [
-        {
-          "depend_component": "postgres",
-          "depend_versions": ">=1.0.0"
-        }
-      ]
-    },
-    {
-      "component_name": "oidc-auth",
-      "display_name": "Casdoor认证客户端",
-      "description": "Casdoor认证客户端",
-      "allowed_versions": ">=1.0.0",
-      "dependences": [
-        {
-          "depend_component": "casdoor",
-          "depend_versions": ">=1.0.0"
-        }
-      ]
-    },
-    {
-      "component_name": "costrict-model-proxy",
-      "display_name": "大模型代理服务",
-      "description": "简化的大模型网关，聚合多来源多类型大语言模型API",
-      "allowed_versions": ">=1.0.0"
-    },
-    {
-      "component_name": "nacos",
-      "display_name": "Nacos",
-      "description": "配置管理中心",
-      "allowed_versions": ">=1.0.0"
-    },
-    {
-      "component_name": "etcd",
-      "display_name": "ETCD",
-      "description": "分布式键值存储，用于配置管理和服务发现",
-      "allowed_versions": ">=3.4.0"
-    },
-    {
-      "component_name": "redis",
-      "display_name": "Redis",
-      "description": "内存数据结构存储，用作缓存和消息代理",
-      "allowed_versions": ">=6.0.0"
-    },
-    {
-      "component_name": "postgres",
-      "display_name": "PostgreSQL",
-      "description": "关系型数据库，存储业务数据",
-      "allowed_versions": ">=13.0.0"
-    },
-    {
       "component_name": "apisix",
       "display_name": "APISIX",
       "description": "云原生 API 网关，提供 API 网关和负载均衡功能",
-      "allowed_versions": ">=2.0.0",
       "dependences": [
         {
           "depend_component": "etcd",
@@ -98,70 +13,162 @@
       ]
     },
     {
-      "component_name": "portal",
-      "display_name": "Portal",
-      "description": "前端门户网站服务",
-      "allowed_versions": ">=1.0.0"
+      "component_name": "casdoor",
+      "display_name": "Casdoor",
+      "description": "身份认证和授权平台",
+      "dependences": [
+        {
+          "depend_component": "postgres",
+          "depend_versions": ">=1.0.0"
+        }
+      ]
     },
     {
       "component_name": "chat-rag",
       "display_name": "Chat-RAG",
-      "description": "提供基于RAG的聊天和问答服务",
-      "allowed_versions": ">=1.0.0"
-    },
-    {
-      "component_name": "credit-manager",
-      "display_name": "Credit-Manager",
-      "description": "提供用户额度和配额管理功能",
-      "allowed_versions": ">=1.0.0"
-    },
-    {
-      "component_name": "code-completion",
-      "display_name": "Code-Completion",
-      "description": "提供智能代码补全和建议功能",
-      "allowed_versions": ">=1.0.0"
-    },
-    {
-      "component_name": "prometheus",
-      "display_name": "Prometheus指标监控服务",
-      "description": "提供系统监控功能",
-      "allowed_versions": ">=1.0.0"
-    },
-    {
-      "component_name": "es",
-      "display_name": "ElasticSearch运营数据存储",
-      "description": "提供运营数据的采集和存储",
-      "allowed_versions": ">=1.0.0"
-    },
-    {
-      "component_name": "grafana",
-      "display_name": "Grafana数据可视化服务",
-      "description": "提供数据可视化功能",
-      "allowed_versions": ">=1.0.0"
-    },
-    {
-      "component_name": "kibana",
-      "display_name": "Kibana",
-      "description": "提供数据可视化功能",
-      "allowed_versions": ">=1.0.0"
-    },
-    {
-      "component_name": "user-indicator",
-      "display_name": "用户指标采集服务",
-      "description": "采集各个客户端反馈的指标，存储到ES",
-      "allowed_versions": ">=0.0.1"
-    },
-    {
-      "component_name": "quota-manager",
-      "display_name": "Quota-Manager",
-      "description": "提供资源配额和限流管理功能",
-      "allowed_versions": ">=1.0.0"
+      "description": "提供基于RAG的聊天和问答服务"
     },
     {
       "component_name": "client-manager",
       "display_name": "Client-Manager",
-      "description": "客户端管理支撑服务",
-      "allowed_versions": ">=1.0.0"
+      "description": "客户端管理支撑服务"
+    },
+    {
+      "component_name": "code-completion",
+      "display_name": "Code-Completion",
+      "description": "提供智能代码补全和建议功能"
+    },
+    {
+      "component_name": "codereview",
+      "display_name": "",
+      "description": "Code review service"
+    },
+    {
+      "component_name": "costrict-admin-backend",
+      "display_name": "costrict-admin后端服务",
+      "description": "CoStrict管理服务的后端服务"
+    },
+    {
+      "component_name": "costrict-admin-dashboard",
+      "display_name": "costrict-admin后端仪表盘",
+      "description": "CoStrict管理服务的仪表盘"
+    },
+    {
+      "component_name": "costrict-admin-frontend",
+      "display_name": "costrict-admin前端页面",
+      "description": "CoStrict管理服务的前端页面",
+      "dependences": [
+        {
+          "depend_component": "portal",
+          "depend_versions": ">=1.0.0"
+        }
+      ]
+    },
+    {
+      "component_name": "costrict-model-proxy",
+      "display_name": "大模型代理服务",
+      "description": "简化的大模型网关，聚合多来源多类型大语言模型API"
+    },
+    {
+      "component_name": "costrict-web-api",
+      "display_name": "",
+      "description": "costrict-web-api package component"
+    },
+    {
+      "component_name": "costrict-web-gateway",
+      "display_name": "",
+      "description": "costrict-web-gateway package component"
+    },
+    {
+      "component_name": "costrict-web-portal",
+      "display_name": "",
+      "description": "costrict-web-portal package component"
+    },
+    {
+      "component_name": "costrict-web-proxy",
+      "display_name": "",
+      "description": "costrict-web-proxy package component"
+    },
+    {
+      "component_name": "costrict-web-worker",
+      "display_name": "",
+      "description": "costrict-web-worker package component"
+    },
+    {
+      "component_name": "credit-manager",
+      "display_name": "Credit-Manager",
+      "description": "提供用户额度和配额管理功能"
+    },
+    {
+      "component_name": "efficiency-dashboard-backend",
+      "display_name": "",
+      "description": "efficiency-dashboard-backend package component"
+    },
+    {
+      "component_name": "efficiency-dashboard-kbcli",
+      "display_name": "",
+      "description": "efficiency-dashboard-kbcli package component"
+    },
+    {
+      "component_name": "efficiency-dashboard-portal",
+      "display_name": "",
+      "description": "efficiency-dashboard-portal package component"
+    },
+    {
+      "component_name": "es",
+      "display_name": "ElasticSearch运营数据存储",
+      "description": "提供运营数据的采集和存储"
+    },
+    {
+      "component_name": "etcd",
+      "display_name": "ETCD",
+      "description": "分布式键值存储，用于配置管理和服务发现"
+    },
+    {
+      "component_name": "license-manager",
+      "display_name": "CoStrict授权服务",
+      "description": "CoStrict授权服务"
+    },
+    {
+      "component_name": "nacos",
+      "display_name": "Nacos",
+      "description": "配置管理中心"
+    },
+    {
+      "component_name": "oidc-auth",
+      "display_name": "Casdoor认证客户端",
+      "description": "Casdoor认证客户端",
+      "dependences": [
+        {
+          "depend_component": "casdoor",
+          "depend_versions": ">=1.0.0"
+        }
+      ]
+    },
+    {
+      "component_name": "portal",
+      "display_name": "Portal",
+      "description": "前端门户网站服务"
+    },
+    {
+      "component_name": "postgres",
+      "display_name": "PostgreSQL",
+      "description": "关系型数据库，存储业务数据"
+    },
+    {
+      "component_name": "prometheus",
+      "display_name": "Prometheus指标监控服务",
+      "description": "提供系统监控功能"
+    },
+    {
+      "component_name": "redis",
+      "display_name": "Redis",
+      "description": "内存数据结构存储，用作缓存和消息代理"
+    },
+    {
+      "component_name": "user-indicator",
+      "display_name": "用户指标采集服务",
+      "description": "采集各个客户端反馈的指标，存储到ES"
     }
   ],
   "services": [
@@ -208,10 +215,12 @@
       "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_CASDOOR }}",
       "health_url": "http://localhost:39009/healthz",
       "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/casdoor/logs/casdoor.log",
-      "dependencies":[{
-        "service": "postgres",
-        "condition": "service_healthy"
-      }]
+      "dependencies": [
+        {
+          "service": "postgres",
+          "condition": "service_healthy"
+        }
+      ]
     },
     {
       "service_name": "nacos",
@@ -219,10 +228,12 @@
       "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_NACOS }}",
       "health_url": "http://localhost:8848/healthz",
       "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/nacos/logs/nacos.log",
-      "dependencies":[{
-        "service": "postgres",
-        "condition": "service_healthy"
-      }]
+      "dependencies": [
+        {
+          "service": "postgres",
+          "condition": "service_healthy"
+        }
+      ]
     },
     {
       "service_name": "oidc-auth",
@@ -289,6 +300,38 @@
     {
       "service_name": "user-indicator",
       "component_name": "user-indicator"
+    },
+    {
+      "service_name": "costrict-web-api",
+      "component_name": "costrict-web-api"
+    },
+    {
+      "service_name": "costrict-web-gateway",
+      "component_name": "costrict-web-gateway"
+    },
+    {
+      "service_name": "costrict-web-portal",
+      "component_name": "costrict-web-portal"
+    },
+    {
+      "service_name": "costrict-web-proxy",
+      "component_name": "costrict-web-proxy"
+    },
+    {
+      "service_name": "costrict-web-worker",
+      "component_name": "costrict-web-worker"
+    },
+    {
+      "service_name": "efficiency-dashboard-backend",
+      "component_name": "efficiency-dashboard-backend"
+    },
+    {
+      "service_name": "efficiency-dashboard-portal",
+      "component_name": "efficiency-dashboard-portal"
+    },
+    {
+      "service_name": "efficiency-dashboard-kbcli",
+      "component_name": "efficiency-dashboard-kbcli"
     },
     {
       "service_name": "license-manager",

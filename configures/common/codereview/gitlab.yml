@@ -1,0 +1,42 @@
+services:
+  # GitLab CE (Omnibus 包含所有依赖服务)
+  gitlab:
+    image: ${IMAGE_GITLAB}
+    hostname: 'gitlab.local'
+    restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - '${PORT_GITLAB_HTTP:-8090}:80'
+      - '${PORT_GITLAB_HTTPS:-8443}:443'
+      - '${PORT_GITLAB_SSH:-2222}:22'
+    volumes:
+      - ./config/gitlab:/etc/gitlab
+      - ${COSTRICT_DATA_DIR}/backend/codereview/gitlab/logs:/var/log/gitlab
+      - ${COSTRICT_DATA_DIR}/backend/codereview/gitlab/data:/var/opt/gitlab
+    environment:
+      GITLAB_ROOT_PASSWORD: Sangfor@123
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://gitlab:80'
+        nginx['listen_port'] = 80
+        nginx['listen_https'] = false
+        gitlab_rails['gitlab_shell_ssh_port'] = 2222
+        # 禁用部分服务以节省内存
+        prometheus['enable'] = false
+        alertmanager['enable'] = false
+        postgresql['shared_buffers'] = '256MB'
+        # 减少 puma worker 数量以节省共享内存
+        puma['worker_processes'] = 4
+        puma['min_threads'] = 2
+        puma['max_threads'] = 4
+    shm_size: '2g'
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 8G
+        reservations:
+          cpus: '2.0'
+          memory: 4G
+    networks:
+      - shenma

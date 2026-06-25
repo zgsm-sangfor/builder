@@ -1,0 +1,8 @@
+{
+  "component_name": "user-indicator",
+  "services": [
+    {
+      "service_name": "user-indicator"
+    }
+  ]
+}

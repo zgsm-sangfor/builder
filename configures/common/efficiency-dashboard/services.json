@@ -1,0 +1,14 @@
+{
+  "component_name": "efficiency-dashboard",
+  "services": [
+    {
+      "service_name": "efficiency-dashboard-backend"
+    },
+    {
+      "service_name": "efficiency-dashboard-portal"
+    },
+    {
+      "service_name": "efficiency-dashboard-kbcli"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "component_name": "client-manager",
+  "services": [
+    {
+      "service_name": "client-manager",
+      "health_url": "http://localhost:8098/healthz"
+    }
+  ]
+}

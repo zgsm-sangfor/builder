@@ -5,3 +5,5 @@ CREATE DATABASE codereview;
 CREATE DATABASE codebase_indexer;
 CREATE DATABASE codebase_embedder;
 CREATE DATABASE nacos;
+CREATE DATABASE costrict_db;
+CREATE DATABASE costrict_web;

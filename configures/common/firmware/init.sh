@@ -158,8 +158,8 @@ stop_docker_services() {
     fi
     log "INFO" "停止Docker Compose服务..."
     if ! docker-compose -f docker-compose.yml down; then
-        log "ERROR" "Docker Compose服务停止失败"
-        exit 1
+        log "WARN" "Docker Compose服务停止失败"
+        return 1
     fi
     log "INFO" "Docker Compose服务已停止"
     return 0

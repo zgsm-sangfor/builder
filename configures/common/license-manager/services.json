@@ -1,0 +1,9 @@
+{
+  "component_name": "license-manager",
+  "services": [
+    {
+      "service_name": "license-manager",
+      "visible": false
+    }
+  ]
+}

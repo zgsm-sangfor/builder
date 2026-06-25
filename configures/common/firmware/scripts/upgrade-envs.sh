@@ -18,31 +18,39 @@ set -o pipefail 2>/dev/null || true
 
 # -------------------------- Initialize Configuration --------------------------
 SCRIPT_NAME=$(basename "$0")
-LOG_FILE="${SCRIPT_NAME%.*}.log"
-exec > >(tee -a "$LOG_FILE") 2>&1
-
-. ./utils.sh
 
 show_usage() {
     cat << EOF
 升级各模块的环境配置，执行各目录下的 do-upgrade-env.sh 脚本
 
-用法: $0 [目录...]
+用法: $0 [options]
 
-参数:
-    目录        要检查的目录路径，默认为当前目录下的所有子目录
+选项:
+    --backend <PATH>   指定后端路径，默认为当前路径
+    --package, -p      指定模块目录列表（空格分隔），从这些目录中搜寻 do-upgrade-env.sh
+    -h, --help         显示帮助信息
+
+说明:
+    若未指定 --package，则搜索 --backend 路径的子目录，从中找到 do-upgrade-env.sh 执行
 
 示例:
     $0                                    # 升级当前目录所有子目录
-    $0 ../license-manager                 # 升级指定目录
-    $0 ../license-manager ../costrict-system  # 升级多个指定目录
+    $0 --backend ../backend               # 升级指定后端路径的所有子目录
+    $0 -p "../license-manager ../costrict-system"  # 升级指定模块目录
 
 EOF
 }
 
+log() {
+    local level=$1
+    local message=$2
+    local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+    echo -e "[${timestamp}] [${level}] ${message}"
+}
+
 upgrade_env() {
     local target_dir="$1"
-    local upgrade_script="${target_dir}/do-upgrade-env.sh"
+    local upgrade_script="${target_dir}do-upgrade-env.sh"
 
     if [[ ! -d "$target_dir" ]]; then
         log "ERROR" "目录不存在: $target_dir"
@@ -50,7 +58,7 @@ upgrade_env() {
     fi
 
     if [[ ! -f "$upgrade_script" ]]; then
-        log "WARN" "$upgrade_script 不存在，跳过"
+        log "INFO" "$upgrade_script 不存在，跳过"
         return 0
     fi
 
@@ -69,9 +77,9 @@ upgrade_envs() {
     local dirs=("$@")
 
     if [[ ${#dirs[@]} -eq 0 ]]; then
-        # 未指定目录，遍历当前目录下的所有子目录
-        log "INFO" "开始升级所有子目录的环境配置..."
-        for subdir in */; do
+        # 未指定目录，遍历后端路径下的所有子目录
+        log "INFO" "开始升级 ${BACKEND_PATH} 下所有子目录的环境配置..."
+        for subdir in "${BACKEND_PATH}"/*/; do
             if [[ ! -d "$subdir" ]]; then
                 continue
             fi
@@ -89,19 +97,39 @@ upgrade_envs() {
     return 0
 }
 
+# -------------------------- Parse Options --------------------------
+BACKEND_PATH="$(pwd)"
+PACKAGE_DIRS=()
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --backend)
+            BACKEND_PATH="$2"
+            shift 2
+            ;;
+        --package|-p)
+            # 解析模块目录列表（空格分隔）
+            IFS=' ' read -ra PACKAGE_DIRS <<< "$2"
+            shift 2
+            ;;
+        -h|--help)
+            show_usage
+            exit 0
+            ;;
+        *)
+            echo "未知选项: $1"
+            show_usage
+            exit 1
+            ;;
+    esac
+done
+
 # -------------------------- Main Logic --------------------------
 main() {
-    log "INFO" "升级脚本启动，日志文件: $LOG_FILE"
-
-    if [[ $# -eq 1 && ( "$1" == "-h" || "$1" == "--help" ) ]]; then
-        show_usage
-        exit 0
-    fi
-
-    if ! upgrade_envs "$@"; then
+    if ! upgrade_envs "${PACKAGE_DIRS[@]}"; then
         log "ERROR" "环境配置升级失败"
         exit 1
     fi
 }
 
-main "$@"
+main

@@ -1,0 +1,9 @@
+{
+  "component_name": "costrict-model-proxy",
+  "services": [
+    {
+      "service_name": "costrict-model-proxy",
+      "health_url": "http://costrict-model-proxy:8080/healthz"
+    }
+  ]
+}

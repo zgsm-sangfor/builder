@@ -1,0 +1,17 @@
+{
+  "component_name": "casdoor",
+  "services": [
+    {
+      "service_name": "casdoor",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_CASDOOR }}",
+      "health_url": "http://localhost:39009/healthz",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/casdoor/logs/casdoor.log",
+      "dependencies": [
+        {
+          "service": "postgres",
+          "condition": "service_healthy"
+        }
+      ]
+    }
+  ]
+}

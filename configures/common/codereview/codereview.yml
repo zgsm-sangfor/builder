@@ -14,8 +14,8 @@ services:
       REDIS_PORT: 6379
     volumes:
       - ${COSTRICT_DATA_DIR}/backend/review-manager/logs:/app/logs
-      - ./config/review-manager:/app/config
       - ${COSTRICT_DATA_DIR}/backend/codereview/workspaces:/home/appuser/Workspaces
+      - ./config/review-manager:/app/config
     depends_on:
       postgres:
         condition: service_healthy
@@ -56,8 +56,8 @@ services:
       REDIS_PORT: 6379
     volumes:
       - ${COSTRICT_DATA_DIR}/backend/review-worker/logs:/app/logs
-      - ./config/review-manager:/app/config
       - ${COSTRICT_DATA_DIR}/backend/codereview/workspaces:/home/appuser/Workspaces
+      - ./config/review-manager:/app/config
     depends_on:
       review-manager:
         condition: service_started

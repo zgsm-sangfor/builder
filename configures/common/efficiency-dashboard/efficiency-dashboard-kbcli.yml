@@ -1,0 +1,20 @@
+services:
+  efficiency-dashboard-kbcli:
+    image: ${IMAGE_EFFICIENCY_DASHBOARD_KBCLI}
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ${COSTRICT_DATA_DIR}/backend/efficiency-dashboard/kbcli/logs:/app/logs
+      - ${COSTRICT_DATA_DIR}/backend/efficiency-dashboard/kbcli/task:/app/task/raw/task
+      - ${COSTRICT_DATA_DIR}/backend/efficiency-dashboard/kbcli/repo:/app/task/raw/repo
+      - ${COSTRICT_DATA_DIR}/backend/efficiency-dashboard/kbcli/analysed:/app/analysed
+      - ./config/kbcli:/app/config
+    networks:
+      - shenma
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 0"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s

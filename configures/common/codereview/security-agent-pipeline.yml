@@ -1,0 +1,37 @@
+services:
+  # Security Agent Pipeline (FastAPI)
+  security-agent-pipeline:
+    image: ${IMAGE_SECURITY_AGENT_PIPELINE}
+    restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: ["sh", "-c", "git config --global --add safe.directory '*' && fastapi run web.py"]
+    volumes:
+      - ./config/base/.config/costrict/costrict.json:/app/aiagent-sast/data/costrict/costrict.json:ro
+      - ${COSTRICT_DATA_DIR}/backend/codereview/agent_pipeline/log:/app/aiagent-sast/log
+      - ./config/agent_pipeline/data:/app/aiagent-sast/data
+      - ${COSTRICT_DATA_DIR}/backend/codereview/agent_pipeline/tmp:/tmp_data
+      - ${COSTRICT_DATA_DIR}/backend/codereview/agent_pipeline/ci_threat_logs:/app/threat-explorer/logs
+      - ${COSTRICT_DATA_DIR}/backend/codereview/agent_pipeline/ci_audit_logs:/app/SecAuditAgent/logs
+      - ${COSTRICT_DATA_DIR}/backend/codereview/workspaces:/home/appuser/Workspaces
+      - /root/.costrict/projects:/root/.costrict/projects
+      - /root/.costrict/raw-dump:/root/.costrict/raw-dump
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CSC_DISABLE_RAW_DUMP=1
+      - CHROMIUM_PATH=/usr/lib/chrome-linux/chrome
+      - COSTRICT_CONFIG=/app/aiagent-sast/data/costrict/costrict.json
+      - COSTRICT_DISABLE_DEFAULT_PLUGINS=1
+      - OPENCODE_DISABLE_DEFAULT_PLUGINS=1
+      - PLATFORM=http://security-backend:5000
+      - TZ=Asia/Shanghai
+    deploy:
+      resources:
+        limits:
+          cpus: '8.0'
+          memory: 8G
+        reservations:
+          cpus: '4.0'
+          memory: 4G
+    networks:
+      - shenma

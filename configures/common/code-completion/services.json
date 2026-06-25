@@ -1,0 +1,10 @@
+{
+  "component_name": "code-completion",
+  "services": [
+    {
+      "service_name": "code-completion",
+      "health_url": "http://localhost:8099/healthz",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/code-completion/logs/code-completion.log"
+    }
+  ]
+}

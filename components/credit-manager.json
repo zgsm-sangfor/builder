@@ -3,7 +3,7 @@
   "type": "zip",
   "subsystem": "backend",
   "path": "./configures",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "提供用户额度和配额管理功能",
   "display_name": "Credit-Manager"
 }

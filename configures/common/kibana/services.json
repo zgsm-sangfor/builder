@@ -1,0 +1,10 @@
+{
+  "component_name": "kibana",
+  "services": [
+    {
+      "service_name": "kibana",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_KIBANA }}",
+      "health_url": "http://localhost:{{ .PORT_KIBANA }}/healthz"
+    }
+  ]
+}

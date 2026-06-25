@@ -1,0 +1,41 @@
+services:
+  # Security 后端服务 (Django)
+  security-backend:
+    image: ${IMAGE_SECURITY_BACKEND}
+    restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SECRET_KEY=admin@123.
+      - ALLOWED_HOSTS=*
+      - DEBUG_CONFIG=0
+      - DATABASE_NAME=${POSTGRES_DB:-codereview}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${PASSWORD_POSTGRES}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - UC_SERVER_ADDR=http://20.20.1.28:8000
+      - SESSION_COOKIE_AGE=172800
+      - SESSION_EXPIRE_AT_BROWSER_CLOSE=0
+      - SESSION_REFRESH_TOKEN_EXPIRE_TIME=7200
+      - WORKFLOW_ALLOW=1
+      - REPORT_2PDF_API=http://security-agent-pipeline:8000/report/report2pdf
+    volumes:
+      - ${COSTRICT_DATA_DIR}/backend/codereview/security/log:/DevSecOps/dc/log
+      - ${COSTRICT_DATA_DIR}/backend/codereview/security/static:/DevSecOps/dc/static
+      - ${COSTRICT_DATA_DIR}/backend/codereview/security/public:/DevSecOps/dc/public
+      - ${COSTRICT_DATA_DIR}/backend/codereview/security/tmp:/DevSecOps/dc/tmp
+    depends_on:
+      postgres:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 8G
+        reservations:
+          cpus: '2.0'
+          memory: 4G
+    networks:
+      - shenma

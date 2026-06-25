@@ -1,8 +1,8 @@
 stat_database:
-  host: "efficiency-postgresql"
+  host: "postgres"
   port: 5432
-  user: "postgres"
-  password: "1"
+  user: "{{POSTGRES_USER}}"
+  password: "{{PASSWORD_POSTGRES}}"
   dbname: "costrict_stat"
   sslmode: "disable"
 

@@ -1,0 +1,9 @@
+{
+  "component_name": "credit-manager",
+  "services": [
+    {
+      "service_name": "credit-manager",
+      "health_url": "http://localhost:8098/healthz"
+    }
+  ]
+}

@@ -63,7 +63,7 @@ gen_services() {
         # 根据lead, indent, service_name, component_name构建服务定义
         result+="${lead}${service_name}:\n"
         result+="${lead}${indent}extends:\n"
-        result+="${lead}${indent}${indent}file: ./${component_name}/${component_name}.yml\n"
+        result+="${lead}${indent}${indent}file: ./${component_name}/${service_name}.yml\n"
         result+="${lead}${indent}${indent}service: ${service_name}\n"
         
         # 检查是否有dependencies字段

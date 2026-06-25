@@ -1,0 +1,16 @@
+services:
+  efficiency-dashboard-portal:
+    image: ${IMAGE_EFFICIENCY_DASHBOARD_PORTAL}
+    restart: always
+    volumes:
+      - ./config/portal/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${COSTRICT_DATA_DIR}/backend/efficiency-dashboard/portal/static:/var/www/static:ro
+      - ${COSTRICT_DATA_DIR}/backend/efficiency-dashboard/portal/login:/var/www/login:ro
+    networks:
+      - shenma
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80/health || exit 0"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

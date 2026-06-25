@@ -1,0 +1,10 @@
+{
+  "component_name": "grafana",
+  "services": [
+    {
+      "service_name": "grafana",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_GRAFANA }}",
+      "health_url": "http://localhost:{{ .PORT_GRAFANA }}/healthz"
+    }
+  ]
+}

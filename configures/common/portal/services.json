@@ -1,0 +1,9 @@
+{
+  "component_name": "portal",
+  "services": [
+    {
+      "service_name": "portal",
+      "health_url": "http://localhost:3000/healthz"
+    }
+  ]
+}

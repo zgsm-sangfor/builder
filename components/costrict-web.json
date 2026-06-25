@@ -1,8 +1,7 @@
 {
   "name": "costrict-web",
   "type": "zip",
-  "subsystem": "backend",
   "path": "./configures",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "description": "costrict-web package component"
 }

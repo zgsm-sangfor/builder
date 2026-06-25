@@ -11,7 +11,8 @@ costrict-static
 !check-packaged.sh
 !gen-component.sh
 !gen-depend.sh
-!update-manifest.sh
+!gen-backend-spec.sh
+!gen-manifest.sh
 !start-local-site.sh
 !packages.json
 !costrict-manifest.json

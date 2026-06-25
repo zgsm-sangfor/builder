@@ -1,5 +1,5 @@
 #!/bin/bash
-# update-manifest.sh
+# gen-manifest.sh
 # 该脚本以 costrict-manifest.json 为模板，补全组件版本信息，输出到 configures/costrict-system/manifest.json
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -12,6 +12,12 @@ components="["
 first=true
 
 for build_file in "$COMPONENTS_DIR"/*.json; do
+    # 排除 costrict-system 自身
+    filename=$(basename "$build_file")
+    if [ "$filename" = "costrict-system.json" ]; then
+        continue
+    fi
+
     # 检查 enabled 字段，若为 false 则跳过该模块（不存在 enabled 字段时视为启用）
     # 注意：不能用 jq 的 // 运算符，因为 false 在 jq 中也是 falsy，false // "true" 会返回 "true"
     enabled=$(jq -r 'if .enabled == false then "false" else "true" end' "$build_file")
