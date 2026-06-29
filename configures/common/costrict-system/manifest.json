@@ -35,7 +35,7 @@
     {
       "name": "backend",
       "subsystem": "root",
-      "version": "1.0.67"
+      "version": "1.0.68"
     },
     {
       "name": "casdoor",
@@ -90,12 +90,12 @@
     {
       "name": "costrict-dept-sync",
       "subsystem": "backend",
-      "version": "1.0.0"
+      "version": "1.0.1"
     },
     {
       "name": "costrict-model-proxy",
       "subsystem": "backend",
-      "version": "1.0.5"
+      "version": "1.0.6"
     },
     {
       "name": "costrict-web",
@@ -125,7 +125,7 @@
     {
       "name": "firmware",
       "subsystem": "root",
-      "version": "1.0.124"
+      "version": "1.0.126"
     },
     {
       "name": "frontend",
@@ -170,7 +170,7 @@
     {
       "name": "user-indicator",
       "subsystem": "backend",
-      "version": "1.0.10"
+      "version": "1.0.11"
     }
   ]
 }

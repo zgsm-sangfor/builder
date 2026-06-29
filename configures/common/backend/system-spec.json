@@ -24,6 +24,11 @@
       ]
     },
     {
+      "component_name": "chat-indicator-statistics",
+      "display_name": "",
+      "description": "Chat indicator statistics service"
+    },
+    {
       "component_name": "chat-rag",
       "display_name": "Chat-RAG",
       "description": "提供基于RAG的聊天和问答服务"
@@ -60,6 +65,11 @@
       ]
     },
     {
+      "component_name": "costrict-dept-sync",
+      "display_name": "",
+      "description": "CoStrict department synchronization service"
+    },
+    {
       "component_name": "costrict-model-proxy",
       "display_name": "大模型代理服务",
       "description": "简化的大模型网关，聚合多来源多类型大语言模型API"
@@ -73,6 +83,11 @@
       "component_name": "credit-manager",
       "display_name": "Credit-Manager",
       "description": "提供用户额度和配额管理功能"
+    },
+    {
+      "component_name": "efficiency-dashboard",
+      "display_name": "",
+      "description": "efficiency-dashboard package component"
     },
     {
       "component_name": "es",
@@ -152,6 +167,10 @@
       ]
     },
     {
+      "component_name": "chat-indicator-statistics",
+      "service_name": "chat-indicator-statistics"
+    },
+    {
       "component_name": "chat-rag",
       "service_name": "chat-rag",
       "health_url": "http://localhost:8093/healthz",
@@ -200,6 +219,10 @@
       "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/costrict-admin/logs/costrict-admin.log"
     },
     {
+      "component_name": "costrict-dept-sync",
+      "service_name": "costrict-dept-sync"
+    },
+    {
       "component_name": "costrict-model-proxy",
       "service_name": "costrict-model-proxy",
       "health_url": "http://costrict-model-proxy:8080/healthz"
@@ -229,6 +252,18 @@
       "component_name": "credit-manager",
       "service_name": "credit-manager",
       "health_url": "http://localhost:8098/healthz"
+    },
+    {
+      "component_name": "efficiency-dashboard",
+      "service_name": "efficiency-dashboard-server"
+    },
+    {
+      "component_name": "efficiency-dashboard",
+      "service_name": "efficiency-dashboard-portal"
+    },
+    {
+      "component_name": "efficiency-dashboard",
+      "service_name": "efficiency-dashboard-kbcli"
     },
     {
       "component_name": "es",

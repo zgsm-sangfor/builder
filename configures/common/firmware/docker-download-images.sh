@@ -50,7 +50,7 @@ fi
 # 优先级3: COSTRICT_DOCKER_HUB - 从Docker Hub/Harbor仓库拉取镜像
 if [ -n "${COSTRICT_DOCKER_HUB}" ]; then
     log "INFO" "检测到 COSTRICT_DOCKER_HUB='${COSTRICT_DOCKER_HUB}'，从Docker仓库拉取镜像..."
-    bash scripts/pull-images.sh -f .images.list
+    bash scripts/pull-images.sh --proxy "${COSTRICT_DOCKER_HUB}" -f .images.list
     bash scripts/verify-images.sh -f .images.list
     exit $?
 fi
