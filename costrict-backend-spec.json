@@ -199,6 +199,18 @@
       ]
     },
     {
+      "service_name": "costrict-dept-sync",
+      "component_name": "costrict-dept-sync",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_COSTRICT_DEPT_SYNC }}",
+      "health_url": "http://localhost:{{ .PORT_COSTRICT_DEPT_SYNC }}/health",
+      "dependencies":[
+        {
+          "service": "postgres",
+          "condition": "service_healthy"
+        }
+      ]
+    },
+    {
       "service_name": "license-manager",
       "component_name": "license-manager",
       "visible": false

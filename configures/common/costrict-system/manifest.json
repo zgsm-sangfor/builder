@@ -88,6 +88,11 @@
       "version": "1.0.67"
     },
     {
+      "name": "costrict-dept-sync",
+      "subsystem": "backend",
+      "version": "1.0.0"
+    },
+    {
       "name": "costrict-model-proxy",
       "subsystem": "backend",
       "version": "1.0.5"
@@ -105,7 +110,7 @@
     {
       "name": "efficiency-dashboard",
       "subsystem": "backend",
-      "version": "1.0.6"
+      "version": "1.0.7"
     },
     {
       "name": "es",
@@ -150,7 +155,7 @@
     {
       "name": "postgres",
       "subsystem": "backend",
-      "version": "1.0.12"
+      "version": "1.0.13"
     },
     {
       "name": "prometheus",

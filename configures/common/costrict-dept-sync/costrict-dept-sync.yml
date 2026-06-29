@@ -1,0 +1,30 @@
+services:
+  costrict-dept-sync:
+    image: ${IMAGE_COSTRICT_DEPT_SYNC}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      TZ: Asia/Shanghai
+    ports:
+      - "${PORT_COSTRICT_DEPT_SYNC}:8080"
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - ${COSTRICT_DATA_DIR}/backend/costrict-dept-sync/data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
+    networks:
+      - shenma
