@@ -41,8 +41,9 @@ cleanup.sh
 run.sh
 backup.sh
 restore.sh
-docker-download-images.sh
 install-os-firmware.sh
+docker-download-images.sh
+configure-runtimes.sh
 costrict-admin.env.sample
 costrict.env.in
 MANIFEST

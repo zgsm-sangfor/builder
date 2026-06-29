@@ -30,47 +30,42 @@
     {
       "name": "apisix",
       "subsystem": "backend",
-      "version": "1.0.5"
+      "version": "1.0.6"
     },
     {
       "name": "backend",
       "subsystem": "root",
-      "version": "1.0.62"
+      "version": "1.0.67"
     },
     {
       "name": "casdoor",
       "subsystem": "backend",
-      "version": "1.0.27"
+      "version": "1.0.29"
     },
     {
       "name": "chat-rag",
       "subsystem": "backend",
-      "version": "1.0.8"
+      "version": "1.0.10"
     },
     {
       "name": "client-manager",
       "subsystem": "backend",
-      "version": "1.0.9"
+      "version": "1.0.11"
     },
     {
       "name": "code-completion",
       "subsystem": "backend",
-      "version": "1.7.101"
+      "version": "1.7.103"
     },
     {
       "name": "codereview",
       "subsystem": "backend",
-      "version": "1.0.5"
+      "version": "1.0.9"
     },
     {
       "name": "costrict-admin-backend",
       "subsystem": "backend",
-      "version": "1.0.103"
-    },
-    {
-      "name": "costrict-admin-dashboard",
-      "subsystem": "backend",
-      "version": "1.0.101"
+      "version": "1.0.107"
     },
     {
       "name": "costrict-admin-frontend",
@@ -80,77 +75,42 @@
     {
       "name": "costrict-admin",
       "subsystem": "frontend",
-      "version": "1.0.125"
+      "version": "1.0.129"
     },
     {
       "name": "costrict-daemon",
       "subsystem": "root",
-      "version": "1.0.65"
+      "version": "1.0.67"
     },
     {
       "name": "costrict-model-proxy",
       "subsystem": "backend",
-      "version": "1.0.4"
+      "version": "1.0.5"
     },
     {
-      "name": "costrict-web-api",
-      "subsystem": "backend",
-      "version": "1.0.1"
-    },
-    {
-      "name": "costrict-web-gateway",
-      "subsystem": "backend",
-      "version": "1.0.1"
-    },
-    {
-      "name": "costrict-web-portal",
-      "subsystem": "backend",
-      "version": "1.0.1"
-    },
-    {
-      "name": "costrict-web-proxy",
-      "subsystem": "backend",
-      "version": "1.0.1"
-    },
-    {
-      "name": "costrict-web-worker",
-      "subsystem": "backend",
-      "version": "1.0.1"
-    },
-    {
-      "name": "credit-manager",
-      "subsystem": "backend",
-      "version": "1.0.4"
-    },
-    {
-      "name": "efficiency-dashboard-backend",
-      "subsystem": "backend",
-      "version": "1.0.3"
-    },
-    {
-      "name": "efficiency-dashboard-kbcli",
-      "subsystem": "backend",
-      "version": "1.0.2"
-    },
-    {
-      "name": "efficiency-dashboard-portal",
-      "subsystem": "backend",
-      "version": "1.0.1"
-    },
-    {
-      "name": "es",
-      "subsystem": "backend",
-      "version": "1.0.2"
-    },
-    {
-      "name": "etcd",
+      "name": "costrict-web",
       "subsystem": "backend",
       "version": "1.0.6"
     },
     {
+      "name": "credit-manager",
+      "subsystem": "backend",
+      "version": "1.0.6"
+    },
+    {
+      "name": "es",
+      "subsystem": "backend",
+      "version": "1.0.3"
+    },
+    {
+      "name": "etcd",
+      "subsystem": "backend",
+      "version": "1.0.7"
+    },
+    {
       "name": "firmware",
       "subsystem": "root",
-      "version": "1.0.117"
+      "version": "1.0.122"
     },
     {
       "name": "frontend",
@@ -160,42 +120,42 @@
     {
       "name": "license-manager",
       "subsystem": "backend",
-      "version": "1.0.10"
+      "version": "1.0.12"
     },
     {
       "name": "nacos",
       "subsystem": "backend",
-      "version": "1.0.1"
+      "version": "1.0.4"
     },
     {
       "name": "oidc-auth",
       "subsystem": "backend",
-      "version": "1.0.6"
+      "version": "1.0.8"
     },
     {
       "name": "portal",
       "subsystem": "backend",
-      "version": "1.0.8"
+      "version": "1.0.10"
     },
     {
       "name": "postgres",
       "subsystem": "backend",
-      "version": "1.0.9"
+      "version": "1.0.10"
     },
     {
       "name": "prometheus",
       "subsystem": "backend",
-      "version": "1.0.1"
+      "version": "1.0.2"
     },
     {
       "name": "redis",
       "subsystem": "backend",
-      "version": "1.0.7"
+      "version": "1.0.9"
     },
     {
       "name": "user-indicator",
       "subsystem": "backend",
-      "version": "1.0.9"
+      "version": "1.0.10"
     }
   ]
 }

@@ -3,7 +3,7 @@
   "type": "zip",
   "subsystem": "backend",
   "path": "./configures",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "提供运营数据的采集和存储",
   "display_name": "ElasticSearch运营数据存储"
 }

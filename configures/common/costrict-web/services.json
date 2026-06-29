@@ -2,7 +2,8 @@
   "component_name": "costrict-web",
   "services": [
     {
-      "service_name": "costrict-web-api"
+      "service_name": "costrict-web-api",
+      "display_name": "costrict-web的API服务"
     },
     {
       "service_name": "costrict-web-gateway"

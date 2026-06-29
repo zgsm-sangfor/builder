@@ -16,6 +16,6 @@
       "arch": "amd64"
     }
   ],
-  "version": "1.0.65",
+  "version": "1.0.67",
   "description": "The daemon of costrict"
 }

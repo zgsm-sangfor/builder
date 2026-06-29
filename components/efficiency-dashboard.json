@@ -1,7 +1,9 @@
 {
   "name": "efficiency-dashboard",
   "type": "zip",
+  "subsystem": "backend",
   "path": "./configures",
-  "version": "1.0.0",
+  "version": "1.0.4",
+  "enabled": false,
   "description": "efficiency-dashboard package component"
 }

@@ -3,7 +3,7 @@
   "type": "zip",
   "subsystem": "backend",
   "path": "./configures",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "云原生 API 网关，提供 API 网关和负载均衡功能",
   "display_name": "APISIX",
   "dependences": [

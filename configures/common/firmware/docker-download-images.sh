@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/bin/bash
+
+. ./utils.sh
 
 log() {
     local level=$1
@@ -49,6 +51,15 @@ fi
 if [ -n "${COSTRICT_DOCKER_HUB}" ]; then
     log "INFO" "检测到 COSTRICT_DOCKER_HUB='${COSTRICT_DOCKER_HUB}'，从Docker仓库拉取镜像..."
     bash scripts/pull-images.sh -f .images.list
+    bash scripts/verify-images.sh -f .images.list
+    exit $?
+fi
+
+if [ -n "${COSTRICT_MIRROR}" ]; then
+    log "INFO" "检测到 COSTRICT_MIRROR='${COSTRICT_MIRROR}'，从HTTP服务器下载镜像..."
+    bash scripts/download-images.sh -b "${COSTRICT_MIRROR}/shenma-images" -f .images.list -o ./images
+    log "INFO" "下载完成，从 ./images 目录加载镜像..."
+    bash scripts/load-images.sh -l ./images
     bash scripts/verify-images.sh -f .images.list
     exit $?
 fi

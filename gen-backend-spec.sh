@@ -75,12 +75,24 @@ components+="]"
 
 # ============================================================
 # 第二部分：从各模块 services.json 聚合 services 数组
+# 只读取 enabled 不为 false 的模块
 # ============================================================
 services_json="["
 first_svc=true
 
 for svc_file in "$SERVICES_DIR"/*/services.json; do
     [ -f "$svc_file" ] || continue
+
+    # 获取模块目录名，查找对应的 component JSON 并检查 enabled 字段
+    module_dir=$(basename "$(dirname "$svc_file")")
+    comp_json="$COMPONENTS_DIR/${module_dir}.json"
+
+    if [ -f "$comp_json" ]; then
+        enabled=$(jq -r 'if .enabled == false then "false" else "true" end' "$comp_json")
+        if [ "$enabled" = "false" ]; then
+            continue
+        fi
+    fi
 
     # 读取外层的 component_name
     comp_name=$(jq -r '.component_name // empty' "$svc_file")

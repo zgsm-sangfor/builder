@@ -183,6 +183,8 @@ fix_permissions() {
         "${COSTRICT_DATA_DIR}/backend/etcd/data"
         "${COSTRICT_DATA_DIR}/backend/es/data"
         "${COSTRICT_DATA_DIR}/backend/oneapi/data"
+        "${COSTRICT_DATA_DIR}/backend/codereview"
+        "${COSTRICT_DATA_DIR}/backend/costrict-web"
     )
     
     log "INFO" "开始修正目录权限..."
@@ -317,91 +319,6 @@ download_docker_images() {
     return 0
 }
 
-wait_for_apisix_ready() {
-    local max_attempts=30
-    local wait_seconds=2
-    local attempt=1
-    
-    . ./configure.sh
-    
-    log "INFO" "等待APISIX服务启动..."
-    
-    while [ $attempt -le $max_attempts ]; do
-        if curl -s -f http://$APISIX_ADDR/apisix/admin/routes -H "$AUTH" -H "$TYPE" -X GET > /dev/null 2>&1; then
-            log "INFO" "APISIX服务已准备就绪，可以添加upstream配置"
-            return 0
-        fi
-        log "INFO" "curl -s -f http://$APISIX_ADDR/apisix/admin/routes -H \"$AUTH\" -H \"$TYPE\" -X GET"
-        log "INFO" "APISIX服务尚未就绪，等待${wait_seconds}秒后重试... (尝试 $attempt/$max_attempts)"
-        sleep $wait_seconds
-        attempt=$((attempt + 1))
-    done
-    
-    log "ERROR" "APISIX服务在${max_attempts}次尝试后仍未准备就绪"
-    return 1
-}
-
-configure_apisix_routes() {
-    log "INFO" "配置APISIX路由..."
-    
-    # 等待APISIX服务就绪
-    if ! wait_for_apisix_ready; then
-        log "WARN" "APISIX服务启动失败，无法继续配置"
-        return 1
-    fi
-    
-    # 配置APISIX路由
-    local apisix_scripts=(
-        # "apisix-casdoor.sh"
-        # "apisix-chatrag.sh"
-        # "apisix-codereview.sh"
-        # "apisix-completion-v2.sh"
-        "apisix-costrict-apps.sh"
-        "apisix-costrict-admin.sh"
-        # "apisix-cotun.sh"
-        # "apisix-credit-manager.sh"
-        # "apisix-embedder.sh"
-        # "apisix-grafana.sh"
-        # "apisix-issue.sh"
-        # "apisix-oidc-auth.sh"
-    )
-    
-    for script in "${apisix_scripts[@]}"; do
-        log "INFO" "执行APISIX配置: $script"
-        if ! bash "$script"; then
-            log "ERROR" "APISIX配置失败: $script"
-            return 1
-        fi
-    done
-    
-    log "INFO" "APISIX路由配置完成"
-    return 0
-}
-
-upgrade_envs() {
-    log "INFO" "开始升级环境配置..."
-
-    for subdir in */; do
-        if [[ ! -d "$subdir" ]]; then
-            continue
-        fi
-
-        local upgrade_script="${subdir}do-upgrade-env.sh"
-        if [[ -f "$upgrade_script" ]]; then
-            log "INFO" "执行 $upgrade_script ..."
-            if bash "$upgrade_script"; then
-                log "INFO" "$upgrade_script 执行成功"
-            else
-                log "ERROR" "$upgrade_script 执行失败"
-                return 1
-            fi
-        fi
-    done
-
-    log "INFO" "环境配置升级完成"
-    return 0
-}
-
 confirm_init() {
     if [ "$FORCE_REINIT" = false ] ; then
         if is_system_initialized; then
@@ -497,10 +414,11 @@ main() {
     
     start_docker_services
     
-    # 配置APISIX路由
-    configure_apisix_routes
-    upgrade_envs
-    
+    # 配置APISIX路由和运行时环境
+    if ! bash configure-runtimes.sh; then
+        log "ERROR" "运行时环境配置失败"
+        exit 1
+    fi
     mark_system_initialized
 
     show_guide_help

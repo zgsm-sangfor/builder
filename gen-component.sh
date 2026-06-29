@@ -21,6 +21,7 @@
 #                    conf/zip 默认 common，即不输出该字段，由 build-components.sh 视为公共包）
 #     - target     : 仅 conf 类型，要打包的目标文件名（默认 <NAME>.json）
 #     - filename   : 打包后在组件中的安装路径（conf 默认 config/<target>；其余默认不输出）
+#     - subsystem  : 所属子系统（默认 backend）
 #     - description: 描述（默认根据 name 生成）
 #     - enabled    : 是否启用，--disabled 时输出 false
 #
@@ -31,6 +32,7 @@
 #
 # 选项说明：
 #   --name <NAME>                  组件名（必填）。决定输出文件名 components/<NAME>.json
+#   --name <NAME>                  组件名（必填）。决定输出文件名 components/<NAME>.json
 #   --type <TYPE>                  组件类型：zip（默认）/ conf / exec
 #   --path <PATH>                  源目录（默认按 type 推导）
 #   --version <VERSION>            版本号（默认：1.0.0）
@@ -38,6 +40,7 @@
 #                                  或 common（默认按 type 推导）
 #   --target <TARGET>              conf 类型的目标文件名（默认：<NAME>.json）
 #   --filename <FILENAME>          打包安装路径（conf 默认：config/<target>）
+#   --subsystem <SUBSYSTEM>        所属子系统（默认：backend）
 #   --service <SERVICES>           逗号分隔的服务名列表；
 #                                    为 configures/common/<NAME>/services.json 生成服务定义
 #   --description <DESC>           描述信息（默认按 name 生成）
@@ -45,7 +48,6 @@
 #   --no-scaffold                  不创建源目录骨架与待构建元件，仅生成 JSON
 #   --force                        覆盖已存在的定义文件或元件
 #   -h, --help                     帮助信息
-#
 # 用法示例：
 #   # 最简方式：生成一个 zip 组件（自动在 ./configures/common/my-pkg/ 下创建骨架）
 #   ./gen-component.sh --name my-pkg
@@ -82,6 +84,7 @@ usage() {
     echo "                                  conf/zip=common)"
     echo "  --target <TARGET>              Target filename for conf type (default: <NAME>.json)"
     echo "  --filename <FILENAME>          Install path in package (conf default: config/<target>)"
+    echo "  --subsystem <SUBSYSTEM>        Subsystem name (default: backend)"
     echo "  --service <SERVICES>           Comma-separated service names; generates"
     echo "                                  configures/common/<NAME>/services.json"
     echo "  --description <DESC>           Description"
@@ -112,6 +115,7 @@ VERSION="1.0.0"
 PLATFORMS=""
 TARGET=""
 FILENAME=""
+SUBSYSTEM="backend"
 DESCRIPTION=""
 ENABLED=""          # 空=不输出 enabled 字段；"false"=输出 enabled:false
 NO_SCAFFOLD=false
@@ -128,6 +132,7 @@ while [ $# -gt 0 ]; do
         --platforms) PLATFORMS="$2"; shift 2;;
         --target) TARGET="$2"; shift 2;;
         --filename) FILENAME="$2"; shift 2;;
+        --subsystem) SUBSYSTEM="$2"; shift 2;;
         --description) DESCRIPTION="$2"; shift 2;;
         --disabled) ENABLED="false"; shift;;
         --no-scaffold) NO_SCAFFOLD=true; shift;;
@@ -211,6 +216,7 @@ RESULT=$(jq -n \
     --argjson platforms "$PLATFORMS_JSON" \
     --arg target "$TARGET" \
     --arg filename "$FILENAME" \
+    --arg subsystem "$SUBSYSTEM" \
     --arg enabled "$ENABLED" \
     --arg description "$DESCRIPTION" \
     '{
@@ -221,9 +227,10 @@ RESULT=$(jq -n \
         platforms: $platforms,
         target: (if $target != "" and $type == "conf" then $target else null end),
         filename: (if $filename != "" then $filename else null end),
+        subsystem: ($subsystem | if . != "" then . else null end),
         enabled: (if $enabled == "false" then false else null end),
         description: ($description | if . != "" then . else null end)
-    } | with_entries(select(.value != null))')
+    } | with_entries(select(.value != null))'
 
 # ---- 写入组件定义文件 ----
 COMPONENTS_DIR="components"

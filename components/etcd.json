@@ -3,7 +3,7 @@
   "type": "zip",
   "subsystem": "backend",
   "path": "./configures",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "分布式键值存储，用于配置管理和服务发现",
   "display_name": "ETCD"
 }

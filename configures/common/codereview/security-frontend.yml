@@ -11,14 +11,6 @@ services:
     depends_on:
       - security-backend
       - security-agent-pipeline
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 256M
     networks:
       shenma:
         aliases:

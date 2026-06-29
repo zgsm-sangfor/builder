@@ -125,7 +125,7 @@ for image in $IMAGES; do
         continue
     fi
 
-    # 构建下载 URL: ${base-url}/{image-name}/{short-name}-{tag}.tar
+    # 构建下载 URL: ${base-url}/{short-name}/{short-name}-{tag}.tar
     # 提取短名称 (去掉 repo 前缀, 即最后一个 '/' 之前的部分)
     short_name="${image_name##*/}"
     file_url="${base_url}/${short_name}/${short_name}-${tag}.tar"
