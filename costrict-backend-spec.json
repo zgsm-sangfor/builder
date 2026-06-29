@@ -148,16 +148,55 @@
       "component_name": "costrict-web"
     },
     {
-      "service_name": "efficiency-dashboard-backend",
-      "component_name": "efficiency-dashboard"
+      "service_name": "efficiency-dashboard-server",
+      "component_name": "efficiency-dashboard",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_EFFICIENCY_DASHBOARD_SERVER }}",
+      "health_url": "http://localhost:{{ .PORT_EFFICIENCY_DASHBOARD_SERVER }}/healthz",
+      "dependencies":[
+        {
+          "service": "postgres",
+          "condition": "service_healthy"
+        },
+        {
+          "service": "chat-indicator-statistics",
+          "condition": "service_started"
+        }
+      ]
     },
     {
       "service_name": "efficiency-dashboard-portal",
-      "component_name": "efficiency-dashboard"
+      "component_name": "efficiency-dashboard",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_EFFICIENCY_DASHBOARD_PORTAL }}",
+      "health_url": "http://localhost:{{ .PORT_EFFICIENCY_DASHBOARD_PORTAL }}/healthz",
+      "dependencies":[
+        {
+          "service": "efficiency-dashboard-server",
+          "condition": "service_started"
+        }
+      ]
     },
     {
       "service_name": "efficiency-dashboard-kbcli",
-      "component_name": "efficiency-dashboard"
+      "component_name": "efficiency-dashboard",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_EFFICIENCY_DASHBOARD_KBCLI }}",
+      "dependencies":[
+        {
+          "service": "postgres",
+          "condition": "service_healthy"
+        }
+      ]
+    },
+    {
+      "service_name": "chat-indicator-statistics",
+      "component_name": "chat-indicator-statistics",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_CHAT_INDICATOR_STATISTICS }}",
+      "health_url": "http://localhost:{{ .PORT_CHAT_INDICATOR_STATISTICS }}/health",
+      "dependencies":[
+        {
+          "service": "postgres",
+          "condition": "service_healthy"
+        }
+      ]
     },
     {
       "service_name": "license-manager",

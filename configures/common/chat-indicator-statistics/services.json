@@ -1,0 +1,8 @@
+{
+  "component_name": "chat-indicator-statistics",
+  "services": [
+    {
+      "service_name": "chat-indicator-statistics"
+    }
+  ]
+}
