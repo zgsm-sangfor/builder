@@ -3,7 +3,7 @@
   "type": "zip",
   "subsystem": "backend",
   "path": "./configures",
-  "version": "1.0.4",
-  "enabled": false,
+  "version": "1.0.7",
+  "enabled": true,
   "description": "efficiency-dashboard package component"
 }

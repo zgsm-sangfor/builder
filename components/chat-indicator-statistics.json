@@ -1,0 +1,9 @@
+{
+  "name": "chat-indicator-statistics",
+  "type": "zip",
+  "subsystem": "backend",
+  "path": "./configures",
+  "version": "1.0.2",
+  "enabled": true,
+  "description": "Chat indicator statistics service"
+}
