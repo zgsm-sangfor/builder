@@ -3,7 +3,7 @@
   "type": "zip",
   "subsystem": "backend",
   "path": "./configures",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "采集各个客户端反馈的指标，存储到ES",
   "display_name": "用户指标采集服务"
 }

@@ -1,0 +1,9 @@
+{
+  "name": "costrict-dept-sync",
+  "type": "zip",
+  "subsystem": "backend",
+  "path": "./configures",
+  "version": "1.0.0",
+  "enabled": true,
+  "description": "CoStrict department synchronization service"
+}

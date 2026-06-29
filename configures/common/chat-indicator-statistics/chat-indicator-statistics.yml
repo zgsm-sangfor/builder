@@ -1,0 +1,31 @@
+services:
+  chat-indicator-statistics:
+    image: ${IMAGE_CHAT_INDICATOR_STATISTICS}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      TZ: Asia/Shanghai
+    ports:
+      - "${PORT_CHAT_INDICATOR_STATISTICS}:8080"
+    volumes:
+      - ./config/config.yaml:/app/config.yaml:ro
+      - ${COSTRICT_DATA_DIR}/backend/chat-indicator-statistics/data:/app/data
+      - ${COSTRICT_DATA_DIR}/backend/chat-rag:/mnt/chat-rag:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 4096M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
+    networks:
+      - shenma

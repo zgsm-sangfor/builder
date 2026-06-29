@@ -1,6 +1,6 @@
 services:
-  efficiency-dashboard-kbcli:
-    image: ${IMAGE_EFFICIENCY_DASHBOARD_KBCLI}
+  efficiency-dashboard-server:
+    image: ${IMAGE_EFFICIENCY_DASHBOARD_SERVER}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -8,12 +8,18 @@ services:
     environment:
       TZ: Asia/Shanghai
     ports:
-      - "${PORT_EFFICIENCY_DASHBOARD_KBCLI}:8080"
+      - "${PORT_EFFICIENCY_DASHBOARD_SERVER}:9990"
     volumes:
-      - ./config/kbcli/config.yaml:/app/config.yaml:ro
+      - ./config/server/config.yaml:/app/config.yaml:ro
       - ${COSTRICT_DATA_DIR}/backend/efficiency-dashboard/user-indicator/task:/app/task:ro
       - ${COSTRICT_DATA_DIR}/backend/efficiency-dashboard/user-indicator/repo:/app/repo:ro
       - ${COSTRICT_DATA_DIR}/backend/efficiency-dashboard/analysed:/app/analysed
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9990/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     deploy:
       resources:
         limits:
