@@ -25,7 +25,16 @@ CoStrict 包管理系统采用模块化设计，支持多种类型的应用组�
 
 - **build-components.sh**: 构建应用组件包
 - **build-depends.sh**: 构建依赖（Docker镜像）
+- **build-costrict.sh**: 全自动一站式构建发布（组合调用以下脚本）
+- **check-update.sh**: 检测包版本和内容变化，自动递增版本号
+- **check-packaged.sh**: 检测包是否已构建/打包
 - **gen-manifest.sh**: 更新系统清单文件
+- **gen-backend-spec.sh**: 更新 backend 子系统规格文件
+
+### 模块创建辅助脚本
+
+- **gen-component.sh**: 创建组件模块定义（`components/<NAME>.json`），同时生成源目录骨架与待构建元件
+- **gen-depend.sh**: 创建依赖包定义文件（`depends/<NAME>.json`）
 
 ### 包管理系统目录结构
 
@@ -36,15 +45,30 @@ builder/
 ├── depends/           # 依赖组件定义
 │   └── {package}.json # 依赖组件的定义文件
 ├── configures/        # 应用配置文件
-│   └── {package}/     # 每个应用的配置目录
+│   ├── common/        # 公共（跨平台）配置
+│   │   └── {package}/ # 每个应用的配置目录
+│   ├── darwin/        # macOS 平台特定配置
+│   ├── linux/         # Linux 平台特定配置
+│   └── windows/       # Windows 平台特定配置
 ├── packages/          # 构建产物输出目录
 │   └── {package}/
 │       └── {os}/
 │           └── {arch}/
 │               └── {ver}/
+├── site/              # 本地下载站点（nginx + docker-compose）
 ├── build-components.sh
 ├── build-depends.sh
-└── gen-manifest.sh
+├── build-costrict.sh
+├── check-update.sh
+├── check-packaged.sh
+├── gen-component.sh
+├── gen-depend.sh
+├── gen-manifest.sh
+├── gen-backend-spec.sh
+├── start-local-site.sh
+├── costrict-manifest.json      # 系统清单模板
+├── costrict-backend-spec.json  # backend 子系统规格模板
+└── packages.json               # 包列表索引
 ```
 
 ---
@@ -133,8 +157,9 @@ CoStrict 系统中的应用主要分为两种类型：客户端应用和服务�
 {
   "name": "completion-agent",
   "type": "exec",
+  "subsystem": "frontend",
   "path": "../../middles/completion-agent",
-  "version": "1.0.21",
+  "version": "1.0.20",
   "platforms": [
     {"os": "windows", "arch": "amd64"},
     {"os": "linux", "arch": "amd64"},
@@ -151,11 +176,16 @@ CoStrict 系统中的应用主要分为两种类型：客户端应用和服务�
 
 - `name`: 应用名称（必填）
 - `type`: 固定值为 "exec"（必填）
+- `subsystem`: 所属子系统，用于 [`gen-manifest.sh`](gen-manifest.sh:1) 和 [`gen-backend-spec.sh`](gen-backend-spec.sh:1) 生成系统清单与规格文件。常见值：`"root"`（根系统）、`"backend"`（后端服务集）、`"frontend"`（前端应用集）（必填）
 - `path`: 源码目录路径（必填）
 - `version`: 应用版本号（必填）
 - `platforms`: 支持的平台和架构列表（必填）
   - `os`: 操作系统（windows/linux/darwin）
   - `arch`: 架构（amd64/arm64）
+- `display_name`: 显示名称，用于系统管理界面展示（可选）
+- `dependences`: 组件依赖列表，定义该组件依赖的其他组件及版本要求（可选）
+  - `depend_component`: 依赖的组件名称
+  - `depend_versions`: 版本要求，使用语义化版本范围（如 `">=1.0.0"`）
 - `enabled`: 是否启用该模块（可选，默认true）
 - `description`: 应用描述（可选）
 
@@ -177,8 +207,9 @@ CoStrict 系统中的应用主要分为两种类型：客户端应用和服务�
 {
   "name": "backend",
   "type": "zip",
+  "subsystem": "root",
   "path": "./configures",
-  "version": "1.0.43",
+  "version": "1.0.67",
   "description": "Backend Subsystem Definition File"
 }
 ```
@@ -187,8 +218,11 @@ CoStrict 系统中的应用主要分为两种类型：客户端应用和服务�
 
 - `name`: 应用名称（必填）
 - `type`: 固定值为 "zip"（必填）
-- `path`: 打包源目录（必填，通常是 ./configures/{package}）
+- `subsystem`: 所属子系统。`gen-manifest.sh` 读取该字段生成系统清单，`gen-backend-spec.sh` 筛选 `subsystem=backend` 的模块生成 backend 规格（必填）
+- `path`: 打包源目录（必填，通常是 `./configures`，构建时自动查找 `configures/common/{name}/`）
 - `version`: 应用版本号（必填）
+- `display_name`: 显示名称，用于系统管理界面展示（可选）
+- `dependences`: 组件依赖列表（可选，格式同 exec 类型）
 - `description`: 应用描述（可选）
 
 ### 3. 应用包-配置数据包 (type: conf)
@@ -203,14 +237,15 @@ CoStrict 系统中的应用主要分为两种类型：客户端应用和服务�
 - 仅用于更新系统配置或数据
 - 可以独立更新配置而不影响应用代码
 
-**示例**: [`components/completion-config.json`](components/completion-config.json:1)
+**示例**: [`completion-config.json`](components/completion-config.json:1)
 
 ```json
 {
   "name": "completion-config",
   "type": "conf",
-  "path": "./configures/common",
-  "version": "1.0.5",
+  "subsystem": "frontend",
+  "path": "./configures",
+  "version": "1.0.6",
   "description": "Configuration package for code completion"
 }
 ```
@@ -219,8 +254,11 @@ CoStrict 系统中的应用主要分为两种类型：客户端应用和服务�
 
 - `name`: 配置包名称（必填）
 - `type`: 固定值为 "conf"（必填）
+- `subsystem`: 所属子系统（必填，同 exec/zip 类型）
 - `path`: 配置文件所在目录（必填）
 - `version`: 配置版本号（必填）
+- `target`: 要打包的目标文件名（可选，默认 `<name>.json`）
+- `filename`: 打包后在组件中的安装路径（可选，默认 `config/<target>`）
 - `description`: 配置包描述（可选）
 
 ### 4. 依赖包-Docker镜像包 (type: exec)
@@ -233,9 +271,41 @@ Docker镜像包定义在`depends/`目录下。
 
 - 定义 Docker 镜像的构建过程
 - 支持自动推送到镜像仓库
-- 可以生成应用配置中的镜像地址
+- 通过 `component` 字段可自动更新对应组件配置中的镜像地址
 
 **示例**: [`depends/client-manager.json`](depends/client-manager.json:1)
+
+```json
+{
+  "name": "client-manager",
+  "type": "exec",
+  "version": "1.0.13",
+  "repo": "zgsm",
+  "path": "../../services/client-manager",
+  "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
+  "tag": "v{{.version}}",
+  "component": {
+    "workdir": "./configures/common/client-manager",
+    "command": "echo IMAGE_CLIENT_MANAGER={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
+  },
+  "description": "Client manager service"
+}
+```
+
+**字段说明**:
+
+- `name`: 依赖包名称（必填）
+- `type`: 固定值为 "exec"（必填）
+- `version`: 依赖版本号（必填）
+- `repo`: Docker Hub 仓库名（必填，如 `zgsm`）
+- `path`: Dockerfile 所在目录路径（必填）
+- `command`: 构建命令模板（必填），支持 Go template 语法
+- `tag`: 镜像标签模板（必填），支持 Go template 语法
+- `component`: 构建后自动更新组件配置（可选）
+  - `workdir`: 组件配置的工作目录
+  - `command`: 执行的更新命令（通常用于写入 `image.env`）
+- `enabled`: 是否启用（可选，默认 true）
+- `description`: 描述信息（可选）
 
 ### 5. 依赖包-前端构建包 (type: frontend)
 
@@ -306,7 +376,7 @@ Docker镜像包定义在`depends/`目录下。
 ### 完整开发流程图
 
 ```
-1. 创建应用配置
+1. 创建应用配置（使用 gen-component.sh / gen-depend.sh）
    ↓
 2. 准备源代码和配置文件
    ↓
@@ -314,7 +384,7 @@ Docker镜像包定义在`depends/`目录下。
    ↓
 4. 构建应用组件
    ↓
-5. 更新系统清单
+5. 更新系统清单（gen-manifest.sh / gen-backend-spec.sh）
    ↓
 6. 测试和发布
 ```
@@ -323,7 +393,45 @@ Docker镜像包定义在`depends/`目录下。
 
 #### 步骤 1: 创建应用配置
 
-根据应用类型，创建相应的配置文件：
+推荐使用辅助脚本快速创建配置文件：
+
+**创建组件模块**（components/）:
+
+```bash
+# 创建一个 zip 类型的服务端应用组件（默认类型）
+./gen-component.sh --name my-pkg
+
+# 创建一个 conf 类型的配置组件
+./gen-component.sh --name my-config --type conf
+
+# 创建一个 exec 类型的可执行组件
+./gen-component.sh --name my-app --type exec
+
+# 创建 zip 组件并附带服务列表
+./gen-component.sh --name my-module --service "svc-a,svc-b,svc-c"
+```
+
+[`gen-component.sh`](gen-component.sh:1) 会一次性生成：
+1. 组件定义文件 `components/<NAME>.json`
+2. 源目录骨架与待构建元件（exec: `build.py`；conf: 配置文件；zip: 打包目录和 docker compose yml）
+3. 组件说明文档 `README.md`
+4. 若指定了 `--service`，还会生成 `configures/common/<NAME>/services.json`
+
+**创建依赖包**（depends/）:
+
+```bash
+# 最简方式：创建一个 exec 类型的 Docker 镜像依赖（默认类型）
+./gen-depend.sh --name my-service --version 1.0.0 --path ../../services/my-service
+
+# 创建一个 frontend 类型的前端构建依赖
+./gen-depend.sh --name my-frontend --version 1.0.0 --path ../../my-frontend --type frontend
+```
+
+[`gen-depend.sh`](gen-depend.sh:1) 会根据 `--type` 自动推导合理的默认值（repo、tag、command、component 等），生成合法的 JSON 定义文件 `depends/<NAME>.json`。
+
+**手动创建**（不依赖辅助脚本）:
+
+根据应用类型，手动创建相应的配置文件：
 
 **客户端应用**: 在 [`components/`](components/) 目录创建 `{package}.json`
 
@@ -362,41 +470,58 @@ Docker镜像包定义在`depends/`目录下。
 # 构建依赖镜像
 ./build-depends.sh --build -p {package}
 
-# 推送到 Docker Hub
-./build-depends.sh --push -p {package}
+# 构建并更新组件配置（将镜像地址写入 image.env）
+./build-depends.sh --build --update -p {package}
+
+# 构建、更新并推送到 Docker Hub
+./build-depends.sh --build --update --push -p {package}
 
 # 或推送到指定环境
-./build-depends.sh --push test,prod -p {package}
+./build-depends.sh --build --push test,prod -p {package}
 ```
 
 #### 步骤 4: 构建应用组件
 
 ```bash
-# 执行默认流程（更新、构建、打包、索引）
+# 执行默认构建流程（构建、打包、索引）
 ./build-components.sh --def -p {package}
 
 # 或分步执行
 ./build-components.sh --update -p {package}   # 更新版本
 ./build-components.sh --build -p {package}    # 构建
 ./build-components.sh --pack -p {package}     # 打包
-./build-components.sh --index -p {package}   # 创建索引
+./build-components.sh --index -p {package}    # 创建索引
 ```
 
 #### 步骤 5: 更新系统清单
 
-新增模块需要在`costrict-manifest.json`添加模块定义。
-
-然后调用`gen-manifest.sh`生成costrict系统的描述文件`configures/common/costrict-system/manifest.json`。
+调用 [`gen-manifest.sh`](gen-manifest.sh:1) 生成 costrict 系统的描述文件 [`configures/common/costrict-system/manifest.json`](configures/common/costrict-system/manifest.json:1)。
 
 ```bash
 ./gen-manifest.sh
 ```
 
+**机制说明**: `gen-manifest.sh` 会自动扫描 [`components/`](components/) 目录，因此**无需手工在 `costrict-manifest.json` 中添加模块**。该脚本会：
+
+1. 读取 [`costrict-manifest.json`](costrict-manifest.json:1) 模板，保留 `leadings` 数组（顶层子系统分组定义）
+2. 遍历 [`components/`](components/) 目录中所有 `enabled` 不为 false 的模块
+3. 从每个模块 JSON 中读取 `name`、`subsystem`、`version` 字段（缺少 `subsystem` 的模块会被跳过），自动填充 `components` 数组
+4. 输出到 [`configures/common/costrict-system/manifest.json`](configures/common/costrict-system/manifest.json:1)
+
+> **注意**: `costrict-manifest.json` 中的 `leadings` 数组定义了顶层子系统（如 `costrict-daemon`、`backend`、`frontend` 等），当需要新增顶层子系统分组时，才需要手动编辑 `leadings`。普通模块只需创建 `components/<name>.json` 并指定正确的 `subsystem` 即可自动纳入清单。
+
+对于 backend 子系统的模块，还需要调用 [`gen-backend-spec.sh`](gen-backend-spec.sh:1) 更新 backend 规格文件：
+
+```bash
+./gen-backend-spec.sh
+```
+
 此脚本会：
 
-1. 读取 [`costrict-manifest.json`](costrict-manifest.json:1) 模板
-2. 从 [`components/`](components/) 目录收集各组件版本
-3. 生成 [`configures/common/costrict-system/manifest.json`](configures/common/costrict-system/manifest.json:1)
+1. 扫描 [`components/`](components/) 目录中 `subsystem=backend` 且 `enabled` 不为 false 的模块
+2. 从每个模块 JSON 中读取 `name`、`display_name`、`description`、`dependences` 字段，构建组件列表
+3. 聚合各模块 `configures/common/*/services.json` 中的服务定义
+4. 以 [`costrict-backend-spec.json`](costrict-backend-spec.json:1) 为模板，输出到 [`configures/common/backend/system-spec.json`](configures/common/backend/system-spec.json:1)
 
 #### 步骤 6: 测试和发布
 
@@ -411,24 +536,39 @@ Docker镜像包定义在`depends/`目录下。
 ./build-components.sh --upload-packages test,prod
 ```
 
+#### 步骤 7: 本地测试站点（可选）
+
+使用 [`start-local-site.sh`](start-local-site.sh:1) 在本地启动 nginx 下载站点，用于测试包更新流程：
+
+```bash
+./start-local-site.sh
+```
+
+该脚本会启动 Docker nginx 容器，将 `packages/` 目录作为静态站点暴露，可用于本地验证包的下载和更新。
+
 ---
 
 ## 配置文件详解
 
 ### 应用配置目录结构
 
-每个服务端应用的配置文件位于 [`configures/{package}/`](configures/) 目录：
+每个服务端应用的配置文件位于 [`configures/common/{package}/`](configures/common/) 目录（平台通用），也可按平台放置于 `configures/<os>/<arch>/{package}/`：
 
 ```
 configures/
-└── {package}/
-    ├── {package}.yml              # Docker Compose 配置
-    ├── image.env                  # 镜像地址变量
-    ├── port.env                   # 端口配置变量
-    ├── app.env                    # 应用配置变量
-    ├── config.yaml.tpl            # 模板配置文件
-    ├── MANIFEST                   # 安装清单（可选）
-    └── deploy.sh                  # 自定义安装脚本（可选）
+├── common/                        # 公共（跨平台）配置
+│   └── {package}/
+│       ├── {package}.yml          # Docker Compose 配置
+│       ├── image.env              # 镜像地址变量
+│       ├── port.env               # 端口配置变量
+│       ├── app.env                # 应用配置变量
+│       ├── services.json          # 服务列表定义
+│       ├── config.yaml.tpl        # 模板配置文件
+│       ├── MANIFEST               # 安装清单（可选）
+│       └── deploy.sh              # 自定义安装脚本（可选）
+├── darwin/                        # macOS 平台特定配置
+├── linux/                         # Linux 平台特定配置
+└── windows/                       # Windows 平台特定配置
 ```
 
 **应用配置的两种方式**:
@@ -633,17 +773,19 @@ configures/
 
 **执行流程**:
 
-该脚本按照以下 5 个步骤自动执行：
+该脚本按照以下 6 个步骤自动执行：
 
-1. **Step 1 - 检查依赖更新**: 调用 [`check-update.sh`](check-update.sh:1) 使用 `--build-type dependency` 参数检查需要构建镜像的包，自动递增被更新模块的版本号
+1. **Step 1 - 检查依赖更新**: 调用 [`check-update.sh`](check-update.sh:1) 使用 `--build-type dependency` 参数，自动递增 dependency 包的版本号
 
-2. **Step 2 - 构建依赖镜像**: 如果 Step 1 检测到有更新，调用 [`build-depends.sh`](build-depends.sh:1) 构建镜像包（可选推送），否则跳过此步骤
+2. **Step 2 - 构建依赖镜像**: 调用 [`check-packaged.sh`](check-packaged.sh:1) 检查哪些依赖包当前版本还没构建；若有，调用 [`build-depends.sh`](build-depends.sh:1) 构建镜像（可选推送），否则跳过。注意：`build-depends.sh` 的 `--update` 操作可能修改 component 包的配置文件（如 `image.env`），因此 component 包的版本递增必须在此步骤之后执行
 
-3. **Step 3 - 更新系统清单**: 调用 [`gen-manifest.sh`](gen-manifest.sh:1) 更新 `configures/costrict-system/manifest.json`
+3. **Step 3 - 更新 backend 规格**: 调用 [`gen-backend-spec.sh`](gen-backend-spec.sh:1) 更新 [`configures/common/backend/system-spec.json`](configures/common/backend/system-spec.json:1)
 
-4. **Step 4 - 检查组件更新**: 调用 [`check-update.sh`](check-update.sh:1) 使用 `--build-type component` 参数检查需要构建组件的包，自动递增被更新模块的版本号
+4. **Step 4 - 检查组件更新**: 调用 [`check-update.sh`](check-update.sh:1) 使用 `--build-type component` 参数，自动递增 component 包的版本号
 
-5. **Step 5 - 构建发布包**: 如果 Step 4 检测到有更新，调用 [`build-components.sh`](build-components.sh:1) 构建包并上传到云环境（如果指定了 `--upload` 参数），否则跳过此步骤
+5. **Step 5 - 更新系统清单**: 调用 [`gen-manifest.sh`](gen-manifest.sh:1) 更新 manifest，并重新检查 `costrict-system` 版本（因 `gen-manifest.sh` 可能修改了其内容）
+
+6. **Step 6 - 构建发布包**: 调用 [`check-packaged.sh`](check-packaged.sh:1) 检查哪些组件包当前版本还没打包；若有，调用 [`build-components.sh`](build-components.sh:1) 构建包并上传到云环境（如果指定了 `--upload` 参数），否则跳过
 
 **支持参数**:
 
@@ -651,6 +793,7 @@ configures/
 |------|------|
 | `--push [env]` | 推送镜像到指定环境（传递给 build-depends.sh）<br>• 如果 env 为空或 'def'，推送到 Docker Hub<br>• 否则推送到指定环境（如 'test,prod' 或 'all'）<br>注意：构建镜像始终执行，此选项只控制是否推送 |
 | `--upload <env>` | 指定包上传的环境（传递给 build-components.sh） |
+| `--skip-depend` | 跳过依赖处理（Step 1 和 Step 2），不处理 dependency 包 |
 | `--help, -h` | 显示帮助信息 |
 
 **关键特性**:
@@ -659,6 +802,7 @@ configures/
 - **自动版本管理**: 检测到变更时，会自动递增相应模块的版本号
 - **智能跳过机制**: 如果没有变更，会自动跳过不必要的构建步骤，提高效率
 - **完整构建链路**: 从依赖镜像构建到应用组件发布，一次性完成整个构建流程
+- **依赖更新联动**: `build-depends.sh --update` 会自动更新对应组件配置中的镜像地址
 
 **使用示例**:
 
@@ -677,6 +821,9 @@ configures/
 
 # 组合使用：构建镜像推送并上传包
 ./build-costrict.sh --push test --upload prod
+
+# 跳过依赖构建，仅处理组件包
+./build-costrict.sh --skip-depend
 ```
 
 **适用场景**:
@@ -689,6 +836,7 @@ configures/
 **注意事项**:
 
 - 脚本依赖于 [`check-update.sh`](check-update.sh:1) 来检测变更
+- 脚本依赖于 [`check-packaged.sh`](check-packaged.sh:1) 来获取待构建的包列表
 - 版本号变更会自动写入对应的 `.json` 配置文件
 - 建议在执行前确认 Git 仓库已提交所有必要的更改
 - 使用 `--push` 和 `--upload` 参数前，请确保网络连接正常
@@ -717,7 +865,7 @@ configures/
 - `--build`: 编译或构建模块
 - `--pack`: 打包并签名模块
 - `--index`: 为构建的包创建索引
-- `--def`: 执行默认步骤（update, build, pack, index）
+- `--def`: 执行默认构建步骤（build, pack, index；不含 update）
 - `--upload <ENV>`: 上传包到指定环境
 - `--upload-packages <ENV>`: 上传 packages.json
 
@@ -735,8 +883,14 @@ declare -a ENV_PATHS=("/packages/test" "/packages/prod" "/packages/qianliu")
 **示例**:
 
 ```bash
-# 构建单个包
+# 构建单个包（默认流程）
 ./build-components.sh --def -p completion-agent
+
+# 分步执行
+./build-components.sh --update -p completion-agent   # 更新版本
+./build-components.sh --build -p completion-agent    # 构建
+./build-components.sh --pack -p completion-agent     # 打包
+./build-components.sh --index -p completion-agent    # 创建索引
 
 # 构建多个包
 ./build-components.sh --def -p completion-agent,backend,cotun
@@ -773,17 +927,25 @@ declare -a ENV_PATHS=("/packages/test" "/packages/prod" "/packages/qianliu")
 **动作**:
 
 - `--build`: 构建依赖镜像
-- `--update`: 使用构建的依赖更新组件信息
-- `--push [<ENV>]`: 推送镜像到环境
+- `--update`: 构建后更新组件信息，将镜像地址写入对应组件配置（如 `image.env`）
+- `--push [<ENV>]`: 推送镜像到指定环境
+
+**说明**:
+- 对于 `exec` 类型的依赖：构建 Docker 镜像后导出镜像 tar 到 `images/<name>/`，并在 `versions.json` 中记录 tag/file/platforms
+- 对于 `frontend` 类型的依赖：执行构建命令后仅记录 version
+- `component` 字段定义了 `--update` 时的工作目录和命令，用于自动更新组件配置中的镜像引用
 
 **示例**:
 
 ```bash
-# 构建依赖
+# 构建依赖镜像
 ./build-depends.sh --build -p client-manager
 
-# 推送到 Docker Hub
-./build-depends.sh --push -p client-manager
+# 构建并更新组件配置
+./build-depends.sh --build --update -p client-manager
+
+# 构建、更新并推送镜像到 Docker Hub
+./build-depends.sh --build --update --push -p client-manager
 
 # 推送到指定环境
 ./build-depends.sh --push test,prod -p client-manager
@@ -909,19 +1071,35 @@ declare -a ENV_PATHS=("/packages/test" "/packages/prod" "/packages/qianliu")
 
 - **客户端应用**: [`components/completion-agent.json`](components/completion-agent.json:1)
 - **服务端应用**: [`components/backend.json`](components/backend.json:1)
+- **配置组件**: [`components/completion-config.json`](components/completion-config.json:1)
 - **依赖镜像**: [`depends/client-manager.json`](depends/client-manager.json:1)
+- **前端依赖**: [`depends/costrict-admin-frontend.json`](depends/costrict-admin-frontend.json:1)
 - **配置示例**: [`configures/common/apisix/`](configures/common/apisix/)
 
 ### B. 相关文档
 
 - 项目根目录 [`README.md`](README.md:1)
 - 包管理配置 [`packages.json`](packages.json:1)
-- 系统清单 [`costrict-manifest.json`](costrict-manifest.json:1)
+- 系统清单模板 [`costrict-manifest.json`](costrict-manifest.json:1)
+- Backend 规格模板 [`costrict-backend-spec.json`](costrict-backend-spec.json:1)
 
-### C. 联系支持
+### C. 辅助脚本索引
+
+| 脚本 | 用途 |
+|------|------|
+| [`gen-component.sh`](gen-component.sh:1) | 创建组件模块定义及源目录骨架 |
+| [`gen-depend.sh`](gen-depend.sh:1) | 创建依赖包定义文件 |
+| [`gen-manifest.sh`](gen-manifest.sh:1) | 生成系统清单文件 |
+| [`gen-backend-spec.sh`](gen-backend-spec.sh:1) | 生成 backend 子系统规格文件 |
+| [`check-update.sh`](check-update.sh:1) | 检测变更并自动递增版本号 |
+| [`check-packaged.sh`](check-packaged.sh:1) | 检测包是否已构建/打包 |
+| [`build-costrict.sh`](build-costrict.sh:1) | 全自动一站式构建发布 |
+| [`start-local-site.sh`](start-local-site.sh:1) | 启动本地下载站点用于测试 |
+
+### D. 联系支持
 
 如有问题，请联系项目维护团队。
 
 ---
 
-**最后更新**: 2025-01-15
+**最后更新**: 2025-07-17

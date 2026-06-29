@@ -13,3 +13,9 @@ services:
       - /etc/machine-id:/etc/machine-id:ro
     networks:
       - shenma
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:10000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

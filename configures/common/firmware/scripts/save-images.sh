@@ -23,17 +23,19 @@ options:
   -o|--output  <DIR>      输出目录 (默认: ./images)
   -i|--images  <STR>      镜像列表字符串, 格式: name:tag (空格/换行分隔多个)
   -f|--file    <FILE>     镜像列表文件路径 (默认: .images.list, 格式: name:tag 每行一个)
+  --force                 强制覆盖已存在的 tar 文件
   -h|--help               显示帮助信息
 
 examples:
   $(basename "$0") -f .images.list
   $(basename "$0") -i 'nginx:1.27.1 redis:7.2.4' -o /tmp/images
   $(basename "$0") -f my-images.list -o ./v1-images
+  $(basename "$0") -f .images.list --force
 EOF
 }
 
 # 使用getopt解析参数
-TEMP=$(getopt -o o:i:f:h --long output:,images:,file:,help -n "$0" -- "$@")
+TEMP=$(getopt -o o:i:f:h --long output:,images:,file:,force,help -n "$0" -- "$@")
 if [ $? -ne 0 ]; then
     usage >&2
     exit 1
@@ -44,6 +46,7 @@ eval set -- "$TEMP"
 SAVE_DIR="./images"
 images_str=""
 images_file=".images.list"
+force=false
 
 # 解析参数
 while true ; do
@@ -59,6 +62,10 @@ while true ; do
         -f|--file)
             images_file="$2"
             shift 2
+            ;;
+        --force)
+            force=true
+            shift
             ;;
         -h|--help)
             usage
@@ -123,6 +130,14 @@ for image in $IMAGES; do
     short_name="${image_name##*/}"
     output_path="${SAVE_DIR}/${short_name}/${short_name}-${tag}.tar"
     output_parent=$(dirname "$output_path")
+
+    # 检查目标 tar 是否已存在
+    if [ -f "$output_path" ] && [ "$force" != "true" ]; then
+        log "INFO" "目标文件已存在, 跳过: ${output_path}"
+        ((success_count++))
+        continue
+    fi
+
     mkdir -p "$output_parent"
 
     log "INFO" "正在保存镜像: ${image}  ->  ${output_path}"

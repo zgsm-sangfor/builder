@@ -2,12 +2,14 @@
 
 . ./utils.sh
 
-log() {
-    local level=$1
-    local message=$2
-    local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-    echo -e "[${timestamp}] [${level}] ${message}"
-}
+load_install_env
+
+# log() {
+#     local level=$1
+#     local message=$2
+#     local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+#     echo -e "[${timestamp}] [${level}] ${message}"
+# }
 
 # 检查 .images.env 和 .images.list 是否存在，如果缺少则调用 gen-env-file.sh
 if [ ! -f ".images.env" ] || [ ! -f ".images.list" ]; then
@@ -40,9 +42,7 @@ fi
 # 优先级2: COSTRICT_DOCKER_URL - 从HTTP服务器下载镜像到./images目录，然后加载
 if [ -n "${COSTRICT_DOCKER_URL}" ]; then
     log "INFO" "检测到 COSTRICT_DOCKER_URL='${COSTRICT_DOCKER_URL}'，从HTTP服务器下载镜像..."
-    bash scripts/download-images.sh -b "${COSTRICT_DOCKER_URL}" -f .images.list -o ./images
-    log "INFO" "下载完成，从 ./images 目录加载镜像..."
-    bash scripts/load-images.sh -l ./images
+    bash scripts/fetch-images.sh -b "${COSTRICT_DOCKER_URL}" -f .images.list -o ./images
     bash scripts/verify-images.sh -f .images.list
     exit $?
 fi
@@ -57,9 +57,7 @@ fi
 
 if [ -n "${COSTRICT_MIRROR}" ]; then
     log "INFO" "检测到 COSTRICT_MIRROR='${COSTRICT_MIRROR}'，从HTTP服务器下载镜像..."
-    bash scripts/download-images.sh -b "${COSTRICT_MIRROR}/shenma-images" -f .images.list -o ./images
-    log "INFO" "下载完成，从 ./images 目录加载镜像..."
-    bash scripts/load-images.sh -l ./images
+    bash scripts/fetch-images.sh -b "${COSTRICT_MIRROR}/shenma-images" -f .images.list -o ./images
     bash scripts/verify-images.sh -f .images.list
     exit $?
 fi

@@ -47,6 +47,14 @@ cpu：20m  内存：200M  磁盘：1G
 
 image: szondocker.sangfor.com/prod-docker/issue-manager:1.0.8
 cpu：10m  内存：200M  磁盘：1G
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
 
 ### 数据库
 

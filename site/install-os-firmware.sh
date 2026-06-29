@@ -18,6 +18,9 @@ set -u
 set -o pipefail 2>/dev/null || true
 
 . ./utils.sh
+
+load_install_env
+
 # -------------------------- 版本要求 --------------------------
 if [ -n "${COSTRICT_MIRROR:-}" ]; then
     BASE_URL="${COSTRICT_MIRROR}"
