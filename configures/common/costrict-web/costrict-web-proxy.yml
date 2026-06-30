@@ -5,6 +5,8 @@ services:
     environment:
       TZ: "Asia/Shanghai"
       LISTEN_ADDR: ":8090"
+      DATABASE_URL: "postgres://${POSTGRES_USER}:${PASSWORD_POSTGRES}@postgres:5432/costrict_db?sslmode=disable"
+      REDIS_URL: "redis://redis:6379"
       SERVER_URL: "http://costrict-web-api:8080"
       LOG_LEVEL: "info"
       FILTER_FAILURE_MODE: "block"

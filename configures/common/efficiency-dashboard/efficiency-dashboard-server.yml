@@ -20,13 +20,5 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
-    deploy:
-      resources:
-        limits:
-          cpus: "3"
-          memory: 6144M
-        reservations:
-          cpus: "0.25"
-          memory: 256M
     networks:
       - shenma

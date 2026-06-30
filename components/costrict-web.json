@@ -3,6 +3,6 @@
   "type": "zip",
   "subsystem": "backend",
   "path": "./configures",
-  "version": "1.0.8",
+  "version": "1.0.10",
   "description": "costrict-web package component"
 }

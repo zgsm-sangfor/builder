@@ -45,7 +45,7 @@
     {
       "name": "chat-indicator-statistics",
       "subsystem": "backend",
-      "version": "1.0.2"
+      "version": "1.0.4"
     },
     {
       "name": "chat-rag",
@@ -75,7 +75,7 @@
     {
       "name": "costrict-admin",
       "subsystem": "frontend",
-      "version": "1.0.130"
+      "version": "1.0.132"
     },
     {
       "name": "costrict-daemon",
@@ -85,7 +85,7 @@
     {
       "name": "costrict-dept-sync",
       "subsystem": "backend",
-      "version": "1.0.1"
+      "version": "1.0.2"
     },
     {
       "name": "costrict-model-proxy",
@@ -95,7 +95,7 @@
     {
       "name": "costrict-web",
       "subsystem": "backend",
-      "version": "1.0.8"
+      "version": "1.0.10"
     },
     {
       "name": "credit-manager",
@@ -105,7 +105,7 @@
     {
       "name": "efficiency-dashboard",
       "subsystem": "backend",
-      "version": "1.0.7"
+      "version": "1.0.10"
     },
     {
       "name": "es",
@@ -135,7 +135,7 @@
     {
       "name": "nacos",
       "subsystem": "backend",
-      "version": "1.0.4"
+      "version": "1.0.6"
     },
     {
       "name": "oidc-auth",

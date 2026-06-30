@@ -6,6 +6,8 @@ services:
       TZ: "Asia/Shanghai"
       LOG_LEVEL: "info"
       CONCURRENCY: "5"
+      DATABASE_URL: "postgres://${POSTGRES_USER}:${PASSWORD_POSTGRES}@postgres:5432/costrict_db?sslmode=disable"
+      REDIS_URL: "redis://redis:6379"
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: costrict_db

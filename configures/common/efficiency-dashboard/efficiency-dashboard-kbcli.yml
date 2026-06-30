@@ -14,13 +14,5 @@ services:
       - ${COSTRICT_DATA_DIR}/backend/efficiency-dashboard/user-indicator/task:/app/task:ro
       - ${COSTRICT_DATA_DIR}/backend/efficiency-dashboard/user-indicator/repo:/app/repo:ro
       - ${COSTRICT_DATA_DIR}/backend/efficiency-dashboard/analysed:/app/analysed
-    deploy:
-      resources:
-        limits:
-          cpus: "3"
-          memory: 6144M
-        reservations:
-          cpus: "0.25"
-          memory: 256M
     networks:
       - shenma
