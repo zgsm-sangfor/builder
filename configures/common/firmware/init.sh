@@ -200,21 +200,13 @@ fix_permissions() {
                 continue
             fi
         fi
-        
-        log "INFO" "处理目录: $full_path"
-        
-        # 修改所有权
-        if sudo chown -R 1000:1000 "$full_path" 2>/dev/null; then
-            log "INFO" "修改所有权成功: 1000:1000"
-        else
-            log "WARN" "修改所有权失败，可能当前用户权限不足或目录不存在"
+
+        log "INFO" "处理目录: $full_path, 设置属主1000:1000, 权限0775"
+        if ! sudo chown -R 1000:1000 "$full_path" 2>/dev/null; then
+            log "WARN" "修改目录 $full_path 所有权失败，可能当前用户权限不足或目录不存在"
         fi
-        
-        # 修改权限
-        if sudo chmod -R 0775 "$full_path" 2>/dev/null; then
-            log "INFO" "修改权限成功: 0775"
-        else
-            log "WARN" "修改权限失败"
+        if ! sudo chmod -R 0775 "$full_path" 2>/dev/null; then
+            log "WARN" "修改目录 $full_path 权限失败"
         fi
     done
     
@@ -392,7 +384,6 @@ main() {
     # 解析命令行参数
     parse_arguments "$@"
     
-    load_install_env
     # 切换到安装目录
     cd "${COSTRICT_BACKEND_DIR}" || {
         log "ERROR" "无法切换到安装目录: ${COSTRICT_BACKEND_DIR}"

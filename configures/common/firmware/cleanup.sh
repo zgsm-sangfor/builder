@@ -250,7 +250,6 @@ main() {
     
     # 解析命令行参数
     parse_arguments "$@"
-    load_install_env
     # 确认卸载
     confirm_uninstall
     

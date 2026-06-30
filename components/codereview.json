@@ -4,6 +4,6 @@
   "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.10",
-  "enabled": true,
+  "enabled": false,
   "description": "Code review service"
 }

@@ -33,9 +33,9 @@ merge_envs() {
         log "WARN" "未找到任何 $source_file 文件"
     else
         log "INFO" "环境变量文件 $output_file 已合并 ${#env_files[@]} 个 $source_file 文件："
-        for file in "${env_files[@]}"; do
-            log "INFO" "  - $file"
-        done
+        # for file in "${env_files[@]}"; do
+        #     log "INFO" "  - $file"
+        # done
     fi
     
     # 切换回原目录

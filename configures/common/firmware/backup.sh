@@ -330,8 +330,6 @@ main() {
     log "INFO" "开始备份 costrict 后端系统"
     log "INFO" "======================================"
     
-    # 加载安装环境配置
-    load_install_env
     # 解析参数
     parse_arguments "$@"
     confirm_backup

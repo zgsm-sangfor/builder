@@ -36,11 +36,6 @@ set -e
 set -u
 set -o pipefail 2>/dev/null || true
 
-# -------------------------- Initialize Configuration --------------------------
-SCRIPT_NAME=$(basename "$0")
-LOG_FILE="${SCRIPT_NAME%.*}.log"
-exec > >(tee -a "$LOG_FILE") 2>&1
-
 # -------------------------- Function Definitions --------------------------
 log() {
     local level=$1
@@ -336,8 +331,6 @@ install_files() {
 
 # -------------------------- Main Logic --------------------------
 main() {
-    log "INFO" "部署脚本启动，日志文件: $LOG_FILE"
-    
     # 解析命令行参数
     parse_arguments "$@"
     

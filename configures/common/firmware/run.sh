@@ -47,8 +47,6 @@ declare -r BASE_DIR=$(pwd)
 
 . ./utils.sh
 
-load_install_env
-
 check_core_dependencies() {
     local missing_deps=()
     local base_path="${BASE_DIR}"

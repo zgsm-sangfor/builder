@@ -10,6 +10,11 @@
   - [📋 目录](#-目录)
   - [🚀 快速开始](#-快速开始)
     - [前置要求](#前置要求)
+      - [运行环境](#运行环境)
+      - [命令行工具](#命令行工具)
+      - [文件与配置](#文件与配置)
+      - [权限与访问](#权限与访问)
+      - [安装命令参考](#安装命令参考)
     - [一键完整构建](#一键完整构建)
     - [分步构建](#分步构建)
   - [📁 项目结构](#-项目结构)
@@ -52,10 +57,55 @@
 
 ### 前置要求
 
-- Docker 已安装并运行
-- Bash 环境（Linux/macOS 或 WSL）
-- 有镜像仓库的推送权限
-- smc 命令在 PATH 中（`/root/.costrict/bin`）
+#### 运行环境
+
+| 依赖 | 用途 | 使用脚本 |
+|------|------|----------|
+| **Bash**（Linux/macOS/WSL/Git Bash） | 所有脚本的运行环境 | 全部 `.sh` 脚本 |
+| **Docker** | 构建和推送 Docker 镜像 | [`build-depends.sh`](build-depends.sh:1) |
+| **Docker Compose** | 本地测试站点启动 | [`start-local-site.sh`](start-local-site.sh:1) |
+
+#### 命令行工具
+
+| 工具 | 用途 | 使用脚本 |
+|------|------|----------|
+| **jq** | JSON 文件解析与处理 | [`build-depends.sh`](build-depends.sh:674)、[`build-components.sh`](build-components.sh:128)、[`check-update.sh`](check-update.sh:1)、[`check-packaged.sh`](check-packaged.sh:1)、[`gen-manifest.sh`](gen-manifest.sh:23)、[`gen-backend-spec.sh`](gen-backend-spec.sh:25)、[`gen-component.sh`](gen-component.sh:1)、[`gen-depend.sh`](gen-depend.sh:1) |
+| **smc** | 包签名、打包、索引管理 | [`build-components.sh`](build-components.sh:24)（路径：`/root/.costrict/bin`） |
+| **rsync** | 上传部署包到远程服务器 | [`build-components.sh`](build-components.sh:579) |
+| **ssh** | 远程服务器操作 | [`build-components.sh`](build-components.sh:581) |
+| **zip** | 创建 zip 格式部署包 | [`build-components.sh`](build-components.sh:309) |
+| **getopt** | 命令行参数解析 | [`build-depends.sh`](build-depends.sh:134)、[`build-components.sh`](build-components.sh:96) |
+| **python** | exec 类型包的构建脚本执行 | [`build-components.sh`](build-components.sh:178)（需 `build.py`） |
+
+#### 文件与配置
+
+| 文件/目录 | 用途 | 说明 |
+|-----------|------|------|
+| **`.env`** | 环境配置文件 | 定义镜像仓库（`DH_ENV_*`）和包上传（`ENV_*`）的环境变量 |
+| **`costrict-private.pem`** | 私钥文件 | 用于对部署包进行签名验证 |
+| **`components/`** | 部署包配置目录 | 存放各组件包的 JSON 定义（供 [`build-components.sh`](build-components.sh:1) 使用） |
+| **`depends/`** | 依赖包配置目录 | 存放各 Docker 镜像的 JSON 定义（供 [`build-depends.sh`](build-depends.sh:1) 使用） |
+| **`configures/`** | 配置文件目录 | 存放各服务的运行配置（创建组件包时的源目录） |
+
+#### 权限与访问
+
+| 要求 | 用途 |
+|------|------|
+| **Docker Hub 推送权限**（或私有镜像仓库登录凭证） | 推送构建好的 Docker 镜像 |
+| **SSH 免密登录远程服务器** | 上传部署包到目标环境（通过 rsync over SSH） |
+
+#### 安装命令参考
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install -y jq zip rsync
+
+# CentOS/RHEL
+sudo yum install -y jq zip rsync
+
+# macOS
+brew install jq zip rsync
+```
 
 ### 一键完整构建
 

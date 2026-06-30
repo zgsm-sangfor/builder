@@ -2,15 +2,6 @@
 
 . ./utils.sh
 
-load_install_env
-
-# log() {
-#     local level=$1
-#     local message=$2
-#     local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-#     echo -e "[${timestamp}] [${level}] ${message}"
-# }
-
 # 检查 .images.env 和 .images.list 是否存在，如果缺少则调用 gen-env-file.sh
 if [ ! -f ".images.env" ] || [ ! -f ".images.list" ]; then
     log "INFO" "缺少镜像环境文件或镜像列表文件，开始生成..."

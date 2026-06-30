@@ -466,8 +466,6 @@ main() {
         exit 1
     fi
 
-    load_install_env
-
     mkdir -p "$COSTRICT_BACKEND_DIR"
     cd "$COSTRICT_BACKEND_DIR" || return 1
     
