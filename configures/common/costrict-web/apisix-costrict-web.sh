@@ -136,7 +136,7 @@ curl -i http://$APISIX_ADDR/apisix/admin/routes -H "$AUTH" -H "$TYPE" -X PUT -d 
   "plugins": {
     "proxy-rewrite": {
       "headers": {
-        "Host": "portal-costrict-web-portal.costrict-web.svc.cluster.local"
+        "Host": "costrict-web-portal"
       },
       "regex_uri": [
         "^/cloud/(.*)",

@@ -6,10 +6,14 @@ services:
       TZ: "Asia/Shanghai"
       GATEWAY_PORT: "8081"
       SERVER_URL: "http://costrict-web-api:8080"
+      GATEWAY_ID: "gw-01"
+      GATEWAY_ENDPOINT: "${COSTRICT_BASEURL}/cloud-gateway"
+      GATEWAY_INTERNAL_URL: "http://costrict-web-gateway:8081"
       GATEWAY_REGION: "default"
       GATEWAY_CAPACITY: "100"
+      INTERNAL_SECRET: "server-gateway-password"
     ports:
-      - "${PORT_COSTRICT_WEB_GATEWAY:-30276}:8081/tcp"
+      - "${PORT_COSTRICT_WEB_GATEWAY:-30277}:8081/tcp"
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health"]
       interval: 30s

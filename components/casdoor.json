@@ -3,7 +3,7 @@
   "type": "zip",
   "subsystem": "backend",
   "path": "./configures",
-  "version": "1.0.29",
+  "version": "1.0.31",
   "description": "身份认证和授权平台",
   "display_name": "Casdoor",
   "dependences": [

@@ -7,6 +7,7 @@ services:
       TZ: "Asia/Shanghai"
       PORT: "8080"
       LOG_LEVEL: "info"
+      RUN_MIGRATIONS: "true"
       DATABASE_URL: "postgres://${POSTGRES_USER}:${PASSWORD_POSTGRES}@postgres:5432/costrict_db?sslmode=disable"
       REDIS_URL: "redis://redis:6379"
       COSTRICT_CLOUD_BASE_URL: "https://app.costrict.ai"
@@ -17,7 +18,40 @@ services:
       DB_PASSWORD: "${PASSWORD_POSTGRES}"
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      # 取消安全cookie
+      COOKIE_SECURE: false
       ARTIFACT_STORAGE_PATH: /app/data/artifacts
+      FRONTEND_URLS: "${COSTRICT_BASEURL}/cloud/,${COSTRICT_BASEURL}/cloud-api/,${COSTRICT_BASEURL}"
+      INTERNAL_SECRET: "server-gateway-password"
+      SYSTEM_TOKEN: "Qj0sNJjbm5nFzVWNRgnc"
+      CASDOOR_ENDPOINT: "${COSTRICT_BASEURL}"
+      CASDOOR_INTERNAL_ENDPOINT: "http://casdoor:8000"
+      CASDOOR_CLIENT_ID: "${OIDC_AUTH_CLIENT_ID}"
+      CASDOOR_CLIENT_SECRET: "${OIDC_AUTH_CLIENT_SECRET}"
+      CASDOOR_CALLBACK_URL: "${COSTRICT_BASEURL}/cloud-api/api/auth/callback"
+      CHANNEL_WECHAT_ENABLED: "false"
+      CHANNEL_WECOM_WEBHOOK_ENABLED: "false"
+      CHANNEL_WECOM_ENABLED: "false"
+      CHANNEL_WECOM_BOT_ENABLED: "false"
+      WECOM_CORP_ID: ""
+      WECOM_AGENT_ID: ""
+      WECOM_SECRET: ""
+      WECOM_TOKEN: ""
+      WECOM_ENCODING_AES_KEY: ""
+      WECOM_BOT_PROXY_URL: ""
+      WECOM_BOT_PROXY_AUTH_TOKEN: ""
+      WECOM_BOT_QR_CODE_URL: ""
+    
+      STORAGE_PATH: "/app/data/artifacts"
+      SCAN_ENABLED: "true"
+      SCAN_LLM_MODEL: "glm-4-plus"
+      SCAN_LLM_TIMEOUT_SECONDS: "30"
+      SCAN_LLM_MAX_INPUT_TOKENS: "6000"
+      SCAN_WORKER_CONCURRENCY: "2"
+      CLAWAGENT_ENCRYPTION_KEY: ""
+      BOOTSTRAP_PLATFORM_ADMIN_UNIVERSAL_IDS: ""
+      DEPT_SYNC_URL: "http://costrict-dept-sync:8080"
+      DEPT_SYNC_API_KEY: ""
     volumes:
       - ${COSTRICT_DATA_DIR}/backend/costrict-web/api/data:/app/data
       - ${COSTRICT_DATA_DIR}/backend/costrict-web/api/logs:/app/logs

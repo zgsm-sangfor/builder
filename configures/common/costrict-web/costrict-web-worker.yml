@@ -15,7 +15,21 @@ services:
       DB_PASSWORD: "${PASSWORD_POSTGRES}"
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      FRONTEND_URLS: "${COSTRICT_BASEURL}/cloud-portal"
+      INTERNAL_SECRET: "server-gateway-password"
+      CASDOOR_ENDPOINT: "${COSTRICT_BASEURL}"
+      CASDOOR_INTERNAL_ENDPOINT: "http://casdoor:8000"
+      CASDOOR_CLIENT_ID: "${OIDC_AUTH_CLIENT_ID}"
+      CASDOOR_CLIENT_SECRET: "${OIDC_AUTH_CLIENT_SECRET}"
+      CASDOOR_CALLBACK_URL: "${COSTRICT_BASEURL}/cloud-api/api/auth/callback"
+      STORAGE_PATH: "/app/data/artifacts"
+      SCAN_ENABLED: "true"
+      SCAN_LLM_MODEL: "glm-4-plus"
+      SCAN_LLM_TIMEOUT_SECONDS: "30"
+      SCAN_LLM_MAX_INPUT_TOKENS: "6000"
+      SCAN_WORKER_CONCURRENCY: "2"
     volumes:
+      - ${COSTRICT_DATA_DIR}/backend/costrict-web/api/data:/app/data
       - ${COSTRICT_DATA_DIR}/backend/costrict-web/worker/logs:/app/logs
     networks:
       - shenma

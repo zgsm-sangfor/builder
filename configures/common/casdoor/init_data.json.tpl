@@ -228,7 +228,7 @@
         }
       ],
       "grantTypes": ["authorization_code", "password", "client_credentials", "token", "id_token", "refresh_token"],
-      "redirectUris": ["{{COSTRICT_BASEURL}}/oidc-auth/api/v1/plugin/login/callback"],
+      "redirectUris": ["{{COSTRICT_BASEURL}}/oidc-auth/api/v1/plugin/login/callback","{{COSTRICT_BASEURL}}/cloud-api/api/auth/callback"],
       "tokenFormat": "JWT",
       "expireInHours": 1200,
       "refreshExpireInHours": 1200

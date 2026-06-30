@@ -40,7 +40,7 @@
     {
       "name": "casdoor",
       "subsystem": "backend",
-      "version": "1.0.29"
+      "version": "1.0.31"
     },
     {
       "name": "chat-indicator-statistics",
@@ -95,7 +95,7 @@
     {
       "name": "costrict-web",
       "subsystem": "backend",
-      "version": "1.0.14"
+      "version": "1.0.16"
     },
     {
       "name": "credit-manager",
@@ -120,7 +120,7 @@
     {
       "name": "firmware",
       "subsystem": "root",
-      "version": "1.0.131"
+      "version": "1.0.132"
     },
     {
       "name": "frontend",

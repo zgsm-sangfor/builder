@@ -3,6 +3,6 @@
   "type": "zip",
   "subsystem": "root",
   "path": "./configures",
-  "version": "1.0.250",
+  "version": "1.0.255",
   "description": "CoStrict system"
 }
