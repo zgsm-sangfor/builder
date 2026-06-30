@@ -5,13 +5,19 @@ services:
     environment:
       TZ: "Asia/Shanghai"
       MODE: standalone
-      PREFER_HOST_MODE: hostname
+      NACOS_SERVER_PORT: ${NACOS_SERVER_PORT}
+      NACOS_APPLICATION_PORT: ${NACOS_APPLICATION_PORT}
+      PREFER_HOST_MODE: ${NACOS_PREFER_HOST_MODE}
+      NACOS_AUTH_ENABLE: ${NACOS_AUTH_ENABLE}
+      NACOS_AUTH_TOKEN: ${NACOS_AUTH_TOKEN}
+      NACOS_AUTH_IDENTITY_KEY: ${NACOS_AUTH_IDENTITY_KEY}
+      NACOS_AUTH_IDENTITY_VALUE: ${NACOS_AUTH_IDENTITY_VALUE}
       SPRING_DATASOURCE_PLATFORM: postgresql
       JAVA_OPT: "-Ddb.num=1 -Ddb.url.0=jdbc:postgresql://postgres:5432/nacos -Ddb.user.0=${POSTGRES_USER} -Ddb.password.0=${PASSWORD_POSTGRES}"
     volumes:
       - ${COSTRICT_DATA_DIR}/backend/nacos/logs:/home/nacos/logs
       - ${COSTRICT_DATA_DIR}/backend/nacos/data:/home/nacos/data
     ports:
-      - "${PORT_NACOS}:8848"
+      - "${PORT_NACOS}:${NACOS_SERVER_PORT}"
     networks:
       - shenma
