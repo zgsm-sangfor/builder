@@ -85,7 +85,7 @@
     {
       "name": "costrict-dept-sync",
       "subsystem": "backend",
-      "version": "1.0.3"
+      "version": "1.0.15"
     },
     {
       "name": "costrict-model-proxy",
@@ -120,7 +120,7 @@
     {
       "name": "firmware",
       "subsystem": "root",
-      "version": "1.0.130"
+      "version": "1.0.131"
     },
     {
       "name": "frontend",
