@@ -3,7 +3,7 @@
   "type": "zip",
   "subsystem": "backend",
   "path": "./configures",
-  "version": "1.0.13",
+  "version": "1.0.15",
   "description": "关系型数据库，存储业务数据",
   "display_name": "PostgreSQL"
 }

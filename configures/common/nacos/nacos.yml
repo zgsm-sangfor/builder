@@ -13,8 +13,8 @@ services:
       - DB_SERVICE_HOST=postgres
       - DB_SERVICE_PORT=5432
       - DB_SERVICE_DB_NAME=nacos
-      - DB_SERVICE_USER="${POSTGRES_USER}"
-      - DB_SERVICE_PASSWORD="${PASSWORD_POSTGRES}"
+      - DB_SERVICE_USER=${POSTGRES_USER}
+      - DB_SERVICE_PASSWORD=${PASSWORD_POSTGRES}
       # pgsql连接参数已经设置，这里注释的是mysql的
       # - DB_SERVICE_DB_PARAM=characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true
       # 可选：JVM 内存配置（根据服务器资源调整）

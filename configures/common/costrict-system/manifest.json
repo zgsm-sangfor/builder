@@ -35,7 +35,7 @@
     {
       "name": "backend",
       "subsystem": "root",
-      "version": "1.0.69"
+      "version": "1.0.70"
     },
     {
       "name": "casdoor",
@@ -50,7 +50,7 @@
     {
       "name": "chat-rag",
       "subsystem": "backend",
-      "version": "1.0.10"
+      "version": "1.0.13"
     },
     {
       "name": "client-manager",
@@ -85,17 +85,17 @@
     {
       "name": "costrict-dept-sync",
       "subsystem": "backend",
-      "version": "1.0.2"
+      "version": "1.0.3"
     },
     {
       "name": "costrict-model-proxy",
       "subsystem": "backend",
-      "version": "1.0.6"
+      "version": "1.0.9"
     },
     {
       "name": "costrict-web",
       "subsystem": "backend",
-      "version": "1.0.10"
+      "version": "1.0.14"
     },
     {
       "name": "credit-manager",
@@ -120,7 +120,7 @@
     {
       "name": "firmware",
       "subsystem": "root",
-      "version": "1.0.127"
+      "version": "1.0.130"
     },
     {
       "name": "frontend",
@@ -135,7 +135,7 @@
     {
       "name": "nacos",
       "subsystem": "backend",
-      "version": "1.0.6"
+      "version": "1.0.7"
     },
     {
       "name": "oidc-auth",
@@ -150,7 +150,7 @@
     {
       "name": "postgres",
       "subsystem": "backend",
-      "version": "1.0.13"
+      "version": "1.0.15"
     },
     {
       "name": "prometheus",

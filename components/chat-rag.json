@@ -3,7 +3,7 @@
   "type": "zip",
   "subsystem": "backend",
   "path": "./configures",
-  "version": "1.0.10",
+  "version": "1.0.13",
   "description": "提供基于RAG的聊天和问答服务",
   "display_name": "Chat-RAG"
 }

@@ -12,9 +12,6 @@
       "service_name": "costrict-web-portal"
     },
     {
-      "service_name": "costrict-web-proxy"
-    },
-    {
       "service_name": "costrict-web-worker"
     }
   ]

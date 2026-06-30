@@ -2,9 +2,9 @@
   "name": "costrict-admin",
   "type": "exec",
   "subsystem": "frontend",
-  "path": "../../costrict-admin/utility",
+  "path": "../costrict-admin/utility",
   "extras": [
-    "../../costrict-admin/common"
+    "../costrict-admin/common"
   ],
   "platforms": [
     {

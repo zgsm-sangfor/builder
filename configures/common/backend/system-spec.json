@@ -214,10 +214,6 @@
     },
     {
       "component_name": "costrict-web",
-      "service_name": "costrict-web-proxy"
-    },
-    {
-      "component_name": "costrict-web",
       "service_name": "costrict-web-worker"
     },
     {

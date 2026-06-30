@@ -3,7 +3,7 @@ server:
   port: 8080
   mode: "release"
 
-admin_key: ""
+admin_key: "costrict"
 
 database:
   driver: "postgres"

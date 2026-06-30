@@ -22,17 +22,17 @@ logger:
 
 # Nacos 连接配置（通用，可被多个业务订阅者复用）
 nacos:
-  serverAddr: "127.0.0.1"
+  serverAddr: "nacos"
   serverPort: 8848           # Nacos HTTP 端口
   grpcPort: 9848             # Nacos gRPC 端口
   username: ""
   password: ""
-  namespace: "your-namespace-id"
+  namespace: "costrict"
 
 # 模型配置订阅目标（与 Nacos 连接配置独立）
 modelConfig:
   dataId: "model-config"
-  group: "DEFAULT_GROUP"
+  group: "MODEL_PROXY"
   fallbackFile: "models.json"  # Nacos 不可用时的本地回退文件,可以用于测试
 
 # 反向代理设置

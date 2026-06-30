@@ -3,7 +3,7 @@
   "type": "zip",
   "subsystem": "backend",
   "path": "./configures",
-  "version": "1.0.6",
+  "version": "1.0.9",
   "description": "简化的大模型网关，聚合多来源多类型大语言模型API",
   "display_name": "大模型代理服务"
 }
