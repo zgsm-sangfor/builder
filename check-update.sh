@@ -261,6 +261,124 @@ calculate_zip_package_checksum() {
     calculate_checksum_from_file_list "${file_list[@]}"
 }
 
+# 计算github类型包的版本信息
+# 从GitHub仓库获取最新的semver版本tag
+# 参数: $1 - JSON配置文件路径, $2 - 包名
+# 输出格式：第一行最新版本号（去掉v前缀），第二行checksum（最新tag）
+calculate_github_version() {
+    local json_file="$1"
+    local package_name="$2"
+    
+    local package_remote=$(jq -r ".remote // empty" "$json_file")
+    local package_path=$(jq -r ".path // empty" "$json_file")
+    
+    # 检查remote字段
+    if [ -z "$package_remote" ] || [ "$package_remote" = "null" ]; then
+        log "ERROR" "No remote URL found for github package '$package_name'"
+        echo ""
+        echo ""
+        return 1
+    fi
+    
+    # 检查path字段
+    if [ -z "$package_path" ] || [ "$package_path" = "null" ]; then
+        log "ERROR" "No local path found for github package '$package_name'"
+        echo ""
+        echo ""
+        return 1
+    fi
+    
+    # 如果本地仓库不存在，从remote clone
+    if [ ! -d "$package_path/.git" ]; then
+        # 如果目录存在但不是git仓库，先删除
+        if [ -d "$package_path" ]; then
+            log "WARN" "Path '$package_path' exists but is not a git repository, removing..."
+            rm -rf "$package_path"
+        fi
+        # 确保父目录存在
+        mkdir -p "$(dirname "$package_path")"
+        log "INFO" "Cloning repository from $package_remote to $package_path..."
+        git clone "$package_remote" "$package_path"
+    fi
+    
+    # 更新tag信息
+    (cd "$package_path" && git fetch --tags --force origin 2>/dev/null) || true
+    
+    # 获取最新semver tag（参考get-github-latest.sh逻辑）
+    local latest_tag=$(cd "$package_path" && git tag -l | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | while read -r tag; do
+        local ver=$(echo "$tag" | sed 's/^v//')
+        printf '%s %s\n' "$ver" "$tag"
+    done | sort -t. -k1,1n -k2,2n -k3,3n | tail -1 | awk '{print $2}')
+    
+    if [ -z "$latest_tag" ]; then
+        log "ERROR" "No valid semver tag found in repository for package '$package_name'"
+        echo ""
+        echo ""
+        return 1
+    fi
+    
+    # 获取最新版本号（去掉v前缀）
+    local latest_version=$(echo "$latest_tag" | sed 's/^v//')
+    
+    echo "$latest_version"
+    echo "$latest_tag"
+}
+
+# 计算多目录组合的CHECKSUM（主目录 + extras目录）
+# 参数：
+#   $1: type - 包类型（exec 或 frontend）
+#   $2: path - 主目录路径
+#   $3: json_file - JSON配置文件路径
+# 输出格式：第一行checksum，第二行文件数
+calculate_multi_directory() {
+    local type="$1"
+    local path="$2"
+    local json_file="$3"
+
+    # 计算主目录的checksum
+    local result=""
+    if [ "$type" = "exec" ]; then
+        result=$(calculate_go_directory_checksum "$path")
+    else
+        result=$(calculate_frontend_checksum "$path" "$json_file")
+    fi
+
+    local combined_checksum=$(echo "$result" | head -n1)
+    local combined_file_count=$(echo "$result" | tail -n1)
+
+    # 处理extras目录（附属源码目录），将其文件纳入checksum计算范围
+    local extras_count=$(jq -r '.extras | length // 0' "$json_file" 2>/dev/null)
+
+    if [ "$extras_count" -gt 0 ]; then
+        for ((i=0; i<extras_count; i++)); do
+            local extra_dir=$(jq -r ".extras[$i] // empty" "$json_file")
+            if [ -z "$extra_dir" ] || [ "$extra_dir" = "null" ]; then
+                continue
+            fi
+
+            prompt_verbose "Processing extras directory: $extra_dir"
+
+            local extra_result=""
+            if [ "$type" = "exec" ]; then
+                extra_result=$(calculate_go_directory_checksum "$extra_dir")
+            else
+                extra_result=$(calculate_frontend_checksum "$extra_dir" "$json_file")
+            fi
+
+            local extra_checksum=$(echo "$extra_result" | head -n1)
+            local extra_count=$(echo "$extra_result" | tail -n1)
+
+            if [ -n "$extra_checksum" ]; then
+                combined_checksum=$(echo "${combined_checksum}${extra_checksum}" | sha256sum | awk '{print $1}')
+                combined_file_count=$((combined_file_count + extra_count))
+            fi
+        done
+    fi
+
+    echo "$combined_checksum"
+    echo "$combined_file_count"
+}
+
 # 递增包的patch版本号
 # 第一个参数为需要修改的文件路径
 increment_patch_version() {
@@ -302,8 +420,6 @@ process_package() {
     local package_path=$(jq -r ".path // empty" "$json_file")
     local package_type=$(jq -r ".type // empty" "$json_file")
     local package_target=$(jq -r ".target // empty" "$json_file")
-    local extras_count=$(jq -r '.extras | length // 0' "$json_file" 2>/dev/null)
-    
     # 检查version字段是否存在
     if [ -z "$package_version" ] || [ "$package_version" = "null" ] || [ "$package_version" = "" ]; then
         log "WARN" "No version found for package '$package_name', skipping..."
@@ -334,63 +450,42 @@ process_package() {
         local result=$(calculate_zip_package_checksum "$package_path" "$package_name")
         new_checksum=$(echo "$result" | head -n1)
         new_file_count=$(echo "$result" | tail -n1)
-    elif [ "$package_type" = "exec" ]; then
-        # exec类型：只扫描Go相关文件（.go和.mod文件）
-        local result=$(calculate_go_directory_checksum "$package_path")
+    elif [ "$package_type" = "exec" ] || [ "$package_type" = "frontend" ]; then
+        # exec/frontend类型：扫描主目录及extras目录
+        local result=$(calculate_multi_directory "$package_type" "$package_path" "$json_file")
         new_checksum=$(echo "$result" | head -n1)
         new_file_count=$(echo "$result" | tail -n1)
-    elif [ "$package_type" = "frontend" ]; then
-        # frontend类型：扫描前端源文件（*.js, *.vue, *.html, *.ts, *.json）
-        local result=$(calculate_frontend_checksum "$package_path" "$json_file")
-        new_checksum=$(echo "$result" | head -n1)
-        new_file_count=$(echo "$result" | tail -n1)
+    elif [ "$package_type" = "github" ]; then
+        # github类型：从远程仓库获取最新tag来确定版本
+        local result=$(calculate_github_version "$json_file" "$package_name")
+        local latest_version=$(echo "$result" | head -n1)
+        new_checksum=$(echo "$result" | tail -n1)
+        new_file_count=0
+        
+        # 如果与JSON中的版本不一致，更新JSON中的版本号
+        if [ -n "$latest_version" ] && [ "$latest_version" != "$package_version" ]; then
+            log "MODIFIED" "GitHub tag version changed for '$package_name': $package_version -> $latest_version"
+            jq "(.version) |= \"$latest_version\"" "$json_file" > "$json_file.tmp"
+            mv "$json_file.tmp" "$json_file"
+            package_version="$latest_version"
+            # 更新latest.json
+            jq ".${LATEST_FIELD_NAME}[\"$package_name\"] = {\"version\": \"$package_version\", \"checksum\": \"$new_checksum\", \"file_count\": $new_file_count}" "$LATEST_JSON" > "$LATEST_JSON.tmp"
+            mv "$LATEST_JSON.tmp" "$LATEST_JSON"
+            modified=true
+            return 0
+        fi
+        # github类型已自行处理版本比较和latest.json更新，直接返回
+        return 1
     else
-        # 其他类型：扫描目录下所有文件
-        local result=$(calculate_directory_checksum "$package_path")
-        new_checksum=$(echo "$result" | head -n1)
-        new_file_count=$(echo "$result" | tail -n1)
+        # 非法类型
+        log "ERROR" "Invalid package type '$package_type' for package '$package_name'. Valid types: conf, zip, frontend, exec, github"
+        return 1
     fi
     
     if [ -z "$new_checksum" ]; then
         log "ERROR" "Failed to calculate checksum for package '$package_name' at path '$package_path'"
         return 1
     fi
-    
-    # 处理extras目录（附属源码目录），将其文件纳入checksum计算范围
-    if [ "$extras_count" -gt 0 ]; then
-        local combined_checksum="$new_checksum"
-        local combined_file_count=$new_file_count
-        
-        for ((i=0; i<extras_count; i++)); do
-            local extra_dir=$(jq -r ".extras[$i] // empty" "$json_file")
-            if [ -z "$extra_dir" ] || [ "$extra_dir" = "null" ]; then
-                continue
-            fi
-            
-            prompt_verbose "Processing extras directory: $extra_dir"
-            
-            local extra_result=""
-            if [ "$package_type" = "exec" ]; then
-                extra_result=$(calculate_go_directory_checksum "$extra_dir")
-            elif [ "$package_type" = "frontend" ]; then
-                extra_result=$(calculate_frontend_checksum "$extra_dir" "$json_file")
-            else
-                extra_result=$(calculate_directory_checksum "$extra_dir")
-            fi
-            
-            local extra_checksum=$(echo "$extra_result" | head -n1)
-            local extra_count=$(echo "$extra_result" | tail -n1)
-            
-            if [ -n "$extra_checksum" ]; then
-                combined_checksum=$(echo "${combined_checksum}${extra_checksum}" | sha256sum | awk '{print $1}')
-                combined_file_count=$((combined_file_count + extra_count))
-            fi
-        done
-        
-        new_checksum="$combined_checksum"
-        new_file_count=$combined_file_count
-    fi
-    
     # 从latest.json中读取之前的版本和checksum
     local old_version=$(jq -r ".${LATEST_FIELD_NAME}[\"$package_name\"].version // \"null\"" "$LATEST_JSON")
     local old_checksum=$(jq -r ".${LATEST_FIELD_NAME}[\"$package_name\"].checksum // \"null\"" "$LATEST_JSON")
@@ -455,7 +550,6 @@ main() {
     prompt "Checking package updates from $JSONS_DIR (type: $BUILD_TYPE)"
     prompt "=============================================="
     prompt ""
-    
     
     # 遍历每个包
     local modified_packages=()

@@ -13,6 +13,7 @@ costrict-static
 !gen-depend.sh
 !gen-backend-spec.sh
 !gen-manifest.sh
+!docker-pull-via.sh
 !start-local-site.sh
 !packages.json
 !costrict-manifest.json

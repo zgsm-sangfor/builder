@@ -17,8 +17,8 @@
 #        "version": "1.0.43",
 #        "type": "exec",
 #        "path": "../costrict-admin/backend",
-#        "command": "docker build --build-arg VERSION={{ .version }} . -t {{ .repo }}/{{ .name }}:{{ .tag }}",
-#        "tag": "{{ .version }}",
+#        "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:{{.tag}}",
+#        "tag": "{{.version}}",
 #        "component": {
 #          "workdir": "./configures/common/costrict-admin-backend",
 #          "command": "echo IMAGE_COSTRICT_ADMIN={{.repo}}/costrict-admin:v{{.version}} > ./image.env"
@@ -33,7 +33,7 @@
 #   - version: 镜像的版本
 #   - path: 构建镜像时的工作路径
 #   - command: 构建镜像的命令
-#   - tag: 镜像的标签（可选，默认值为'{{ .version }}'）
+#   - tag: 镜像的标签（可选，默认值为'{{.version}}'）
 #   - description: 镜像描述
 #
 #   command和tag中定义的命令行，可以包含可变参数，可变参数采用go的text/template语法，变量'.'就是{package}.json根对象。
@@ -160,7 +160,7 @@ render_template() {
     local json_file="$2"
     
     # 使用jq将JSON转换为可以被go template使用的格式
-    # 这里简化处理：直接替换{{ .field }}为对应的JSON值
+    # 这里简化处理：直接替换{{.field}}为对应的JSON值
     local result="$template"
     
     # 获取JSON中的所有字段（排除command和tag）
@@ -199,6 +199,7 @@ build_dependency() {
     local depend_path=$(jq -r ".path // empty" "$depend_config_file")
     local depend_command=$(jq -r ".command // empty" "$depend_config_file")
     local depend_version=$(jq -r ".version // empty" "$depend_config_file")
+    local depend_type=$(jq -r ".type // empty" "$depend_config_file")
     
     if [ -z "$depend_name" ] || [ "$depend_name" = "null" ] || [ "$depend_name" = "" ]; then
         echo "Error: 'name' not found for image '${package}' in ${depend_config_file}!"
@@ -224,14 +225,24 @@ build_dependency() {
     local rendered_command=$(render_template "$depend_command" "$depend_config_file")
     echo "Executing: $rendered_command"
     
-    # 执行构建命令
-    (cd "$depend_path" && bash -c "$rendered_command")
-    if [ $? -ne 0 ]; then
-        echo "Error: Build failed for image $depend_name"
-        return 1
+    if [ "$depend_type" = "github" ]; then
+        # github类型：镜像已由github action自动编译上传，仅需从镜像仓库拉取
+        bash -c "$rendered_command"
+        if [ $? -ne 0 ]; then
+            echo "Error: Pull failed for image $depend_name"
+            return 1
+        fi
+        echo "Successfully pulled image: $depend_name"
+    else
+        # 其他类型：cd到源码目录后执行构建命令
+        (cd "$depend_path" && bash -c "$rendered_command")
+        if [ $? -ne 0 ]; then
+            echo "Error: Build failed for image $depend_name"
+            return 1
+        fi
+        echo "Successfully built image: $depend_name"
     fi
     
-    echo "Successfully built image: $depend_name"
     return 0
 }
 
@@ -252,9 +263,9 @@ save_dependency_version() {
     local depend_repo=$(jq -r ".repo // empty" "$depend_config_file")
     local depend_tag=$(jq -r ".tag // empty" "$depend_config_file")
     
-    # tag字段为可选的，默认值为 '{{ .version }}'
+    # tag字段为可选的，默认值为 '{{.version}}'
     if [ -z "$depend_tag" ] || [ "$depend_tag" = "null" ] || [ "$depend_tag" = "" ]; then
-        depend_tag="{{ .version }}"
+        depend_tag="{{.version}}"
     fi
     
     # 渲染tag模板
@@ -268,7 +279,7 @@ save_dependency_version() {
     local tar_file=""
     local platforms_json="[]"
     
-    if [ "$depend_type" = "exec" ]; then
+    if [ "$depend_type" = "exec" ] || [ "$depend_type" = "github" ]; then
         local image_full_name="${depend_repo}/${depend_name}:${rendered_tag}"
         
         echo "=============================================="
@@ -306,7 +317,7 @@ save_dependency_version() {
     
     if [ -f "$versions_file" ]; then
         # 读取现有versions.json，更新latest和versions数组
-        if [ "$depend_type" = "exec" ]; then
+        if [ "$depend_type" = "exec" ] || [ "$depend_type" = "github" ]; then
             # exec类型：版本条目中包含file字段和platforms
             jq --arg ver "$depend_version" \
                --arg tag "$rendered_tag" \
@@ -340,7 +351,7 @@ save_dependency_version() {
         mv "$tmp_file" "$versions_file"
     else
         # 创建新的versions.json
-        if [ "$depend_type" = "exec" ]; then
+        if [ "$depend_type" = "exec" ] || [ "$depend_type" = "github" ]; then
             # exec类型：版本条目中包含file字段和platforms
             jq -n --arg pkg "$depend_name" \
                   --arg ver "$depend_version" \
@@ -446,9 +457,9 @@ push_image() {
     local depend_repo=$(jq -r ".repo // empty" "$depend_config_file")
     local depend_tag=$(jq -r ".tag // empty" "$depend_config_file")
     
-    # tag字段为可选的，默认值为 '{{ .version }}'
+    # tag字段为可选的，默认值为 '{{.version}}'
     if [ -z "$depend_tag" ] || [ "$depend_tag" = "null" ] || [ "$depend_tag" = "" ]; then
-        depend_tag="{{ .version }}"
+        depend_tag="{{.version}}"
     fi
     
     # 渲染tag模板
@@ -510,9 +521,9 @@ upload_image() {
     local depend_repo=$(jq -r ".repo // empty" "$depend_config_file")
     local depend_tag=$(jq -r ".tag // empty" "$depend_config_file")
     
-    # tag字段为可选的，默认值为 '{{ .version }}'
+    # tag字段为可选的，默认值为 '{{.version}}'
     if [ -z "$depend_tag" ] || [ "$depend_tag" = "null" ] || [ "$depend_tag" = "" ]; then
-        depend_tag="{{ .version }}"
+        depend_tag="{{.version}}"
     fi
     
     # 渲染tag模板
