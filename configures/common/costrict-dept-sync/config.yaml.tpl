@@ -3,8 +3,8 @@ server:
   port: 8080
   mode: "release"
 
-admin_key: "costrict"
-
+admin_key: "{{APIKEY_COSTRICT_DEPT_SYNC_ADMIN}}"
+default_key: "{{APIKEY_COSTRICT_DEPT_SYNC_DEFAULT}}"
 database:
   driver: "postgres"
   host: "postgres"

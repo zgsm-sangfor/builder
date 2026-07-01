@@ -35,7 +35,7 @@ task_real_minutes:
 
 dept_sync:
   base_url: "http://costrict-dept-sync:8080"
-  query_key: "0b8e86321298d10b498af18f343409050853c57a2ec6145c9d16cd4a65300b75"
+  query_key: "{{APIKEY_COSTRICT_DEPT_SYNC_DEFAULT}}"
   root_dept_id: "49"
 
 chat_stats:
