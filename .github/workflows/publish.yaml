@@ -25,6 +25,14 @@ jobs:
           echo "$ENV_CONTENT" > .env
           echo ".env file generated from ENV_FILE_CONTENT secret"
 
+      - name: Save COSTRICT_PRIVATE_PEM
+        env:
+          PEM_CONTENT: ${{ secrets.COSTRICT_PRIVATE_PEM }}
+        run: |
+          echo "$PEM_CONTENT" > ./costrict-private.pem
+          chmod 600 ./costrict-private.pem
+          echo "costrict-private.pem file generated from COSTRICT_PRIVATE_PEM secret"
+
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
