@@ -3,7 +3,7 @@
   "type": "zip",
   "subsystem": "backend",
   "path": "./configures",
-  "version": "1.0.7",
+  "version": "1.0.9",
   "description": "配置管理中心",
   "display_name": "Nacos"
 }

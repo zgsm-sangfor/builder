@@ -120,7 +120,7 @@
     {
       "name": "firmware",
       "subsystem": "root",
-      "version": "1.0.132"
+      "version": "1.0.133"
     },
     {
       "name": "frontend",
@@ -135,7 +135,7 @@
     {
       "name": "nacos",
       "subsystem": "backend",
-      "version": "1.0.7"
+      "version": "1.0.9"
     },
     {
       "name": "oidc-auth",
