@@ -56,6 +56,7 @@ api6-save.sh
 # APISIX 服务管理脚本
 apisix-costrict-admin.sh
 apisix-costrict-apps.sh
+apisix-ai-gateway.sh
 
 # ==================== 子目录（递归拷贝） ====================
 init.d

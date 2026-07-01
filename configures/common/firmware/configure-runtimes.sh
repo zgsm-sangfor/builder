@@ -70,6 +70,7 @@ configure_apisix_routes() {
     local apisix_scripts=(
         "apisix-costrict-apps.sh"
         "apisix-costrict-admin.sh"
+        # "apisix-ai-gateway.sh"
         # "apisix-casdoor.sh"
         # "apisix-chatrag.sh"
         # "apisix-codereview.sh"

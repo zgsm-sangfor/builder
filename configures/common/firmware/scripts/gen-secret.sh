@@ -15,7 +15,7 @@ log() {
     echo -e "[${timestamp}] [${level}] ${message}"
 }
 
-# 生成 base64 编码的随机密钥
+# 生成 base64 编码（除/=）外的随机密钥
 gen_base64() {
     local size=$1
     local result=""
@@ -47,11 +47,11 @@ gen_hex() {
     echo "$result"
 }
 
-# 生成密码（仅包含字母和数字）
+# 生成密码（包含字母、数字和特殊符号）
 gen_password() {
     local size=$1
     local password=""
-    local chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    local chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~!@#%*_+-=,.'
     local chars_length=${#chars}
     
     # 生成随机密码
@@ -157,7 +157,7 @@ usage() {
     echo "Supported marker formats:"
     echo "  {{base64 <size>}}   Generate a base64-encoded random string"
     echo "  {{hex <size>}}      Generate a hexadecimal random string"
-    echo "  {{password <size>}} Generate a password with letters and numbers"
+    echo "  {{password <size>}} Generate a password with letters, numbers, and special characters"
     echo ""
     echo "Examples:"
     echo "  # Generate secrets from template"

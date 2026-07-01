@@ -175,6 +175,13 @@ start_docker_services() {
     log "INFO" "Docker Compose服务启动完成"
 }
 
+configure_runtimes() {
+    # 配置APISIX路由和运行时环境
+    if ! bash configure-runtimes.sh; then
+        exit 1
+    fi
+}
+
 fix_permissions() {
     # 需要修正权限的目录（相对于安装目录）
     declare -a dirs=(
@@ -404,14 +411,9 @@ main() {
     gen_docker_compose_yml
     
     start_docker_services
-    
-    # 配置APISIX路由和运行时环境
-    if ! bash configure-runtimes.sh; then
-        log "ERROR" "运行时环境配置失败"
-        exit 1
-    fi
-    mark_system_initialized
+    configure_runtimes
 
+    mark_system_initialized
     show_guide_help
 }
 
