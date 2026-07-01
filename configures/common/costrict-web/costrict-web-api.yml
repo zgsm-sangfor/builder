@@ -51,7 +51,7 @@ services:
       CLAWAGENT_ENCRYPTION_KEY: ""
       BOOTSTRAP_PLATFORM_ADMIN_UNIVERSAL_IDS: ""
       DEPT_SYNC_URL: "http://costrict-dept-sync:8080"
-      DEPT_SYNC_API_KEY: ""
+      DEPT_SYNC_API_KEY: "${APIKEY_COSTRICT_DEPT_SYNC_DEFAULT}"
     volumes:
       - ${COSTRICT_DATA_DIR}/backend/costrict-web/api/data:/app/data
       - ${COSTRICT_DATA_DIR}/backend/costrict-web/api/logs:/app/logs
