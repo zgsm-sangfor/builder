@@ -6,6 +6,7 @@
   "path": "../deploy/license",
   "command": "docker build -f manager.Dockerfile --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",
+  "enabled": false,
   "component": {
     "workdir": "./configures/common/license-manager",
     "command": "echo IMAGE_LICENSE_MANAGER={{.repo}}/{{.name}}:v{{.version}} > ./image.env"

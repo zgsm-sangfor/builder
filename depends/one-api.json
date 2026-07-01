@@ -12,5 +12,6 @@
     "workdir": "./configures/common/oneapi",
     "command": "echo IMAGE_ONEAPI={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
   },
+  "enabled": false,
   "description": "LLM Management Gateway Service"
 }
