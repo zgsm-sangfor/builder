@@ -335,6 +335,22 @@ calculate_multi_directory() {
     local path="$2"
     local json_file="$3"
 
+    # 检查主目录是否存在，如果不存在则从remote克隆
+    if [ ! -d "$path" ]; then
+        local remote=$(jq -r ".remote // empty" "$json_file" 2>/dev/null)
+        if [ -z "$remote" ] || [ "$remote" = "null" ] || [ "$remote" = "" ]; then
+            log "ERROR" "Path '$path' does not exist and no remote URL configured in $(basename "$json_file")"
+            return 1
+        fi
+        log "INFO" "Path '$path' does not exist, cloning from $remote ..."
+        mkdir -p "$(dirname "$path")"
+        git clone "$remote" "$path"
+        if [ $? -ne 0 ]; then
+            log "ERROR" "Failed to clone repository from $remote to $path"
+            return 1
+        fi
+    fi
+
     # 计算主目录的checksum
     local result=""
     if [ "$type" = "exec" ]; then

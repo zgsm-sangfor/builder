@@ -3,8 +3,8 @@
   "type": "frontend",
   "version": "1.0.64",
   "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
-  "path": "../costrict-admin/frontend",
-  "command": "bash build.sh",
+  "path": "../costrict-admin",
+  "command": "cd frontend && bash build.sh",
   "enabled": true,
   "excludes": [
     "*/dist/*",

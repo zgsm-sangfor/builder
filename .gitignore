@@ -16,6 +16,7 @@ costrict-static
 !docker-pull-via.sh
 !start-local-site.sh
 !packages.json
+!latest.json
 !costrict-manifest.json
 !costrict-backend-spec.json
 !README.md

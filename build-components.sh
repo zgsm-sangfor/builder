@@ -773,6 +773,36 @@ if ! command -v jq >/dev/null 2>&1; then
     exit 1
 fi
 
+# 检查smc命令是否可用，如果不可用则自动下载安装
+if ! command -v smc >/dev/null 2>&1; then
+    echo "Warning: smc command not found, attempting to download..."
+    SMC_BIN="/root/.costrict/bin/smc"
+    SMC_URL="https://zgsm.sangfor.com/costrict/smc/linux/amd64/1.1.18/smc"
+
+    if [ -f "$SMC_BIN" ]; then
+        # 如果文件已存在但不在PATH中，添加到PATH
+        export PATH="$PATH:/root/.costrict/bin"
+        echo "smc found at $SMC_BIN, added to PATH"
+    else
+        # 创建目录并使用curl下载，如果curl不可用则使用wget
+        mkdir -p /root/.costrict/bin
+        echo "Downloading smc from $SMC_URL ..."
+        if curl -fsSL -o "$SMC_BIN" "$SMC_URL" 2>/dev/null; then
+            chmod +x "$SMC_BIN"
+            export PATH="$PATH:/root/.costrict/bin"
+            echo "smc downloaded and installed to $SMC_BIN"
+        elif wget -q -O "$SMC_BIN" "$SMC_URL" 2>/dev/null; then
+            chmod +x "$SMC_BIN"
+            export PATH="$PATH:/root/.costrict/bin"
+            echo "smc downloaded and installed to $SMC_BIN"
+        else
+            echo "Error: Failed to download smc from $SMC_URL"
+            echo "Please download it manually to /root/.costrict/bin/smc"
+            exit 1
+        fi
+    fi
+fi
+
 # 检查components目录是否存在
 if [ ! -d "components" ]; then
     echo "Error: 'components' directory not found!"
