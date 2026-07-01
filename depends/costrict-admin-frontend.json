@@ -1,8 +1,9 @@
 {
   "name": "costrict-admin-frontend",
   "type": "frontend",
-  "version": "1.0.63",
-  "path": "../../costrict-admin/frontend",
+  "version": "1.0.64",
+  "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
+  "path": "../costrict-admin/frontend",
   "command": "bash build.sh",
   "enabled": true,
   "excludes": [
@@ -11,7 +12,7 @@
     "*/node_modules/*"
   ],
   "component": {
-    "workdir": "../../costrict-admin/frontend",
+    "workdir": "../costrict-admin/frontend",
     "command": "bash update.sh"
   },
   "description": "Build the front-end page to be released for the costrict system."

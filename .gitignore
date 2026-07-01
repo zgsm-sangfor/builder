@@ -28,3 +28,4 @@ costrict-static
 !depends/**
 !site/
 !site/**
+!.github/**

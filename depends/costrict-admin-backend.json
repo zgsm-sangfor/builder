@@ -1,11 +1,12 @@
 {
   "name": "costrict-admin-backend",
   "type": "exec",
-  "version": "1.0.119",
+  "version": "1.0.120",
+  "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
   "repo": "zgsm",
-  "path": "../../costrict-admin/backend",
+  "path": "../costrict-admin/backend",
   "extras": [
-    "../../costrict-admin/common"
+    "../costrict-admin/common"
   ],
   "command": "export DOCKER_BUILDKIT=1 && docker build -f ./Dockerfile --build-arg VERSION={{.version}} .. -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",

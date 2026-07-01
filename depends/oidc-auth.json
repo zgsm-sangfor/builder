@@ -1,9 +1,10 @@
 {
   "name": "oidc-auth",
   "type": "exec",
-  "version": "1.2.17",
+  "version": "1.2.18",
+  "remote": "git@github.com:zgsm-sangfor/oidc-auth.git",
   "repo": "zgsm",
-  "path": "../../zgsm-ai/oidc-auth",
+  "path": "../zgsm-ai/oidc-auth",
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",
   "enabled": true,

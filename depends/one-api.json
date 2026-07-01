@@ -1,12 +1,13 @@
 {
   "name": "one-api",
-  "type": "exec",
-  "version": "1.0.4",
+  "type": "github",
+  "version": "0.11.2",
+  "remote": "git@github.com:zgsm-sangfor/one-api.git",
+  "path": "../source/new-api",
   "repo": "zgsm",
-  "path": "../../source/new-api",
-  "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",
-  "enabled": false,
+  "image": "{{.repo}}/{{.name}}:v{{.version}}",
+  "command": "./docker-pull-via.sh --image-id {{.repo}}/{{.name}}:v{{.version}} --proxy-id hub.dbin.site/{{.repo}}/{{.name}}:v{{.version}}",
   "component": {
     "workdir": "./configures/common/oneapi",
     "command": "echo IMAGE_ONEAPI={{.repo}}/{{.name}}:v{{.version}} > ./image.env"

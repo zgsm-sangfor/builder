@@ -1,9 +1,9 @@
 {
   "name": "license-manager",
   "type": "exec",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "repo": "zgsm",
-  "path": "../license",
+  "path": "../deploy/license",
   "command": "docker build -f manager.Dockerfile --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",
   "component": {

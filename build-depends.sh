@@ -13,11 +13,12 @@
 #
 #     {
 #        "name": "costrict-admin-backend",
-#        "repo": "zgsm",
 #        "version": "1.0.43",
 #        "type": "exec",
-#        "path": "../costrict-admin/backend",
-#        "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:{{.tag}}",
+#        "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
+#        "path": "../costrict-admin",
+#        "command": "cd backend && docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:{{.tag}}",
+#        "repo": "zgsm",
 #        "tag": "{{.version}}",
 #        "component": {
 #          "workdir": "./configures/common/costrict-admin-backend",
@@ -200,6 +201,7 @@ build_dependency() {
     local depend_command=$(jq -r ".command // empty" "$depend_config_file")
     local depend_version=$(jq -r ".version // empty" "$depend_config_file")
     local depend_type=$(jq -r ".type // empty" "$depend_config_file")
+    local depend_remote=$(jq -r ".remote // empty" "$depend_config_file")
     
     if [ -z "$depend_name" ] || [ "$depend_name" = "null" ] || [ "$depend_name" = "" ]; then
         echo "Error: 'name' not found for image '${package}' in ${depend_config_file}!"
@@ -234,7 +236,22 @@ build_dependency() {
         fi
         echo "Successfully pulled image: $depend_name"
     else
-        # 其他类型：cd到源码目录后执行构建命令
+        # 其他类型：先检查源码目录是否存在，不存在则从remote克隆
+        if [ ! -d "$depend_path" ]; then
+            if [ -z "$depend_remote" ] || [ "$depend_remote" = "null" ]; then
+                echo "Error: Directory '$depend_path' does not exist and 'remote' field is not configured!"
+                return 1
+            fi
+            echo "Directory '$depend_path' not found, cloning from $depend_remote ..."
+            git clone "$depend_remote" "$depend_path"
+            if [ $? -ne 0 ]; then
+                echo "Error: git clone failed for $depend_remote"
+                return 1
+            fi
+            echo "Successfully cloned to '$depend_path'"
+        fi
+        
+        # cd到源码目录后执行构建命令
         (cd "$depend_path" && bash -c "$rendered_command")
         if [ $? -ne 0 ]; then
             echo "Error: Build failed for image $depend_name"

@@ -1,9 +1,10 @@
 {
   "name": "client-manager",
   "type": "exec",
-  "version": "1.0.13",
+  "version": "1.0.14",
+  "remote": "git@github.com:zgsm-ai/client-manager.git",
   "repo": "zgsm",
-  "path": "../../services/client-manager",
+  "path": "../services/client-manager",
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",
   "component": {

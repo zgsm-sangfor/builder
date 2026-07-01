@@ -1,9 +1,10 @@
 {
   "name": "code-completion",
   "type": "exec",
-  "version": "1.7.100",
+  "version": "1.7.101",
+  "remote": "git@github.com:zgsm-ai/code-completions-go.git",
   "repo": "zgsm",
-  "path": "../../services/code-completions-go",
+  "path": "../services/code-completions-go",
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",
   "component": {

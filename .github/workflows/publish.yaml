@@ -1,0 +1,72 @@
+name: Build and Publish
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-publish:
+    name: Build And Publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate .env file
+        env:
+          ENV_CONTENT: ${{ secrets.ENV_FILE_CONTENT }}
+        run: |
+          echo "$ENV_CONTENT" > .env
+          echo ".env file generated from ENV_FILE_CONTENT secret"
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add SSH known hosts
+        run: |
+          mkdir -p ~/.ssh
+          # 从 .env 读取 prod 环境配置并添加 host key
+          source .env
+          ssh-keyscan -p ${prod_port} ${prod_host} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Run build-costrict.sh
+        run: |
+          chmod +x *.sh
+          ./build-costrict.sh
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if [[ -n $(git status --porcelain) ]]; then
+            git add .
+            git commit -m "chore: auto build and update packages [skip ci]"
+            git push origin main
+            echo "Changes committed and pushed"
+          else
+            echo "No changes to commit"
+          fi
+
+      - name: Read version and create tag
+        run: |
+          VERSION=$(jq -r '.version' components/costrict-system.json)
+          TAG_NAME="v${VERSION}"
+          echo "Version from costrict-system.json: ${VERSION}"
+          echo "Creating tag: ${TAG_NAME}"
+
+          # 如果 tag 已存在则跳过（幂等）
+          if git rev-parse "${TAG_NAME}" >/dev/null 2>&1; then
+            echo "Tag ${TAG_NAME} already exists, skipping..."
+          else
+            git tag -a "${TAG_NAME}" -m "Release ${TAG_NAME}"
+            git push origin "${TAG_NAME}"
+            echo "Tag ${TAG_NAME} created and pushed"
+          fi

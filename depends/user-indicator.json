@@ -1,9 +1,10 @@
 {
   "name": "user-indicator",
   "type": "exec",
-  "version": "0.0.8",
+  "version": "0.0.9",
+  "remote": "git@github.com:zgsm-ai/user-indicator-for-es.git",
   "repo": "zgsm",
-  "path": "../../zgsm-ai/user-indicator-for-es",
+  "path": "../zgsm-ai/user-indicator-for-es",
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",
   "component": {

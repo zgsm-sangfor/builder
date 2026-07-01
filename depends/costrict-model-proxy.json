@@ -1,9 +1,10 @@
 {
   "name": "costrict-model-proxy",
   "type": "exec",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "remote": "git@github.com:zgsm-sangfor/costrict-model-proxy.git",
   "repo": "zgsm",
-  "path": "../../zgsm-ai/costrict-model-proxy",
+  "path": "../zgsm-ai/costrict-model-proxy",
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",
   "component": {
