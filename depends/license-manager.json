@@ -1,6 +1,6 @@
 {
   "name": "license-manager",
-  "type": "github",
+  "type": "docker",
   "version": "1.0.5",
   "repo": "zgsm",
   "path": "../deploy/license",

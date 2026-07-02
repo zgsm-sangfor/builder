@@ -1,6 +1,6 @@
 {
   "name": "tagd",
-  "type": "exec",
+  "type": "docker",
   "version": "1.0.4",
   "remote": "git@github.com:zgsm-ai/tagd.git",
   "repo": "zgsm",

@@ -27,7 +27,7 @@ CoStrict 包管理系统采用模块化设计，支持多种类型的应用组�
 - **build-depends.sh**: 构建依赖（Docker镜像）
 - **build-costrict.sh**: 全自动一站式构建发布（组合调用以下脚本）
 - **check-update.sh**: 检测包版本和内容变化，自动递增版本号
-- **check-packaged.sh**: 检测包是否已构建/打包
+- **check-build.sh**: 检测包是否已构建/打包
 - **gen-manifest.sh**: 更新系统清单文件
 - **gen-backend-spec.sh**: 更新 backend 子系统规格文件
 
@@ -60,7 +60,7 @@ builder/
 ├── build-depends.sh
 ├── build-costrict.sh
 ├── check-update.sh
-├── check-packaged.sh
+├── check-build.sh
 ├── gen-component.sh
 ├── gen-depend.sh
 ├── gen-manifest.sh
@@ -777,7 +777,7 @@ configures/
 
 1. **Step 1 - 检查依赖更新**: 调用 [`check-update.sh`](check-update.sh:1) 使用 `--build-type dependency` 参数，自动递增 dependency 包的版本号
 
-2. **Step 2 - 构建依赖镜像**: 调用 [`check-packaged.sh`](check-packaged.sh:1) 检查哪些依赖包当前版本还没构建；若有，调用 [`build-depends.sh`](build-depends.sh:1) 构建镜像（可选推送），否则跳过。注意：`build-depends.sh` 的 `--update` 操作可能修改 component 包的配置文件（如 `image.env`），因此 component 包的版本递增必须在此步骤之后执行
+2. **Step 2 - 构建依赖镜像**: 调用 [`check-build.sh`](check-build.sh:1) 检查哪些依赖包当前版本还没构建；若有，调用 [`build-depends.sh`](build-depends.sh:1) 构建镜像（可选推送），否则跳过。注意：`build-depends.sh` 的 `--update` 操作可能修改 component 包的配置文件（如 `image.env`），因此 component 包的版本递增必须在此步骤之后执行
 
 3. **Step 3 - 更新 backend 规格**: 调用 [`gen-backend-spec.sh`](gen-backend-spec.sh:1) 更新 [`configures/common/backend/system-spec.json`](configures/common/backend/system-spec.json:1)
 
@@ -785,7 +785,7 @@ configures/
 
 5. **Step 5 - 更新系统清单**: 调用 [`gen-manifest.sh`](gen-manifest.sh:1) 更新 manifest，并重新检查 `costrict-system` 版本（因 `gen-manifest.sh` 可能修改了其内容）
 
-6. **Step 6 - 构建发布包**: 调用 [`check-packaged.sh`](check-packaged.sh:1) 检查哪些组件包当前版本还没打包；若有，调用 [`build-components.sh`](build-components.sh:1) 构建包并上传到云环境（如果指定了 `--upload` 参数），否则跳过
+6. **Step 6 - 构建发布包**: 调用 [`check-build.sh`](check-build.sh:1) 检查哪些组件包当前版本还没打包；若有，调用 [`build-components.sh`](build-components.sh:1) 构建包并上传到云环境（如果指定了 `--upload` 参数），否则跳过
 
 **支持参数**:
 
@@ -836,7 +836,7 @@ configures/
 **注意事项**:
 
 - 脚本依赖于 [`check-update.sh`](check-update.sh:1) 来检测变更
-- 脚本依赖于 [`check-packaged.sh`](check-packaged.sh:1) 来获取待构建的包列表
+- 脚本依赖于 [`check-build.sh`](check-build.sh:1) 来获取待构建的包列表
 - 版本号变更会自动写入对应的 `.json` 配置文件
 - 建议在执行前确认 Git 仓库已提交所有必要的更改
 - 使用 `--push` 和 `--upload` 参数前，请确保网络连接正常
@@ -1092,7 +1092,7 @@ declare -a ENV_PATHS=("/packages/test" "/packages/prod" "/packages/qianliu")
 | [`gen-manifest.sh`](gen-manifest.sh:1) | 生成系统清单文件 |
 | [`gen-backend-spec.sh`](gen-backend-spec.sh:1) | 生成 backend 子系统规格文件 |
 | [`check-update.sh`](check-update.sh:1) | 检测变更并自动递增版本号 |
-| [`check-packaged.sh`](check-packaged.sh:1) | 检测包是否已构建/打包 |
+| [`check-build.sh`](check-build.sh:1) | 检测包是否已构建/打包 |
 | [`build-costrict.sh`](build-costrict.sh:1) | 全自动一站式构建发布 |
 | [`start-local-site.sh`](start-local-site.sh:1) | 启动本地下载站点用于测试 |
 

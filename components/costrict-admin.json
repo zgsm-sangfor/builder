@@ -1,11 +1,7 @@
 {
   "name": "costrict-admin",
-  "type": "exec",
+  "type": "binary",
   "subsystem": "frontend",
-  "path": "../costrict-admin/utility",
-  "extras": [
-    "../costrict-admin/common"
-  ],
   "platforms": [
     {
       "os": "linux",

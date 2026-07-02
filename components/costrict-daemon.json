@@ -2,8 +2,10 @@
   "name": "costrict-daemon",
   "type": "exec",
   "subsystem": "root",
-  "path": "../costrict-admin/daemon",
-  "extras": [
+  "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
+  "path": "../costrict-admin",
+  "sources": [
+    "../costrict-admin/daemon",
     "../costrict-admin/common"
   ],
   "platforms": [

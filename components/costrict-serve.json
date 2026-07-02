@@ -2,8 +2,12 @@
   "name": "costrict-serve",
   "type": "exec",
   "subsystem": "backend",
-  "path": "../costrict-admin/backend",
-  "extras": ["../costrict-admin/common"],
+  "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
+  "path": "../costrict-admin",
+  "sources": [
+    "../costrict-admin/backend",
+    "../costrict-admin/common"
+  ],
   "platforms": [
     {
       "os": "linux",

@@ -24,7 +24,7 @@
     - [2. build-components - 部署包构建](#2-build-components---部署包构建)
     - [3. build-costrict - 完整构建](#3-build-costrict---完整构建)
     - [4. check-update - 更新检测](#4-check-update---更新检测)
-    - [5. check-packaged - 打包状态检测](#5-check-packaged---打包状态检测)
+    - [5. check-build - 打包状态检测](#5-check-build---打包状态检测)
     - [6. gen-manifest - 发布清单更新](#6-gen-manifest---发布清单更新)
     - [7. gen-backend-spec - backend 子系统规格生成](#7-gen-backend-spec---backend-子系统规格生成)
     - [8. gen-component - 组件模块定义生成](#8-gen-component---组件模块定义生成)
@@ -69,7 +69,7 @@
 
 | 工具 | 用途 | 使用脚本 |
 |------|------|----------|
-| **jq** | JSON 文件解析与处理 | [`build-depends.sh`](build-depends.sh:674)、[`build-components.sh`](build-components.sh:128)、[`check-update.sh`](check-update.sh:1)、[`check-packaged.sh`](check-packaged.sh:1)、[`gen-manifest.sh`](gen-manifest.sh:23)、[`gen-backend-spec.sh`](gen-backend-spec.sh:25)、[`gen-component.sh`](gen-component.sh:1)、[`gen-depend.sh`](gen-depend.sh:1) |
+| **jq** | JSON 文件解析与处理 | [`build-depends.sh`](build-depends.sh:674)、[`build-components.sh`](build-components.sh:128)、[`check-update.sh`](check-update.sh:1)、[`check-build.sh`](check-build.sh:1)、[`gen-manifest.sh`](gen-manifest.sh:23)、[`gen-backend-spec.sh`](gen-backend-spec.sh:25)、[`gen-component.sh`](gen-component.sh:1)、[`gen-depend.sh`](gen-depend.sh:1) |
 | **smc** | 包签名、打包、索引管理 | [`build-components.sh`](build-components.sh:24)（路径：`/root/.costrict/bin`） |
 | **rsync** | 上传部署包到远程服务器 | [`build-components.sh`](build-components.sh:579) |
 | **ssh** | 远程服务器操作 | [`build-components.sh`](build-components.sh:581) |
@@ -134,7 +134,7 @@ brew install jq zip rsync
 ./build-depends.sh --build --push
 
 # 步骤2: 检查镜像是否已构建，列出待构建列表
-./check-packaged.sh --build-type dependency
+./check-build.sh --build-type dependency
 
 # 步骤3: 检查更新并自动递增依赖包版本
 ./check-update.sh --update --build-type dependency
@@ -163,7 +163,7 @@ builder/
 ├── build-components.sh       # 部署包构建脚本
 ├── build-costrict.sh         # 完整构建脚本（自动化流程）
 ├── check-update.sh           # 更新检测与版本递增脚本
-├── check-packaged.sh         # 已打包/已构建状态检测脚本
+├── check-build.sh         # 已打包/已构建状态检测脚本
 ├── gen-manifest.sh           # 发布清单更新脚本
 ├── gen-backend-spec.sh       # backend 子系统规格生成脚本
 ├── gen-component.sh          # 组件模块定义生成脚本
@@ -348,11 +348,11 @@ builder/
 
 **执行流程**：
 1. 调用 [`check-update.sh`](check-update.sh:1) 自动递增 dependency 包的版本号
-2. 调用 [`check-packaged.sh`](check-packaged.sh:1) 检查尚未构建的 dependency 包，若有则调用 [`build-depends.sh`](build-depends.sh:1) 构建
+2. 调用 [`check-build.sh`](check-build.sh:1) 检查尚未构建的 dependency 包，若有则调用 [`build-depends.sh`](build-depends.sh:1) 构建
 3. 调用 [`gen-backend-spec.sh`](gen-backend-spec.sh:1) 更新 `backend/system-spec.json`
 4. 调用 [`check-update.sh`](check-update.sh:1) 自动递增 component 包的版本号
 5. 调用 [`gen-manifest.sh`](gen-manifest.sh:1) 更新 manifest，并重新检查 costrict-system 版本
-6. 调用 [`check-packaged.sh`](check-packaged.sh:1) 检查尚未打包的 component 包，若有则调用 [`build-components.sh`](build-components.sh:1) 构建
+6. 调用 [`check-build.sh`](check-build.sh:1) 检查尚未打包的 component 包，若有则调用 [`build-components.sh`](build-components.sh:1) 构建
 
 **示例**：
 ```bash
@@ -421,13 +421,13 @@ builder/
 
 ---
 
-### 5. check-packaged - 打包状态检测
+### 5. check-build - 打包状态检测
 
 **功能**：检测组件包或依赖包的版本是否已经构建/打包完成，输出尚未构建的模块列表
 
 **用法**：
 ```bash
-./check-packaged.sh [OPTIONS]
+./check-build.sh [OPTIONS]
 ```
 
 **选项**：
@@ -445,16 +445,16 @@ builder/
 **示例**：
 ```bash
 # 检查所有组件包是否已打包
-./check-packaged.sh
+./check-build.sh
 
 # 检查依赖包是否已构建
-./check-packaged.sh --build-type dependency
+./check-build.sh --build-type dependency
 
 # 检查指定包
-./check-packaged.sh --packages backend,frontend
+./check-build.sh --packages backend,frontend
 
 # 详细模式
-./check-packaged.sh --verbose
+./check-build.sh --verbose
 ```
 
 ---

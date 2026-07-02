@@ -1,6 +1,6 @@
 {
   "name": "taskd",
-  "type": "exec",
+  "type": "docker",
   "version": "1.0.3",
   "remote": "git@github.com:zgsm-ai/taskd.git",
   "repo": "zgsm",

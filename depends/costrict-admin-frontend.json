@@ -5,6 +5,9 @@
   "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
   "path": "../costrict-admin",
   "enabled": true,
+  "sources": [
+    "../costrict-admin/frontend"
+  ],
   "excludes": [
     "*/dist/*",
     "*/.git/*",

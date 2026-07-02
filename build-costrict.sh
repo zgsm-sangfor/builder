@@ -16,7 +16,7 @@ set -e
 #         如果有，调用build-components.sh构建包并上传到云环境（如果指定了--upload参数），否则跳过。
 #
 # 说明：check-update.sh 只负责自动递增包的版本号，不再用于获取待构建的包列表；
-#       待构建的包列表统一由 check-packaged.sh 获取。
+#       待构建的包列表统一由 check-build.sh 获取。
 #
 
 # build-costrict.sh支持以下可选参数：
@@ -41,11 +41,11 @@ show_help() {
     echo ""
     echo "执行步骤:"
     echo "  1. 调用 check-update.sh 自动递增 dependency 包的版本号"
-    echo "  2. 调用 check-packaged.sh 检查尚未构建的 dependency 包，若有则调用 build-depends.sh 构建"
+    echo "  2. 调用 check-build.sh 检查尚未构建的 dependency 包，若有则调用 build-depends.sh 构建"
     echo "  3. 调用 gen-backend-spec.sh 更新 backend/system-spec.json"
     echo "  4. 调用 check-update.sh 自动递增 component 包的版本号"
     echo "  5. 调用 gen-manifest.sh 更新 manifest，并重新检查 costrict-system 版本"
-    echo "  6. 调用 check-packaged.sh 检查尚未打包的 component 包，若有则调用 build-components.sh 构建"
+    echo "  6. 调用 check-build.sh 检查尚未打包的 component 包，若有则调用 build-components.sh 构建"
     echo ""
     echo "示例:"
     echo "  $0                    # 构建镜像（不推送），然后构建包"
@@ -106,9 +106,9 @@ else
     echo "----------------------------------------------------------------"
     echo "Step 2: Checking packaged dependencies..."
     echo "----------------------------------------------------------------"
-    # check-packaged.sh 以未构建包的数量作为退出码，当存在未构建包时返回非0，
+    # check-build.sh 以未构建包的数量作为退出码，当存在未构建包时返回非0，
     # 此处使用 '|| true' 防止 set -e 中断脚本执行
-    need_build_packages=$(./check-packaged.sh --build-type dependency || true)
+    need_build_packages=$(./check-build.sh --build-type dependency || true)
     echo "Need build 'dependency' packages: $need_build_packages"
 
     if [ -n "$need_build_packages" ]; then
@@ -150,9 +150,9 @@ echo "----------------------------------------------------------------"
 echo "----------------------------------------------------------------"
 echo "Step 6: Checking packaged components..."
 echo "----------------------------------------------------------------"
-# check-packaged.sh 以未打包包的数量作为退出码，当存在未打包包时返回非0，
+# check-build.sh 以未打包包的数量作为退出码，当存在未打包包时返回非0，
 # 此处使用 '|| true' 防止 set -e 中断脚本执行
-need_pack_packages=$(./check-packaged.sh --build-type component || true)
+need_pack_packages=$(./check-build.sh --build-type component || true)
 echo "Need build 'component' packages: $need_pack_packages"
 
 if [ -n "$need_pack_packages" ]; then

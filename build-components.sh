@@ -33,7 +33,6 @@ usage() {
     echo "  --key <key>          Private key file (default: costrict-private.pem)"
     echo "  -h, --help           Help information"
     echo "Actions:"
-    # echo "  --update             Automatically update component versions"
     echo "  --clean              Clean the earlier versions"
     echo "  --build              Compile or build the module to be packaged"
     echo "  --pack               Package and sign the module"
@@ -75,6 +74,47 @@ enable_upload() {
                 ;;
         esac
     done
+}
+
+# 写入或更新 build.json 构建状态文件
+# 参数:
+#   $1: type - "dependency" 或 "component"
+#   $2: package_name - 包名
+#   $3: version - 版本号
+#   $4: field - 时间戳字段 ("build", "update", "push", "upload")
+write_build_json() {
+    local type="$1"
+    local package_name="$2"
+    local version="$3"
+    local field="$4"
+
+    local build_dir="builds/${type}/${package_name}/${version}"
+    local build_file="${build_dir}/build.json"
+    local current_time=$(date "+%Y-%m-%d %H:%M:%S")
+
+    mkdir -p "$build_dir"
+
+    if [ -f "$build_file" ]; then
+        # 更新现有文件：设置指定时间戳字段
+        local tmp_file=$(mktemp)
+        jq --arg time "$current_time" --arg field "$field" \
+            '.timestamp[$field] = $time' "$build_file" > "$tmp_file" && mv "$tmp_file" "$build_file"
+    else
+        # 创建新文件，仅设置当前字段的时间戳，其余字段为空
+        jq -n --arg pkg "$package_name" --arg ver "$version" --arg time "$current_time" --arg field "$field" \
+            '{
+                package: $pkg,
+                version: $ver,
+                timestamp: {
+                    build: (if $field == "build" then $time else "" end),
+                    update: (if $field == "update" then $time else "" end),
+                    push: (if $field == "push" then $time else "" end),
+                    upload: (if $field == "upload" then $time else "" end)
+                }
+            }' > "$build_file"
+    fi
+
+    echo "Build status saved to $build_file (${field}=${current_time})"
 }
 
 # 默认私钥文件
@@ -135,55 +175,57 @@ is_module_enabled() {
     return 0
 }
 
-# Function to build a package for multiple platforms
+# Function to render build command template
+# 支持 {{.version}}, {{.os}}, {{.arch}}, {{.output}} 模板变量
+# 参数: $1 - template string, $2 - version, $3 - os, $4 - arch, $5 - output
+render_build_template() {
+    local template="$1"
+    local version="$2"
+    local os="$3"
+    local arch="$4"
+    local output="$5"
+    
+    local result="$template"
+    result="${result//\{\{.version\}\}/$version}"
+    result="${result//\{\{.os\}\}/$os}"
+    result="${result//\{\{.arch\}\}/$arch}"
+    result="${result//\{\{.output\}\}/$output}"
+    
+    echo "$result"
+}
+
+# Function to build a package for multiple platforms (仅用于 exec 类型)
 build_app() {
     local package_name="$1"
     local version="$2"
     local source_dir="$3"
     local platforms_json="$4"
+    local package_config_file="$5"
 
     # 获取当前路径的绝对路径
-    local current_dir=$(pwd)   
-    # 解析platforms数组
+    local current_dir=$(pwd)
+    
+    # exec 类型的编译工作已迁移至 build-depends.sh，此处检查 packages/ 目录下是否已有编译产物
+    echo "Skipping exec-type build for '${package_name}' (should be pre-built by build-depends.sh)"
+    local build_output_exists=false
     local platform_count=$(echo "$platforms_json" | jq 'length')
-
-    echo "Starting multi-platform build for package: $package_name, version: $version"
-    echo ""
-    echo "Source directory: $source_dir"
-    echo "Building for $platform_count platform(s): $platforms_json"
-    # 遍历每个平台
     local i
     for ((i=0; i<platform_count; i++)); do
         local os=$(echo "$platforms_json" | jq -r ".[$i].os")
         local arch=$(echo "$platforms_json" | jq -r ".[$i].arch")
-        
-        echo "==== Building $package_name for $os/$arch ===="
-        
-        # 创建输出目录
-        local output_dir="$current_dir/packages/$package_name/$os/$arch/$version"
-        mkdir -p "$output_dir"
-        
-        # 设置输出文件名
-        local output_file="$package_name"
-        if [ "$os" = "windows" ]; then
-            output_file="$output_file.exe"
+        local expected_output="packages/${package_name}/${os}/${arch}/${version}"
+        if [ -d "$expected_output" ]; then
+            build_output_exists=true
+            echo "  Found pre-built output: $expected_output"
+        else
+            echo "  WARNING: Pre-built output not found: $expected_output (run build-depends.sh --build first)"
         fi
-        
-        # 完整输出路径
-        local output_target="$output_dir/$output_file"
-        
-        echo "Output target: $output_target"
-        
-        # 到目标路径执行build.py
-        (cd "$source_dir" && python ./build.py --software "$version" --os "$os" --arch "$arch" --output "$output_target")
-        if [ $? -ne 0 ]; then
-            echo "Build failed for $package_name on $os/$arch"
-            exit 1
-        fi
-        echo ""
     done
-    
-    echo "All apps built successfully for package: $package_name"
+    if [ "$build_output_exists" = false ]; then
+        echo "Error: No pre-built output found for exec package '${package_name}'. Please run build-depends.sh --build first."
+        exit 1
+    fi
+    return 0
 }
 
 # Function to build configuration package directories
@@ -339,15 +381,6 @@ build_package() {
         echo "Skipping build step for ${package}..."
         return
     fi
-
-    # 计算source_dir
-    local current_dir=$(pwd)
-    local source_dir="$current_dir/$package_path"
-    # 检查源路径是否存在
-    if [ ! -d "$source_dir" ]; then
-        echo "Error: Source directory $source_dir does not exist!"
-        exit 1
-    fi
     
     if [ -z "$package_version" ] || [ "$package_version" = "null" ] || [ "$package_version" = "" ]; then
         echo "Error: Version not found for package '${package}' in ${package_config_file}!"
@@ -368,7 +401,7 @@ build_package() {
     echo "Building package: $package, version: $package_version, path: $package_path, type: $package_type"
     echo "=============================================="
     if [ "exec" == "$package_type" ]; then
-        build_app "${package}" "${package_version}" "${source_dir}" "${package_platforms}"
+        build_app "${package}" "${package_version}" "${package_path}" "${package_platforms}" "${package_config_file}"
     elif [ "zip" == "$package_type" ]; then
         build_zip "${package}" "${package_version}" "${source_dir}" "${package_platforms}"
     else
@@ -635,6 +668,13 @@ process_package() {
         exit 1
     fi
     
+    # 获取 name 和 version 字段（如不存在则使用 package_name 作为 name）
+    local pkg_name=$(jq -r ".name // empty" "components/${package_name}.json")
+    local pkg_version=$(jq -r ".version // empty" "components/${package_name}.json")
+    if [ -z "$pkg_name" ] || [ "$pkg_name" = "null" ] || [ "$pkg_name" = "" ]; then
+        pkg_name="$package_name"
+    fi
+    
     # 处理指定包
     mkdir -p "packages/${package_name}"
 
@@ -648,6 +688,12 @@ process_package() {
     if [ "$NEED_BUILD" = true ]; then
         echo "Building target for ${package_name}..."
         build_package "${package_name}"
+        if [ $? -ne 0 ]; then
+            echo "Error: Build failed for ${package_name}"
+            exit 1
+        fi
+        # 写入 build.json 记录构建完成时间戳
+        write_build_json "component" "${pkg_name}" "${pkg_version}" "build"
     else
         echo "Skipping build step for ${package_name}..."
     fi
@@ -677,6 +723,12 @@ process_package() {
     if [ "$NEED_UPLOAD" = true ]; then
         echo "Uploading package: ${package_name}"
         upload_package_clouds "packages" "${package_name}"
+        if [ $? -ne 0 ]; then
+            echo "Error: Upload failed for ${package_name}"
+            exit 1
+        fi
+        # 写入 build.json 记录 upload 完成时间戳
+        write_build_json "component" "${pkg_name}" "${pkg_version}" "upload"
     fi
 }
 

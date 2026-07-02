@@ -324,10 +324,10 @@ calculate_github_version() {
     echo "$latest_tag"
 }
 
-# 计算多目录组合的CHECKSUM（主目录 + extras目录）
+# 计算多目录组合的CHECKSUM
 # 参数：
 #   $1: type - 包类型（exec 或 frontend）
-#   $2: path - 主目录路径
+#   $2: path - 主目录路径（git仓库路径，sources不存在时作为checksum目标）
 #   $3: json_file - JSON配置文件路径
 # 输出格式：第一行checksum，第二行文件数
 calculate_multi_directory() {
@@ -335,7 +335,25 @@ calculate_multi_directory() {
     local path="$2"
     local json_file="$3"
 
-    # 检查主目录是否存在，如果不存在则从remote克隆
+    # 确定需要计算checksum的目录列表：
+    # - sources 字段存在且非空时，使用 sources 数组中的所有路径
+    # - sources 字段不存在或为空时，使用 path 字段的值
+    local dirs_to_check=()
+    local sources_count=$(jq -r '.sources | length // 0' "$json_file" 2>/dev/null)
+
+    if [ "$sources_count" -gt 0 ]; then
+        for ((i=0; i<sources_count; i++)); do
+            local source_dir=$(jq -r ".sources[$i] // empty" "$json_file")
+            if [ -n "$source_dir" ] && [ "$source_dir" != "null" ]; then
+                dirs_to_check+=("$source_dir")
+            fi
+        done
+    else
+        dirs_to_check+=("$path")
+    fi
+
+    # 检查主目录（git仓库路径）是否存在，如果不存在则从remote克隆
+    # 无论sources是否存在，都需要确保path仓库已克隆（sources通常是path的子目录）
     if [ ! -d "$path" ]; then
         local remote=$(jq -r ".remote // empty" "$json_file" 2>/dev/null)
         if [ -z "$remote" ] || [ "$remote" = "null" ] || [ "$remote" = "" ]; then
@@ -351,45 +369,34 @@ calculate_multi_directory() {
         fi
     fi
 
-    # 计算主目录的checksum
-    local result=""
-    if [ "$type" = "exec" ]; then
-        result=$(calculate_go_directory_checksum "$path")
-    else
-        result=$(calculate_frontend_checksum "$path" "$json_file")
-    fi
+    # 对目标目录列表逐个计算checksum并合并
+    local combined_checksum=""
+    local combined_file_count=0
+    local first=true
 
-    local combined_checksum=$(echo "$result" | head -n1)
-    local combined_file_count=$(echo "$result" | tail -n1)
+    for dir in "${dirs_to_check[@]}"; do
+        prompt_verbose "Processing checksum directory: $dir"
 
-    # 处理extras目录（附属源码目录），将其文件纳入checksum计算范围
-    local extras_count=$(jq -r '.extras | length // 0' "$json_file" 2>/dev/null)
+        local result=""
+        if [ "$type" = "exec" ]; then
+            result=$(calculate_go_directory_checksum "$dir")
+        else
+            result=$(calculate_frontend_checksum "$dir" "$json_file")
+        fi
 
-    if [ "$extras_count" -gt 0 ]; then
-        for ((i=0; i<extras_count; i++)); do
-            local extra_dir=$(jq -r ".extras[$i] // empty" "$json_file")
-            if [ -z "$extra_dir" ] || [ "$extra_dir" = "null" ]; then
-                continue
-            fi
+        local dir_checksum=$(echo "$result" | head -n1)
+        local dir_count=$(echo "$result" | tail -n1)
 
-            prompt_verbose "Processing extras directory: $extra_dir"
-
-            local extra_result=""
-            if [ "$type" = "exec" ]; then
-                extra_result=$(calculate_go_directory_checksum "$extra_dir")
+        if [ -n "$dir_checksum" ]; then
+            if [ "$first" = true ]; then
+                combined_checksum="$dir_checksum"
+                first=false
             else
-                extra_result=$(calculate_frontend_checksum "$extra_dir" "$json_file")
+                combined_checksum=$(echo "${combined_checksum}${dir_checksum}" | sha256sum | awk '{print $1}')
             fi
-
-            local extra_checksum=$(echo "$extra_result" | head -n1)
-            local extra_count=$(echo "$extra_result" | tail -n1)
-
-            if [ -n "$extra_checksum" ]; then
-                combined_checksum=$(echo "${combined_checksum}${extra_checksum}" | sha256sum | awk '{print $1}')
-                combined_file_count=$((combined_file_count + extra_count))
-            fi
-        done
-    fi
+            combined_file_count=$((combined_file_count + dir_count))
+        fi
+    done
 
     echo "$combined_checksum"
     echo "$combined_file_count"
@@ -467,7 +474,7 @@ process_package() {
         new_checksum=$(echo "$result" | head -n1)
         new_file_count=$(echo "$result" | tail -n1)
     elif [ "$package_type" = "exec" ] || [ "$package_type" = "docker" ] || [ "$package_type" = "frontend" ]; then
-        # exec/docker/frontend类型：扫描主目录及extras目录
+        # exec/docker/frontend类型：扫描主目录及sources目录
         local result=$(calculate_multi_directory "$package_type" "$package_path" "$json_file")
         new_checksum=$(echo "$result" | head -n1)
         new_file_count=$(echo "$result" | tail -n1)
@@ -492,9 +499,36 @@ process_package() {
         fi
         # github类型已自行处理版本比较和latest.json更新，直接返回
         return 1
+    elif [ "$package_type" = "binary" ]; then
+        # binary类型：version字段与depends/${componentName}.json中的version保持一致
+        local depends_file="depends/${package_name}.json"
+        if [ ! -f "$depends_file" ]; then
+            log "ERROR" "Depends file '$depends_file' not found for binary package '$package_name'"
+            return 1
+        fi
+        local depends_version=$(jq -r ".version // empty" "$depends_file")
+        if [ -z "$depends_version" ] || [ "$depends_version" = "null" ]; then
+            log "ERROR" "No version found in depends file '$depends_file' for binary package '$package_name'"
+            return 1
+        fi
+
+        # 如果版本不一致，同步为depends中的版本
+        if [ "$package_version" != "$depends_version" ]; then
+            log "MODIFIED" "Binary package '$package_name' version synced from depends: $package_version -> $depends_version"
+            jq "(.version) |= \"$depends_version\"" "$json_file" > "$json_file.tmp"
+            mv "$json_file.tmp" "$json_file"
+            package_version="$depends_version"
+
+            # 更新latest.json
+            jq ".${LATEST_FIELD_NAME}[\"$package_name\"] = {\"version\": \"$package_version\", \"checksum\": \"\", \"file_count\": 0}" "$LATEST_JSON" > "$LATEST_JSON.tmp"
+            mv "$LATEST_JSON.tmp" "$LATEST_JSON"
+            modified=true
+            return 0
+        fi
+        return 1
     else
         # 非法类型
-        log "ERROR" "Invalid package type '$package_type' for package '$package_name'. Valid types: conf, zip, frontend, exec, docker, github"
+        log "ERROR" "Invalid package type '$package_type' for package '$package_name'. Valid types: conf, zip, frontend, exec, docker, github, binary"
         return 1
     fi
     
