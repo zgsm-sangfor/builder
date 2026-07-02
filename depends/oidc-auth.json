@@ -1,14 +1,19 @@
 {
   "name": "oidc-auth",
-  "type": "exec",
+  "type": "github",
   "version": "1.2.18",
   "remote": "git@github.com:zgsm-sangfor/oidc-auth.git",
   "repo": "zgsm",
   "path": "../zgsm-ai/oidc-auth",
-  "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",
   "enabled": true,
-  "component": {
+  "build": {
+    "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "pull": {
+    "command": "docker pull {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "update": {
     "workdir": "./configures/common/oidc-auth",
     "command": "echo IMAGE_OIDC_AUTH={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
   },

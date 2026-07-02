@@ -466,8 +466,8 @@ process_package() {
         local result=$(calculate_zip_package_checksum "$package_path" "$package_name")
         new_checksum=$(echo "$result" | head -n1)
         new_file_count=$(echo "$result" | tail -n1)
-    elif [ "$package_type" = "exec" ] || [ "$package_type" = "frontend" ]; then
-        # exec/frontend类型：扫描主目录及extras目录
+    elif [ "$package_type" = "exec" ] || [ "$package_type" = "docker" ] || [ "$package_type" = "frontend" ]; then
+        # exec/docker/frontend类型：扫描主目录及extras目录
         local result=$(calculate_multi_directory "$package_type" "$package_path" "$json_file")
         new_checksum=$(echo "$result" | head -n1)
         new_file_count=$(echo "$result" | tail -n1)
@@ -494,7 +494,7 @@ process_package() {
         return 1
     else
         # 非法类型
-        log "ERROR" "Invalid package type '$package_type' for package '$package_name'. Valid types: conf, zip, frontend, exec, github"
+        log "ERROR" "Invalid package type '$package_type' for package '$package_name'. Valid types: conf, zip, frontend, exec, docker, github"
         return 1
     fi
     

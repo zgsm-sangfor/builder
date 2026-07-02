@@ -279,7 +279,7 @@ process_dependency_package() {
     fi
 
     # 对于exec类型的依赖包，进一步检查镜像tar文件是否存在
-    if [ "$depend_type" = "exec" ]; then
+    if [ "$depend_type" = "exec" ] || [ "$depend_type" = "docker" ]; then
         local tar_file=$(jq -r --arg ver "$depend_version" \
             '.versions | map(select(.version == $ver)) | .[0].file // empty' "$versions_file" 2>/dev/null)
 

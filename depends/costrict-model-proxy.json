@@ -4,10 +4,17 @@
   "version": "1.0.1",
   "remote": "git@github.com:zgsm-sangfor/costrict-model-proxy.git",
   "repo": "zgsm",
+  "tag": "v{{.version}}",
   "path": "../zgsm-ai/costrict-model-proxy",
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
-  "tag": "v{{.version}}",
-  "component": {
+  "build": {
+    "workdir": "",
+    "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "pull": {
+    "command": "docker pull {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "update": {
     "workdir": "./configures/common/costrict-model-proxy",
     "command": "echo IMAGE_COSTRICT_MODEL_PROXY={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
   }

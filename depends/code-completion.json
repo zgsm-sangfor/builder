@@ -1,13 +1,18 @@
 {
   "name": "code-completion",
-  "type": "exec",
+  "type": "github",
   "version": "1.7.101",
   "remote": "git@github.com:zgsm-ai/code-completions-go.git",
   "repo": "zgsm",
   "path": "../services/code-completions-go",
-  "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",
-  "component": {
+  "build": {
+    "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "pull": {
+    "command": "docker pull {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "update": {
     "workdir": "./configures/common/code-completion",
     "command": "echo IMAGE_CODE_COMPLETION={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
   },

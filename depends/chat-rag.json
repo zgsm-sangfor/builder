@@ -1,14 +1,16 @@
 {
   "name": "chat-rag",
-  "type": "exec",
+  "type": "github",
   "version": "1.2.8",
   "remote": "https://github.com/zgsm-ai/chat-rag.git",
   "repo": "zgsm",
   "path": "../zgsm-ai/chat-rag",
-  "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",
   "enabled": false,
-  "component": {
+  "pull": {
+    "command": "docker pull {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "update": {
     "workdir": "./configures/common/chat-rag",
     "command": "echo IMAGE_CHATRAG={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
   },

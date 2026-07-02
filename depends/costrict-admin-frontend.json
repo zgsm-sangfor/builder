@@ -4,14 +4,17 @@
   "version": "1.0.64",
   "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
   "path": "../costrict-admin",
-  "command": "cd frontend && bash build.sh",
   "enabled": true,
   "excludes": [
     "*/dist/*",
     "*/.git/*",
     "*/node_modules/*"
   ],
-  "component": {
+  "build": {
+    "workdir": "../costrict-admin/backend",
+    "command": "cd frontend && bash build.sh"
+  },
+  "update": {
     "workdir": "../costrict-admin/frontend",
     "command": "bash update.sh"
   },

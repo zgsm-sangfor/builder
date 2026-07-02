@@ -32,6 +32,7 @@ MIN_JQ_VERSION="1.5"          # jq 最低版本
 # -------------------------- 运行目录（定位离线包） --------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 [ -n "$SCRIPT_DIR" ] || SCRIPT_DIR="$(pwd)"
+DOWNLOADS_DIR="${SCRIPT_DIR}/downloads"
 
 # -------------------------- 日志 --------------------------
 log() {
@@ -71,21 +72,37 @@ version_ge() {
 }
 
 # -------------------------- 下载 --------------------------
-# 从远端下载文件到当前目录，若本地已存在则跳过下载
+# 从远端下载文件到当前目录，若本地已存在则跳过下载。
+# 若设置了 COSTRICT_LOCAL_STORAGE，则优先从该变量指定的本地目录获取文件。
 download_file() {
     local file_name=$1
-    local url="${BASE_URL}/costrict-static/linux/${URL_ARCH}/${file_name}"
 
-    if [ -f "$SCRIPT_DIR/$file_name" ]; then
+    if [ -f "$DOWNLOADS_DIR/$file_name" ]; then
         log "INFO" "文件已存在，跳过下载: $file_name"
         return 0
     fi
 
+    mkdir -p "$DOWNLOADS_DIR"
+    # 优先使用本地存储路径
+    if [ -n "${COSTRICT_LOCAL_STORAGE:-}" ]; then
+        local local_path="${COSTRICT_LOCAL_STORAGE}/costrict-static/linux/${URL_ARCH}/${file_name}"
+        if [ -f "$local_path" ]; then
+            log "INFO" "从本地存储复制: $local_path"
+            cp "$local_path" "$DOWNLOADS_DIR/$file_name"
+            log "INFO" "复制完成: $file_name"
+            return 0
+        else
+            log "ERROR" "本地存储中未找到文件: $local_path"
+            return 1
+        fi
+    fi
+
+    local url="${BASE_URL}/costrict-static/linux/${URL_ARCH}/${file_name}"
     log "INFO" "正在下载: $url"
     if command -v curl >/dev/null 2>&1; then
-        curl -fsSL -o "$SCRIPT_DIR/$file_name" "$url"
+        curl -fsSL -o "$DOWNLOADS_DIR/$file_name" "$url"
     elif command -v wget >/dev/null 2>&1; then
-        wget -q -O "$SCRIPT_DIR/$file_name" "$url"
+        wget -q -O "$DOWNLOADS_DIR/$file_name" "$url"
     else
         log "ERROR" "未找到 curl 或 wget，无法下载文件"
         return 1
@@ -96,7 +113,7 @@ download_file() {
 # -------------------------- 安装: docker --------------------------
 install_docker() {
     download_file "$DOCKER_TGZ" || return 1
-    local tgz="$SCRIPT_DIR/$DOCKER_TGZ"
+    local tgz="$DOWNLOADS_DIR/$DOCKER_TGZ"
     log "INFO" "开始离线安装 docker (包: $tgz)..."
     [ -f "$tgz" ] || { log "ERROR" "docker 离线包不存在: $tgz"; return 1; }
 
@@ -141,7 +158,7 @@ EOF
 # -------------------------- 安装: docker compose --------------------------
 install_compose() {
     download_file "$COMPOSE_BIN" || return 1
-    local src="$SCRIPT_DIR/$COMPOSE_BIN"
+    local src="$DOWNLOADS_DIR/$COMPOSE_BIN"
     log "INFO" "开始离线安装 docker compose (二进制: $src)..."
     [ -f "$src" ] || { log "ERROR" "docker compose 离线二进制不存在: $src"; return 1; }
 
@@ -162,7 +179,7 @@ install_compose() {
 # -------------------------- 安装: jq --------------------------
 install_jq() {
     download_file "$JQ_BIN" || return 1
-    local src="$SCRIPT_DIR/$JQ_BIN"
+    local src="$DOWNLOADS_DIR/$JQ_BIN"
     log "INFO" "开始离线安装 jq (二进制: $src)..."
     [ -f "$src" ] || { log "ERROR" "jq 离线二进制不存在: $src"; return 1; }
 

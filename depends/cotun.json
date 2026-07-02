@@ -5,9 +5,14 @@
   "remote": "git@github.com:zgsm-sangfor/cotun.git",
   "repo": "zgsm",
   "path": "../services/cotun",
-  "command": "docker pull {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",
-  "component": {
+  "build": {
+    "command": "export DOCKER_BUILDKIT=1 && docker build -f ./Dockerfile --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "pull": {
+    "command": "docker pull {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "update": {
     "workdir": "./configures/common/cotund",
     "command": "echo IMAGE_COTUN={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
   },

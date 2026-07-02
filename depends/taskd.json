@@ -8,7 +8,13 @@
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",
   "enabled": false,
-  "component": {
+  "build": {
+    "command": "export DOCKER_BUILDKIT=1 && docker build -f ./Dockerfile --build-arg VERSION={{.version}} .. -t {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "pull": {
+    "command": "docker pull {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "update": {
     "workdir": "./configures/common/taskd",
     "command": "echo IMAGE_TASKD={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
   },

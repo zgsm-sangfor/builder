@@ -8,9 +8,15 @@
   "extras": [
     "../costrict-admin/common"
   ],
-  "command": "cd backend && export DOCKER_BUILDKIT=1 && docker build -f ./Dockerfile --build-arg VERSION={{.version}} .. -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",
-  "component": {
+  "build": {
+    "workdir": "../costrict-admin/backend",
+    "command": "export DOCKER_BUILDKIT=1 && docker build -f ./Dockerfile --build-arg VERSION={{.version}} .. -t {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "pull": {
+    "command": "docker pull {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "update": {
     "workdir": "./configures/common/costrict-admin-backend",
     "command": "echo IMAGE_COSTRICT_ADMIN_BACKEND={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
   },

@@ -5,9 +5,11 @@
   "repo": "zgsm",
   "remote": "git@github.com:zgsm-sangfor/casdoor.git",
   "path": "../source/casdoor",
-  "command": "docker pull {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",
-  "component": {
+  "pull": {
+    "command": "docker pull {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "update": {
     "workdir": "./configures/common/casdoor",
     "command": "echo IMAGE_CASDOOR={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
   },

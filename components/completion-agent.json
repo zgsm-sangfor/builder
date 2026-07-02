@@ -2,7 +2,7 @@
   "name": "completion-agent",
   "type": "exec",
   "subsystem": "frontend",
-  "path": "../../middles/completion-agent",
+  "path": "../middles/completion-agent",
   "version": "1.0.20",
   "platforms": [
     {

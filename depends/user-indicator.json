@@ -1,13 +1,19 @@
 {
   "name": "user-indicator",
-  "type": "exec",
+  "type": "github",
   "version": "0.0.9",
   "remote": "git@github.com:zgsm-ai/user-indicator-for-es.git",
   "repo": "zgsm",
   "path": "../zgsm-ai/user-indicator-for-es",
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",
-  "component": {
+  "build": {
+    "command": "export DOCKER_BUILDKIT=1 && docker build -f ./Dockerfile --build-arg VERSION={{.version}} .. -t {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "pull": {
+    "command": "docker pull {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "update": {
     "workdir": "./configures/common/user-indicator",
     "command": "echo IMAGE_USER_INDICATOR={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
   },

@@ -1,14 +1,19 @@
 {
   "name": "codebase-embedder",
-  "type": "exec",
+  "type": "github",
   "version": "0.2.6",
   "remote": "https://github.com/zgsm-sangfor/codebase-embedder.git",
   "repo": "zgsm",
   "path": "../zgsm-ai/codebase-embedder",
-  "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",
   "enabled": false,
-  "component": {
+  "build": {
+    "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "pull": {
+    "command": "docker pull {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "update": {
     "workdir": "./configures/common/codebase-embedder",
     "command": "echo IMAGE_CODEBASE_EMBEDDER={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
   },

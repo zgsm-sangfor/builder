@@ -2,8 +2,8 @@
   "name": "costrict-serve",
   "type": "exec",
   "subsystem": "backend",
-  "path": "../../costrict-admin/backend",
-  "extras": ["../../costrict-admin/common"],
+  "path": "../costrict-admin/backend",
+  "extras": ["../costrict-admin/common"],
   "platforms": [
     {
       "os": "linux",

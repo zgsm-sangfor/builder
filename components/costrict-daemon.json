@@ -2,9 +2,9 @@
   "name": "costrict-daemon",
   "type": "exec",
   "subsystem": "root",
-  "path": "../../costrict-admin/daemon",
+  "path": "../costrict-admin/daemon",
   "extras": [
-    "../../costrict-admin/common"
+    "../costrict-admin/common"
   ],
   "platforms": [
     {
@@ -16,6 +16,6 @@
       "arch": "amd64"
     }
   ],
-  "version": "1.0.67",
+  "version": "1.0.68",
   "description": "The daemon of costrict"
 }

@@ -2,7 +2,7 @@
   "name": "smc",
   "type": "exec",
   "subsystem": "frontend",
-  "path": "../../smc",
+  "path": "../smc",
   "version": "1.1.18",
   "platforms": [
     {

@@ -1,13 +1,18 @@
 {
   "name": "client-manager",
-  "type": "exec",
+  "type": "github",
   "version": "1.0.14",
   "remote": "git@github.com:zgsm-ai/client-manager.git",
   "repo": "zgsm",
   "path": "../services/client-manager",
-  "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",
-  "component": {
+  "build": {
+    "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "pull": {
+    "command": "docker pull {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "update": {
     "workdir": "./configures/common/client-manager",
     "command": "echo IMAGE_CLIENT_MANAGER={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
   },

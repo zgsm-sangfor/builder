@@ -48,7 +48,7 @@ jobs:
       - name: Run build-costrict.sh
         run: |
           chmod +x *.sh
-          ./build-costrict.sh
+          ./build-costrict.sh --skip-depend
 
       - name: Commit and push changes
         run: |

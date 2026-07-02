@@ -2,7 +2,7 @@
   "name": "codebase-indexer",
   "type": "exec",
   "subsystem": "frontend",
-  "path": "../../middles/codebase-indexer",
+  "path": "../middles/codebase-indexer",
   "version": "0.6.8",
   "platforms": [
     {
