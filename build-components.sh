@@ -20,8 +20,8 @@
 # # 各环境的路径配置（对应ENV_NAMES的顺序）
 # declare -a ENV_PATHS=("$test_path" "$prod_path" "$qianliu_path")
 #
-# 确保smc命令在PATH中
-export PATH="$PATH:/root/.costrict/bin"
+# 确保smc命令在PATH中（使用$HOME兼容root和非root环境）
+export PATH="$PATH:$HOME/.costrict/bin"
 
 source ./.env
 
@@ -774,30 +774,32 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 
 # 检查smc命令是否可用，如果不可用则自动下载安装
+# 使用$HOME/.costrict/bin替代硬编码的/root/.costrict/bin，兼容GitHub Actions等非root环境
 if ! command -v smc >/dev/null 2>&1; then
     echo "Warning: smc command not found, attempting to download..."
-    SMC_BIN="/root/.costrict/bin/smc"
+    SMC_DIR="$HOME/.costrict/bin"
+    SMC_BIN="$SMC_DIR/smc"
     SMC_URL="https://zgsm.sangfor.com/costrict/smc/linux/amd64/1.1.18/smc"
 
     if [ -f "$SMC_BIN" ]; then
         # 如果文件已存在但不在PATH中，添加到PATH
-        export PATH="$PATH:/root/.costrict/bin"
+        export PATH="$PATH:$SMC_DIR"
         echo "smc found at $SMC_BIN, added to PATH"
     else
         # 创建目录并使用curl下载，如果curl不可用则使用wget
-        mkdir -p /root/.costrict/bin
+        mkdir -p "$SMC_DIR"
         echo "Downloading smc from $SMC_URL ..."
         if curl -fsSL -o "$SMC_BIN" "$SMC_URL" 2>/dev/null; then
             chmod +x "$SMC_BIN"
-            export PATH="$PATH:/root/.costrict/bin"
+            export PATH="$PATH:$SMC_DIR"
             echo "smc downloaded and installed to $SMC_BIN"
         elif wget -q -O "$SMC_BIN" "$SMC_URL" 2>/dev/null; then
             chmod +x "$SMC_BIN"
-            export PATH="$PATH:/root/.costrict/bin"
+            export PATH="$PATH:$SMC_DIR"
             echo "smc downloaded and installed to $SMC_BIN"
         else
             echo "Error: Failed to download smc from $SMC_URL"
-            echo "Please download it manually to /root/.costrict/bin/smc"
+            echo "Please download it manually to $SMC_BIN"
             exit 1
         fi
     fi

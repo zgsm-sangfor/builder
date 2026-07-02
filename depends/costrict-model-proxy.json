@@ -1,6 +1,6 @@
 {
   "name": "costrict-model-proxy",
-  "type": "exec",
+  "type": "github",
   "version": "1.0.1",
   "remote": "git@github.com:zgsm-sangfor/costrict-model-proxy.git",
   "repo": "zgsm",
