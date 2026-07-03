@@ -17,5 +17,6 @@
     "workdir": "./configures/common/user-indicator",
     "command": "echo IMAGE_USER_INDICATOR={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
   },
+  "enabled": false,
   "description": "user indicator"
 }
