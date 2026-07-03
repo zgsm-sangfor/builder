@@ -5,7 +5,8 @@
 !build-components.sh
 !build-depends.sh
 !check-update.sh
-!check-packaged.sh
+!check-build.sh
+!build-mirror.sh
 !gen-component.sh
 !gen-depend.sh
 !gen-backend-spec.sh
