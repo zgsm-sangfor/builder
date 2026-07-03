@@ -48,7 +48,22 @@ jobs:
       - name: Run build-costrict.sh
         run: |
           chmod +x *.sh
-          ./build-costrict.sh --skip-depend
+          ./build-costrict.sh --skip-dependency
+
+      - name: Prepare package repository artifact
+        run: |
+          rm -rf artifact
+          mkdir -p artifact
+          cp packages.json artifact/
+          cp -a packages/. artifact/
+
+      - name: Upload package repository artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: costrict-packages-${{ github.sha }}
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Commit and push changes
         run: |
