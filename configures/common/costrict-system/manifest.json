@@ -40,7 +40,7 @@
     {
       "name": "casdoor",
       "subsystem": "backend",
-      "version": "1.0.31"
+      "version": "1.0.32"
     },
     {
       "name": "chat-indicator-statistics",
@@ -60,12 +60,12 @@
     {
       "name": "code-completion",
       "subsystem": "backend",
-      "version": "1.7.103"
+      "version": "1.7.104"
     },
     {
       "name": "costrict-admin-backend",
       "subsystem": "backend",
-      "version": "1.0.107"
+      "version": "1.0.108"
     },
     {
       "name": "costrict-admin-frontend",
@@ -140,7 +140,7 @@
     {
       "name": "oidc-auth",
       "subsystem": "backend",
-      "version": "1.0.8"
+      "version": "1.0.9"
     },
     {
       "name": "portal",
