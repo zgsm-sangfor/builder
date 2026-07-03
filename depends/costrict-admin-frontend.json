@@ -14,8 +14,8 @@
     "*/node_modules/*"
   ],
   "build": {
-    "workdir": "../costrict-admin/backend",
-    "command": "cd frontend && bash build.sh"
+    "workdir": "../costrict-admin/frontend",
+    "command": "bash build.sh"
   },
   "update": {
     "workdir": "../costrict-admin/frontend",

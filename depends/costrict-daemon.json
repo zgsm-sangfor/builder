@@ -18,8 +18,7 @@
     }
   ],
   "build": {
-    "workdir": "../costrict-admin/daemon",
-    "command": "./build.py"
+    "workdir": "../costrict-admin/daemon"
   },
   "version": "1.0.68",
   "description": "The daemon of costrict"
