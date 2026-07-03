@@ -1,0 +1,8 @@
+./linux/amd64/docker-20.10.24-x86-64.tgz
+./linux/amd64/docker-compose-linux-x86_64
+./linux/amd64/jq-linux-amd64
+./linux/arm64/docker-20.10.24-aarch64.tgz
+./linux/arm64/docker-compose-linux-aarch64
+./linux/arm64/jq-linux-arm64
+./MANIFEST
+./mirror-site.tar

@@ -30,4 +30,4 @@
 !.github/**
 !builds/
 !builds/**
-
+!costrict-static
