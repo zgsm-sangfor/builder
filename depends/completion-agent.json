@@ -1,0 +1,31 @@
+{
+  "name": "completion-agent",
+  "type": "exec",
+  "remote": "git@github.com:zgsm-sangfor/completion-agent.git",
+  "path": "../middles/completion-agent",
+  "version": "1.0.20",
+  "platforms": [
+    {
+      "os": "windows",
+      "arch": "amd64"
+    },
+    {
+      "os": "linux",
+      "arch": "amd64"
+    },
+    {
+      "os": "linux",
+      "arch": "arm64"
+    },
+    {
+      "os": "darwin",
+      "arch": "amd64"
+    },
+    {
+      "os": "darwin",
+      "arch": "arm64"
+    }
+  ],
+  "enabled": false,
+  "description": "Client agent for code completion"
+}

@@ -1,0 +1,25 @@
+{
+  "name": "costrict-admin",
+  "type": "exec",
+  "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
+  "path": "../costrict-admin",
+  "sources": [
+    "../costrict-admin/utility",
+    "../costrict-admin/common"
+  ],
+  "platforms": [
+    {
+      "os": "linux",
+      "arch": "amd64"
+    },
+    {
+      "os": "windows",
+      "arch": "amd64"
+    }
+  ],
+  "build": {
+    "workdir": "../costrict-admin/utility"
+  },
+  "version": "1.0.133",
+  "description": "Utilities for backend management of Costrict"
+}

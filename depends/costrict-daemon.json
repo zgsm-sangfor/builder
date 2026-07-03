@@ -1,0 +1,26 @@
+{
+  "name": "costrict-daemon",
+  "type": "exec",
+  "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
+  "path": "../costrict-admin",
+  "sources": [
+    "../costrict-admin/daemon",
+    "../costrict-admin/common"
+  ],
+  "platforms": [
+    {
+      "os": "linux",
+      "arch": "amd64"
+    },
+    {
+      "os": "windows",
+      "arch": "amd64"
+    }
+  ],
+  "build": {
+    "workdir": "../costrict-admin/daemon",
+    "command": "./build.py"
+  },
+  "version": "1.0.68",
+  "description": "The daemon of costrict"
+}

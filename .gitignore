@@ -18,10 +18,16 @@
 !costrict-backend-spec.json
 !README.md
 !developer.md
+!configures/
 !configures/**
+!components/
 !components/**
+!depends/
 !depends/**
+!site/
 !site/**
+!.github/
 !.github/**
+!builds/
 !builds/**
 
