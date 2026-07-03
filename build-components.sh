@@ -400,12 +400,15 @@ build_package() {
     echo "=============================================="
     echo "Building package: $package, version: $package_version, path: $package_path, type: $package_type"
     echo "=============================================="
-    if [ "exec" == "$package_type" ]; then
+    if [ "binary" == "$package_type" ]; then
         build_app "${package}" "${package_version}" "${package_path}" "${package_platforms}" "${package_config_file}"
     elif [ "zip" == "$package_type" ]; then
-        build_zip "${package}" "${package_version}" "${source_dir}" "${package_platforms}"
+        build_zip "${package}" "${package_version}" "${package_path}" "${package_platforms}"
+    elif [ "conf" == "$package_type" ]; then
+        build_conf "${package}" "${package_version}" "${package_path}" "${package_platforms}"
     else
-        build_conf "${package}" "${package_version}" "${source_dir}" "${package_platforms}"
+        echo "Error: Unknown package type '${package_type}' for package '${package}', currently only binary/zip/conf are supported."
+        exit 1
     fi
 }
 
