@@ -1,7 +1,7 @@
 {
   "name": "user-indicator",
   "type": "github",
-  "version": "0.0.9",
+  "version": "0.0.20",
   "remote": "git@github.com:zgsm-ai/user-indicator-for-es.git",
   "repo": "zgsm",
   "path": "../zgsm-ai/user-indicator-for-es",

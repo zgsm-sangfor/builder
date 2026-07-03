@@ -1,7 +1,7 @@
 {
   "name": "code-completion",
   "type": "github",
-  "version": "1.7.101",
+  "version": "1.7.105",
   "remote": "git@github.com:zgsm-ai/code-completions-go.git",
   "repo": "zgsm",
   "path": "../services/code-completions-go",

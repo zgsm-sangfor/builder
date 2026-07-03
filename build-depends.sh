@@ -9,8 +9,7 @@
 #   后续由 build-components.sh 对编译结果进行签名打包。
 #
 #   对于type为"docker"或"github"的依赖包，构建/拉取docker镜像，
-#   构建成功后会在 images/{packageName}/versions.json 中记录版本信息，
-#   并将构建好的镜像导出为tar文件保存到 images/{packageName}/ 目录下。
+#   构建成功后将镜像导出为tar文件保存到 images/{packageName}/ 目录下。
 #
 #   对于type为"frontend"的依赖包，构建阶段行为与"docker"一致（本地clone源码并执行build命令），
 #   但构建产物为前端静态资源，不涉及docker镜像的保存和推送操作。
@@ -466,6 +465,8 @@ build_other_dependency() {
         fi
         echo "Successfully built image: $depend_name"
     fi
+    # 构建/拉取成功后，导出docker镜像tar文件（docker/github类型；frontend类型跳过）
+    save_docker_image "$package" || return 1
     return 0
 }
 
@@ -528,10 +529,10 @@ build_dependency() {
     return $?
 }
 
-# 对 docker/github 类型的依赖包记录版本信息到versions.json并导出镜像tar文件；
-# 对 exec 类型跳过（编译结果由 build-components.sh 签名打包）。
+# 对 docker/github 类型的依赖包导出镜像tar文件；
+# 对 exec/frontend 类型跳过（不涉及 docker 镜像）。
 # 参数: $1 - package name
-save_dependency_version() {
+save_docker_image() {
     local package="$1"
     local depend_config_file="depends/${package}.json"
     
@@ -541,7 +542,7 @@ save_dependency_version() {
     # exec / frontend 类型：无需导出docker镜像
     if [ "$depend_type" = "exec" ] || [ "$depend_type" = "frontend" ]; then
         local depend_name=$(jq -r ".name // empty" "$depend_config_file")
-        echo "Skipping version save for ${depend_type}-type package '${depend_name}' (no docker image to export)"
+        echo "Skipping image export for ${depend_type}-type package '${depend_name}' (no docker image to export)"
         return 0
     fi
 
@@ -563,10 +564,6 @@ save_dependency_version() {
     local image_dir="images/${depend_name}"
     mkdir -p "$image_dir"
     
-    # docker/github类型：导出镜像tar文件并检测平台架构
-    local tar_file=""
-    local platforms_json="[]"
-    
     local image_full_name="${depend_repo}/${depend_name}:${rendered_tag}"
     
     echo "=============================================="
@@ -574,7 +571,7 @@ save_dependency_version() {
     echo "=============================================="
     
     # 导出镜像为tar文件
-    tar_file="${depend_name}-${rendered_tag}.tar"
+    local tar_file="${depend_name}-${rendered_tag}.tar"
     echo "Saving image to ${image_dir}/${tar_file}..."
     docker save -o "${image_dir}/${tar_file}" "$image_full_name"
     if [ $? -ne 0 ]; then
@@ -583,59 +580,6 @@ save_dependency_version() {
     fi
     
     echo "Successfully exported image to ${image_dir}/${tar_file}"
-    
-    # 检测镜像支持的平台架构
-    local arch=$(docker image inspect --format='{{.Architecture}}' "$image_full_name" 2>/dev/null || echo "amd64")
-    # 标准化架构名称
-    case "$arch" in
-        x86_64) arch="amd64" ;;
-        aarch64) arch="arm64" ;;
-    esac
-    platforms_json="[\"$arch\"]"
-    
-    # 更新或创建versions.json
-    local versions_file="${image_dir}/versions.json"
-    local tmp_file=$(mktemp)
-    
-    if [ -f "$versions_file" ]; then
-        # 读取现有versions.json，更新latest和versions数组
-        jq --arg ver "$depend_version" \
-           --arg tag "$rendered_tag" \
-           --arg file "$tar_file" \
-           --argjson platforms "$platforms_json" \
-           '
-           .latest = $ver |
-           if (.versions | any(.version == $ver)) then
-               .versions = [.versions[] | if .version == $ver then {version: $ver, tag: $tag, file: $file, platforms: $platforms} else . end]
-           else
-               .versions += [{version: $ver, tag: $tag, file: $file, platforms: $platforms}]
-           end
-           ' "$versions_file" > "$tmp_file"
-        if [ $? -ne 0 ]; then
-            echo "Error: Failed to update $versions_file"
-            rm -f "$tmp_file"
-            return 1
-        fi
-        mv "$tmp_file" "$versions_file"
-    else
-        # 创建新的versions.json
-        jq -n --arg pkg "$depend_name" \
-              --arg ver "$depend_version" \
-              --arg tag "$rendered_tag" \
-              --arg file "$tar_file" \
-              --argjson platforms "$platforms_json" \
-              '{
-                  packageName: $pkg,
-                  latest: $ver,
-                  versions: [{version: $ver, tag: $tag, file: $file, platforms: $platforms}]
-              }' > "$versions_file"
-        if [ $? -ne 0 ]; then
-            echo "Error: Failed to create $versions_file"
-            return 1
-        fi
-    fi
-    
-    echo "Version info saved to $versions_file"
     return 0
 }
 
@@ -851,13 +795,6 @@ process_package() {
         
         # 写入 build.json 记录构建完成时间戳
         write_build_json "dependency" "${depend_name}" "${depend_version}" "build"
-        
-        # 构建成功后，保存版本信息（docker/github类型还会导出镜像tar文件；exec类型跳过）
-        save_dependency_version "${package_name}"
-        if [ $? -ne 0 ]; then
-            echo "Error: Version save failed for ${package_name}"
-            exit 1
-        fi
     else
         echo "Skipping build step for ${package_name}..."
     fi
@@ -971,7 +908,7 @@ fi
 
 # 检查depends目录是否存在
 if [ ! -d "depends" ]; then
-    echo "Error: depends directory not found!"
+    echo "Error: 'depends' directory not found!"
     exit 1
 fi
 

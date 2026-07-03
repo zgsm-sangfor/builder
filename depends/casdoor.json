@@ -1,7 +1,7 @@
 {
   "name": "casdoor",
   "type": "github",
-  "version": "2.2.1",
+  "version": "3.105.0",
   "repo": "zgsm",
   "remote": "git@github.com:zgsm-sangfor/casdoor.git",
   "path": "../source/casdoor",

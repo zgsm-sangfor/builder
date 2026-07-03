@@ -1,8 +1,5 @@
 # 忽略所有文件
 *
-packages
-images
-costrict-static
 # 但包含以下特定文件和目录
 !build-costrict.sh
 !build-components.sh
@@ -21,12 +18,10 @@ costrict-static
 !costrict-backend-spec.json
 !README.md
 !developer.md
-!configures/
 !configures/**
-!components/
 !components/**
-!depends/
 !depends/**
-!site/
 !site/**
 !.github/**
+!builds/**
+

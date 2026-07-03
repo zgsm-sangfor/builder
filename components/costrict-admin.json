@@ -2,6 +2,7 @@
   "name": "costrict-admin",
   "type": "binary",
   "subsystem": "frontend",
+  "path": "../packages",
   "platforms": [
     {
       "os": "linux",

@@ -261,11 +261,11 @@ calculate_zip_package_checksum() {
     calculate_checksum_from_file_list "${file_list[@]}"
 }
 
-# 计算github类型包的版本信息
+# 从github获取远程仓库tag中的版本信息
 # 从GitHub仓库获取最新的semver版本tag
 # 参数: $1 - JSON配置文件路径, $2 - 包名
 # 输出格式：第一行最新版本号（去掉v前缀），第二行checksum（最新tag）
-calculate_github_version() {
+fetch_github_latest() {
     local json_file="$1"
     local package_name="$2"
     
@@ -428,11 +428,75 @@ increment_patch_version() {
     echo "$NEW_VERSION"
 }
 
+# 检查github类型包：从远程仓库获取最新tag来确定版本
+# 参数:
+#   $1: json_file - JSON 配置文件路径
+#   $2: package_name - 包名
+#   $3: package_version - 当前版本号
+# 返回值: 0=已修改, 1=未修改
+check_github_package() {
+    local json_file="$1"
+    local package_name="$2"
+    local package_version="$3"
+    
+    local result=$(fetch_github_latest "$json_file" "$package_name")
+    local latest_version=$(echo "$result" | head -n1)
+    local new_checksum=$(echo "$result" | tail -n1)
+    
+    # 如果与JSON中的版本不一致，更新JSON中的版本号
+    if [ -n "$latest_version" ] && [ "$latest_version" != "$package_version" ]; then
+        log "MODIFIED" "GitHub tag version changed for '$package_name': $package_version -> $latest_version"
+        jq "(.version) |= \"$latest_version\"" "$json_file" > "$json_file.tmp"
+        mv "$json_file.tmp" "$json_file"
+        # 更新latest.json
+        jq ".${LATEST_FIELD_NAME}[\"$package_name\"] = {\"version\": \"$latest_version\", \"checksum\": \"$new_checksum\", \"file_count\": 0}" "$LATEST_JSON" > "$LATEST_JSON.tmp"
+        mv "$LATEST_JSON.tmp" "$LATEST_JSON"
+        return 0
+    fi
+    return 1
+}
+
+# 检查binary类型包：version字段与depends/${componentName}.json中的version保持一致
+# 参数:
+#   $1: json_file - JSON 配置文件路径
+#   $2: package_name - 包名
+#   $3: package_version - 当前版本号
+# 返回值: 0=已修改, 1=未修改
+check_binary_package() {
+    local json_file="$1"
+    local package_name="$2"
+    local package_version="$3"
+    
+    local depends_file="depends/${package_name}.json"
+    if [ ! -f "$depends_file" ]; then
+        log "ERROR" "Depends file '$depends_file' not found for binary package '$package_name'"
+        return 1
+    fi
+    local depends_version=$(jq -r ".version // empty" "$depends_file")
+    if [ -z "$depends_version" ] || [ "$depends_version" = "null" ]; then
+        log "ERROR" "No version found in depends file '$depends_file' for binary package '$package_name'"
+        return 1
+    fi
+
+    # 如果版本不一致，同步为depends中的版本
+    if [ "$package_version" != "$depends_version" ]; then
+        log "MODIFIED" "Binary package '$package_name' version synced from depends: $package_version -> $depends_version"
+        jq "(.version) |= \"$depends_version\"" "$json_file" > "$json_file.tmp"
+        mv "$json_file.tmp" "$json_file"
+
+        # 更新latest.json
+        jq ".${LATEST_FIELD_NAME}[\"$package_name\"] = {\"version\": \"$depends_version\", \"checksum\": \"\", \"file_count\": 0}" "$LATEST_JSON" > "$LATEST_JSON.tmp"
+        mv "$LATEST_JSON.tmp" "$LATEST_JSON"
+        return 0
+    fi
+    return 1
+}
+
 # 处理单个包
 # 参数:
 #   $1: json_file - JSON 配置文件路径
 # 返回值: 0=已修改, 1=未修改
-process_package() {
+check_package_dirty() {
     local json_file="$1"
     local modified=false
     
@@ -479,53 +543,11 @@ process_package() {
         new_checksum=$(echo "$result" | head -n1)
         new_file_count=$(echo "$result" | tail -n1)
     elif [ "$package_type" = "github" ]; then
-        # github类型：从远程仓库获取最新tag来确定版本
-        local result=$(calculate_github_version "$json_file" "$package_name")
-        local latest_version=$(echo "$result" | head -n1)
-        new_checksum=$(echo "$result" | tail -n1)
-        new_file_count=0
-        
-        # 如果与JSON中的版本不一致，更新JSON中的版本号
-        if [ -n "$latest_version" ] && [ "$latest_version" != "$package_version" ]; then
-            log "MODIFIED" "GitHub tag version changed for '$package_name': $package_version -> $latest_version"
-            jq "(.version) |= \"$latest_version\"" "$json_file" > "$json_file.tmp"
-            mv "$json_file.tmp" "$json_file"
-            package_version="$latest_version"
-            # 更新latest.json
-            jq ".${LATEST_FIELD_NAME}[\"$package_name\"] = {\"version\": \"$package_version\", \"checksum\": \"$new_checksum\", \"file_count\": $new_file_count}" "$LATEST_JSON" > "$LATEST_JSON.tmp"
-            mv "$LATEST_JSON.tmp" "$LATEST_JSON"
-            modified=true
-            return 0
-        fi
-        # github类型已自行处理版本比较和latest.json更新，直接返回
-        return 1
+        check_github_package "$json_file" "$package_name" "$package_version"
+        return $?
     elif [ "$package_type" = "binary" ]; then
-        # binary类型：version字段与depends/${componentName}.json中的version保持一致
-        local depends_file="depends/${package_name}.json"
-        if [ ! -f "$depends_file" ]; then
-            log "ERROR" "Depends file '$depends_file' not found for binary package '$package_name'"
-            return 1
-        fi
-        local depends_version=$(jq -r ".version // empty" "$depends_file")
-        if [ -z "$depends_version" ] || [ "$depends_version" = "null" ]; then
-            log "ERROR" "No version found in depends file '$depends_file' for binary package '$package_name'"
-            return 1
-        fi
-
-        # 如果版本不一致，同步为depends中的版本
-        if [ "$package_version" != "$depends_version" ]; then
-            log "MODIFIED" "Binary package '$package_name' version synced from depends: $package_version -> $depends_version"
-            jq "(.version) |= \"$depends_version\"" "$json_file" > "$json_file.tmp"
-            mv "$json_file.tmp" "$json_file"
-            package_version="$depends_version"
-
-            # 更新latest.json
-            jq ".${LATEST_FIELD_NAME}[\"$package_name\"] = {\"version\": \"$package_version\", \"checksum\": \"\", \"file_count\": 0}" "$LATEST_JSON" > "$LATEST_JSON.tmp"
-            mv "$LATEST_JSON.tmp" "$LATEST_JSON"
-            modified=true
-            return 0
-        fi
-        return 1
+        check_binary_package "$json_file" "$package_name" "$package_version"
+        return $?
     else
         # 非法类型
         log "ERROR" "Invalid package type '$package_type' for package '$package_name'. Valid types: conf, zip, frontend, exec, docker, github, binary"
@@ -639,7 +661,7 @@ main() {
         
         if [ "$should_process" = true ]; then
             checked_count=$((checked_count + 1))
-            if process_package "$json_file"; then
+            if check_package_dirty "$json_file"; then
                 modified_packages+=("$package_name")
             fi
         fi

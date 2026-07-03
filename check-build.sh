@@ -21,6 +21,7 @@ set -e
 VERBOSE=false
 PACKAGES=""
 BUILD_TYPE="component"
+PACKAGES_DIR="components"
 
 print_usage() {
     echo "Usage: check-build.sh [OPTIONS]"
@@ -108,7 +109,6 @@ check_package_build() {
 # 参数: $1 - type ("component" 或 "dependency")
 main_check() {
     local type="$1"
-    local dir="${type}s"          # components 或 depends
     local label_singular="$type"
     local use_name="false"
 
@@ -118,7 +118,7 @@ main_check() {
     fi
 
     prompt "=============================================="
-    prompt "Checking packaged status from ${dir}"
+    prompt "Checking packaged status from ${PACKAGES_DIR}"
     prompt "=============================================="
     prompt ""
 
@@ -134,7 +134,7 @@ main_check() {
     local total=0
     local checked=0
 
-    for json_file in "${dir}"/*.json; do
+    for json_file in "${PACKAGES_DIR}"/*.json; do
         [ -f "$json_file" ] || continue
         total=$((total + 1))
 
@@ -226,14 +226,16 @@ while true; do
 done
 
 # 验证目录存在
-dir="${BUILD_TYPE}s"  # components 或 depends
-if [ ! -d "$dir" ]; then
-    log "ERROR" "$dir directory not found!"
+if [ "$BUILD_TYPE" = "dependency" ]; then
+    PACKAGES_DIR="depends"
+fi
+if [ ! -d "$PACKAGES_DIR" ]; then
+    log "ERROR" "$PACKAGES_DIR directory not found!"
     exit 1
 fi
 
-if [ -z "$(ls -A ${dir}/*.json 2>/dev/null)" ]; then
-    log "ERROR" "No JSON files found in $dir directory!"
+if [ -z "$(ls -A ${PACKAGES_DIR}/*.json 2>/dev/null)" ]; then
+    log "ERROR" "No JSON files found in $PACKAGES_DIR directory!"
     exit 1
 fi
 
