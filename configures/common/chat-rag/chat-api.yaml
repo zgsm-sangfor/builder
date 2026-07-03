@@ -49,6 +49,6 @@ VIPPriority:
   enabled: true
 
 chatMetrics:
-  enabled: false
-  url: ""
+  enabled: true
+  url: "http://user-indicator:8080/internal/indicator/api/v1/chat-indicator"
   method: "PUT"
