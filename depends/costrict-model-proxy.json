@@ -3,7 +3,7 @@
   "type": "github",
   "version": "0.0.4",
   "remote": "git@github.com:zgsm-sangfor/costrict-model-proxy.git",
-  "repo": "zgsm",
+  "repo": "ghcr.io/zgsm-sangfor",
   "tag": "v{{.version}}",
   "path": "../zgsm-ai/costrict-model-proxy",
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
