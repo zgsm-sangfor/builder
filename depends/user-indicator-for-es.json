@@ -1,9 +1,9 @@
 {
-  "name": "user-indicator",
+  "name": "user-indicator-for-es",
   "type": "github",
   "version": "0.0.20",
   "remote": "git@github.com:zgsm-ai/user-indicator-for-es.git",
-  "repo": "zgsm",
+  "repo": "ghcr.io/zgsm-sangfor",
   "path": "../zgsm-ai/user-indicator-for-es",
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",
