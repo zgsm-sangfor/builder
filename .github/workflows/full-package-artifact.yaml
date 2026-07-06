@@ -1,4 +1,4 @@
-name: Full Package Artifact
+name: Current Program Package Artifact
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-full-package:
-    name: Build Full Package Artifact
+  build-current-program-package:
+    name: Build Current Program Package Artifact
     runs-on: ubuntu-latest
     timeout-minutes: 360
     permissions:
@@ -49,29 +49,27 @@ jobs:
           echo "$PEM_CONTENT" > costrict-private.pem
           chmod 600 costrict-private.pem
 
-      - name: Build all packages
+      - name: Build current program dependencies
         run: |
           chmod +x *.sh
-          ./build-costrict.sh --rebuild
+          ./build-depends.sh --packages costrict-admin,costrict-daemon --build
 
-      - name: Build offline mirror archive
+      - name: Build current program install packages
         run: |
           chmod +x *.sh
-          ./build-mirror.sh --ignore-images
+          ./build-components.sh --packages costrict-admin,costrict-daemon --clean --build --pack --index
 
       - name: Prepare artifact
         run: |
           rm -rf artifact
-          mkdir -p artifact
-          cp packages.json artifact/
-          cp latest.json artifact/
-          cp costrict-mirror.tar.gz artifact/
-          cp -a packages artifact/packages
+          mkdir -p artifact/packages
+          cp -a packages/costrict-admin artifact/packages/
+          cp -a packages/costrict-daemon artifact/packages/
 
-      - name: Upload full package artifact
+      - name: Upload current program package artifact
         uses: actions/upload-artifact@v4
         with:
-          name: costrict-full-package-${{ github.ref_name }}-${{ github.run_number }}
+          name: costrict-current-program-packages-${{ github.ref_name }}-${{ github.run_number }}
           path: artifact/
           if-no-files-found: error
           retention-days: 7
