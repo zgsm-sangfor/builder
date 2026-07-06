@@ -108,6 +108,27 @@ echo "----------------------------------------------------------------"
 # 创建 costrict-static 目录（如果不存在）
 mkdir -p "${STATIC_DIR}"
 
+# 先尝试从 GitHub Releases 下载 costrict-static.tar，将其中的 linux 目录解压到 costrict-static 下
+STATIC_TAR_URL="https://github.com/zgsm-sangfor/costrict-static/releases/download/v1.0.0/costrict-static.tar"
+STATIC_TAR_FILE="costrict-static.tar"
+
+echo "正在尝试从 GitHub Releases 下载 ${STATIC_TAR_FILE}..."
+download_success=false
+if command -v curl &> /dev/null; then
+    curl -fSL -o "${STATIC_TAR_FILE}" "${STATIC_TAR_URL}" && download_success=true || true
+elif command -v wget &> /dev/null; then
+    wget -q -O "${STATIC_TAR_FILE}" "${STATIC_TAR_URL}" && download_success=true || true
+fi
+
+if [ "$download_success" = true ] && [ -f "${STATIC_TAR_FILE}" ]; then
+    echo "下载成功，正在提取 linux 目录到 ${STATIC_DIR}/..."
+    tar -xf "${STATIC_TAR_FILE}" -C "${STATIC_DIR}" linux/
+    rm -f "${STATIC_TAR_FILE}"
+    echo "${STATIC_TAR_FILE} 中的 linux 目录提取完成。"
+else
+    echo "从 GitHub Releases 下载 ${STATIC_TAR_FILE} 失败，将使用原有 MANIFEST 方式获取。"
+fi
+
 # 下载单个文件
 # file_path 是./costrict-static目录下的文件或子目录（如 ./linux/amd64/xxx）
 #

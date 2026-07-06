@@ -2,13 +2,8 @@
   "package": "costrict-daemon",
   "version": "1.0.137",
   "timestamp": {
-<<<<<<< HEAD
     "build": "2026-07-06 19:49:44",
     "update": "",
-=======
-    "build": "2026-07-06 12:09:39",
-    "update": "2026-07-06 12:09:39",
->>>>>>> origin/main
     "push": "",
     "upload": ""
   }
