@@ -15,7 +15,7 @@ jobs:
       contents: read
 
     env:
-      GH_RELEASE_TOKEN: ${{ secrets.PAT_TOKEN || github.token }}
+      GH_RELEASE_TOKEN: ${{ secrets.COSTRICT_ADMIN_RELEASE_TOKEN || secrets.PAT_TOKEN || github.token }}
 
     steps:
       - name: Checkout

@@ -17,7 +17,8 @@
     "workdir": "../costrict-admin/daemon"
   },
   "pull": {
-    "command": "mkdir -p ../packages/costrict-daemon/{{.os}}/{{.arch}}/{{.version}} && curl -fSL -o ../packages/costrict-daemon/{{.os}}/{{.arch}}/{{.version}}/costrict-daemon https://github.com/zgsm-sangfor/costrict-admin/releases/download/v{{.version}}/costrict-daemon-{{.os}}-{{.arch}}-v{{.version}}"
+    "workdir": ".",
+    "command": "./github-fetch-release.sh --package costrict-daemon --repo zgsm-sangfor/costrict-admin --os {{os}} --arch {{arch}} --version {{.version}} --output {{output}}"
   },
   "version": "1.0.137",
   "description": "The daemon of costrict"

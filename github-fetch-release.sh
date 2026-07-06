@@ -177,8 +177,19 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# 下载release文件
-curl -fSL -o "${TARGET_FILE}" "${PACKAGE_URL}"
+# 下载release文件。私有仓库/私有 release 优先通过 GitHub CLI 下载，避免
+# releases/download 重定向后鉴权丢失；GH_RELEASE_TOKEN 需要有目标仓库 contents:read。
+AUTH_TOKEN="${GH_RELEASE_TOKEN:-$GITHUB_TOKEN}"
+if [ -n "$AUTH_TOKEN" ] && command -v gh >/dev/null 2>&1 && [[ "$PACKAGE_URL" == https://github.com/*/releases/download/* ]]; then
+    ASSET_NAME="$(basename "$PACKAGE_URL")"
+    GH_TOKEN="$AUTH_TOKEN" gh release download "v${PACKAGE_VERSION}" \
+        --repo "$PACKAGE_REPO" \
+        --pattern "$ASSET_NAME" \
+        --output "$TARGET_FILE" \
+        --clobber
+else
+    curl -fSL -o "${TARGET_FILE}" "${PACKAGE_URL}"
+fi
 if [ $? -ne 0 ]; then
     echo "Error: Failed to download from: ${PACKAGE_URL}"
     rm -f "${TARGET_FILE}"
