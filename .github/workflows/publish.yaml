@@ -48,7 +48,7 @@ jobs:
       - name: Run build-costrict.sh
         run: |
           chmod +x *.sh
-          ./build-costrict.sh --rebuild
+          ./build-costrict.sh --rebuild --repack
 
       - name: Run build-mirror.sh
         run: |
