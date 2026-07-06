@@ -231,52 +231,68 @@ while true; do
     esac
 done
 
-# Function to render template using go text/template syntax
-# 参数: $1 - template string, $2 - json file path, $3 - workdir (optional)
-# Function to render template using go text/template syntax (用于github/docker类型的docker命令)
-# 参数: $1 - template string, $2 - json file path, $3 - workdir (optional)
-render_template() {
-    local template="$1"
-    local json_file="$2"
-    local workdir="$3"
+# Function to get value from JSON using jq expression
+# 参数: $1 - json file path, $2 - jq expression (text extracted from {{}})
+# 使用jq从json_file获取数据，只负责获取值，不做模板替换（模板替换由render_template_ex的循环负责）
+get_expr_value() {
+    local json_file="$1"
+    local expr="$2"
     
-    # 使用jq将JSON转换为可以被go template使用的格式
-    # 这里简化处理：直接替换{{.field}}为对应的JSON值
-    local result="$template"
+    # 使用jq从json_file获取数据
+    local value
+    value=$(jq -r "$expr" "$json_file" 2>/dev/null)
+    local rc=$?
     
-    # 获取JSON中的所有字段（排除command和tag）
-    local name=$(jq -r '.name // empty' "$json_file")
-    local version=$(jq -r '.version // empty' "$json_file")
-    local path=$(jq -r '.path // empty' "$json_file")
-    local description=$(jq -r '.description // empty' "$json_file")
-    local repo=$(jq -r '.repo // empty' "$json_file")
+    # 如果jq执行失败或值为null/empty，返回空字符串
+    if [ $rc -ne 0 ] || [ "$value" = "null" ] || [ -z "$value" ]; then
+        echo ""
+        return
+    fi
     
-    # 替换 {{.name}} 格式（不带空格）
-    result="${result//\{\{.name\}\}/$name}"
-    result="${result//\{\{.version\}\}/$version}"
-    result="${result//\{\{.path\}\}/$path}"
-    result="${result//\{\{.description\}\}/$description}"
-    result="${result//\{\{.repo\}\}/$repo}"
-    result="${result//\{\{.workdir\}\}/$workdir}"
-    
-    echo "$result"
+    echo "$value"
 }
 
-# Function to render build command template (用于exec类型二进制编译)
-# 支持 {{.version}}, {{.os}}, {{.arch}}, {{.output}} 模板变量
-# 参数: $1 - template string, $2 - version, $3 - os, $4 - arch, $5 - output
-render_build_template() {
+# Function to render template using jq expressions from JSON file
+# 参数: $1 - template string, $2 - json file path, $3 - os, $4 - arch, $5 - output
+# 使用循环不断扫描替换后的结果，如果还有{{}}表达式则继续替换，直到没有为止
+# 如果表达式是 os/arch/output，直接替换为参数值；否则从 JSON 文件查询
+render_template_ex() {
     local template="$1"
-    local version="$2"
+    local json_file="$2"
     local os="$3"
     local arch="$4"
     local output="$5"
-    
     local result="$template"
-    result="${result//\{\{.version\}\}/$version}"
-    result="${result//\{\{.os\}\}/$os}"
-    result="${result//\{\{.arch\}\}/$arch}"
-    result="${result//\{\{.output\}\}/$output}"
+    
+    # 循环扫描替换，直到结果中没有{{}}标记为止
+    while [[ "$result" == *"{{"*"}}"* ]]; do
+        # 查找所有{{text}}标记
+        local matches
+        matches=$(echo "$result" | grep -o -E '\{\{[^}]+\}\}' 2>/dev/null | sort -u)
+        
+        if [ -z "$matches" ]; then
+            break
+        fi
+        
+        # 逐项替换
+        while IFS= read -r match; do
+            if [ -z "$match" ]; then
+                continue
+            fi
+            # 提取{{和}}之间的文本作为jq表达式
+            local expr="${match:2:${#match}-4}"
+            # 如果表达式是 os/arch/output，直接使用参数值；否则从 JSON 文件查询
+            local value
+            case "$expr" in
+                os)     value="$os" ;;
+                arch)   value="$arch" ;;
+                output) value="$output" ;;
+                *)      value=$(get_expr_value "$json_file" "$expr") ;;
+            esac
+            # 替换模板中的标记
+            result="${result//$match/$value}"
+        done <<< "$matches"
+    done
     
     echo "$result"
 }
@@ -316,8 +332,6 @@ build_exec_binary() {
         fi
     fi
 
-    # 解析platforms数组
-    local platform_count=$(echo "$platforms_json" | jq 'length')
 
     # 确定工作目录：build.workdir 存在则使用，否则使用 path 指定的目录
     local work_dir="$source_dir"
@@ -325,6 +339,8 @@ build_exec_binary() {
         work_dir="$build_workdir"
     fi
 
+    # 解析platforms数组
+    local platform_count=$(echo "$platforms_json" | jq 'length')
     echo "Starting multi-platform build for package: $package_name, version: $version"
     echo "Source directory: $source_dir"
     echo "Work directory: $work_dir"
@@ -350,13 +366,12 @@ build_exec_binary() {
         
         # 完整输出路径
         local output_target="$output_dir/$output_file"
-        
         echo "Output target: $output_target"
         
         # 执行构建：优先使用自定义构建命令，否则使用默认的 build.py
         if [ -n "$build_command" ] && [ "$build_command" != "null" ] && [ "$build_command" != "" ]; then
             # 使用自定义构建命令，支持 {{.version}} {{.os}} {{.arch}} {{.output}} 模板
-            local rendered_cmd=$(render_build_template "$build_command" "$version" "$os" "$arch" "$output_target")
+            local rendered_cmd=$(render_template_ex "$build_command" "$os" "$arch" "$output_target")
             echo "Executing custom build command: $rendered_cmd"
             (cd "$work_dir" && bash -c "$rendered_cmd")
         else
@@ -374,6 +389,28 @@ build_exec_binary() {
     echo "All apps built successfully for package: $package_name"
 }
 
+# 单平台构建（渲染并执行构建命令，参照 build_exec_binary 中的单平台构建逻辑抽取）
+# 参数:
+#   $1: depend_config_file - JSON 配置文件路径
+#   $2: depend_workdir - 构建工作目录
+#   $3: depend_command - 构建命令模板（支持 {{.os}}/{{.arch}}/{{.output}} 等模板变量）
+#   $4: os - 目标操作系统（如 linux, windows, darwin）
+#   $5: arch - 目标架构（如 amd64, arm64）
+#   $6: output_target - 输出文件完整路径
+build_single_platform() {
+    local depend_config_file="$1"
+    local depend_workdir="$2"
+    local depend_command="$3"
+    local os="$4"
+    local arch="$5"
+    local output_target="$6"
+    
+    local rendered_cmd=$(render_template_ex "$depend_command" "$depend_config_file" "$os" "$arch" "$output_target")
+    echo "Executing: $rendered_cmd"
+    (cd "$depend_workdir" && bash -c "$rendered_cmd")
+    return $?
+}
+
 # Function to build a docker/github/frontend-type dependency (docker 镜像拉取/构建 或 前端静态资源构建)
 # 参数: $1 - package, $2 - config_file, $3 - name, $4 - path, $5 - version, $6 - type
 build_other_dependency() {
@@ -384,9 +421,8 @@ build_other_dependency() {
     local depend_version="$5"
     local depend_type="$6"
     
-    local depend_remote=$(jq -r ".remote // empty" "$depend_config_file")
-    
     # 根据类型获取命令和工作目录
+    local depend_remote=$(jq -r ".remote // empty" "$depend_config_file")
     local depend_command=""
     local depend_workdir=""
     
@@ -398,6 +434,9 @@ build_other_dependency() {
         # frontend类型：从.build.command获取命令，从.build.workdir获取工作目录（默认值为.path）
         depend_command=$(jq -r ".build.command // empty" "$depend_config_file")
         depend_workdir=$(jq -r ".build.workdir // empty" "$depend_config_file")
+    elif [ "$depend_type" = "exec" ]; then
+        depend_workdir=$(jq -r ".build.workdir // empty" "$package_config_file")
+        depend_command=$(jq -r ".build.command // empty" "$package_config_file")
     else
         # docker类型：从.build.command获取命令，从.build.workdir获取工作目录（默认值为.path）
         depend_command=$(jq -r ".build.command // empty" "$depend_config_file")
@@ -412,7 +451,77 @@ build_other_dependency() {
         echo "Error: 'command' not found for dependency '${package}' (type=${depend_type}) in ${depend_config_file}!"
         return 1
     fi
+    # 确保源码存在（docker/frontend/exec 类型需要本地源码）
+    if [ "$depend_type" = "frontend" ] || [ "$depend_type" = "docker" ] || [ "$depend_type" = "exec" ]; then
+        if [ ! -d "$depend_path" ]; then
+            if [ -z "$depend_remote" ] || [ "$depend_remote" = "null" ]; then
+                echo "Error: Directory '$depend_path' does not exist and 'remote' field is not configured!"
+                return 1
+            fi
+            echo "Directory '$depend_path' not found, cloning from $depend_remote ..."
+            git clone "$depend_remote" "$depend_path"
+            if [ $? -ne 0 ]; then
+                echo "Error: git clone failed for $depend_remote"
+                return 1
+            fi
+            echo "Successfully cloned to '$depend_path'"
+        fi
+    fi
+    # 检查是否存在 .platforms 字段，如果有则进行分平台编译（参照 build_exec_binary 实现）
+    local depend_platforms=$(jq -r ".platforms // empty" "$depend_config_file")
     
+    if [ -n "$depend_platforms" ] && [ "$depend_platforms" != "null" ] && [ "$depend_platforms" != "" ]; then
+        # ============================================================
+        # 分平台编译
+        # ============================================================
+        local current_dir=$(pwd)
+        
+        
+        # 解析 platforms 数组
+        local platform_count=$(echo "$depend_platforms" | jq 'length')
+        echo "=============================================="
+        echo "Processing dependency: $depend_name, type: $depend_type, version: $depend_version"
+        echo "Path: $depend_path"
+        echo "Workdir: $depend_workdir"
+        echo "Building for $platform_count platform(s): $depend_platforms"
+        echo "=============================================="
+        
+        local i
+        for ((i=0; i<platform_count; i++)); do
+            local os=$(echo "$depend_platforms" | jq -r ".[$i].os")
+            local arch=$(echo "$depend_platforms" | jq -r ".[$i].arch")
+            
+            echo "==== Building $depend_name for $os/$arch ===="
+            
+            # 创建输出目录: packages/{name}/{os}/{arch}/{version}/
+            local output_dir="$current_dir/packages/$depend_name/$os/$arch/$depend_version"
+            mkdir -p "$output_dir"
+            
+            # 设置输出文件名
+            local output_file="$depend_name"
+            if [ "$os" = "windows" ]; then
+                output_file="$output_file.exe"
+            fi
+            
+            local output_target="$output_dir/$output_file"
+            echo "Output target: $output_target"
+            
+            # 调用单平台构建函数
+            build_single_platform "$depend_config_file" "$depend_workdir" "$depend_command" "$os" "$arch" "$output_target"
+            if [ $? -ne 0 ]; then
+                echo "Error: Build failed for $depend_name on $os/$arch"
+                return 1
+            fi
+            echo ""
+        done
+        
+        echo "All platforms built successfully for dependency: $depend_name"
+        return 0
+    fi
+    
+    # ============================================================
+    # 原有逻辑：无 .platforms 字段时的单平台构建
+    # ============================================================
     echo "=============================================="
     echo "Processing dependency: $depend_name, type: $depend_type, version: $depend_version"
     echo "Path: $depend_path"
@@ -420,10 +529,10 @@ build_other_dependency() {
     echo "=============================================="
     
     # 渲染命令模板
-    local rendered_command=$(render_template "$depend_command" "$depend_config_file" "$depend_workdir")
+    local rendered_command=$(render_template_ex "$depend_command" "$depend_config_file")
     echo "Executing: $rendered_command"
     
-    if [ "$depend_type" = "frontend" ] || [ "$depend_type" = "docker" ]; then
+    if [ "$depend_type" = "frontend" ] || [ "$depend_type" = "docker" ] || [ "$depend_type" = "exec" ]; then
         # docker和frontend类型：需要本地代码，所以需要先检查源码目录是否存在，不存在则从remote克隆
         if [ ! -d "$depend_path" ]; then
             if [ -z "$depend_remote" ] || [ "$depend_remote" = "null" ]; then
@@ -448,7 +557,7 @@ build_other_dependency() {
             return 1
         fi
         echo "Successfully pulled image: $depend_name"
-    elif [ "$depend_type" = "frontend" ]; then        
+    elif [ "$depend_type" = "frontend" ]; then
         # cd到工作目录后执行构建命令
         (cd "$depend_workdir" && bash -c "$rendered_command")
         if [ $? -ne 0 ]; then
@@ -467,6 +576,7 @@ build_other_dependency() {
     fi
     # 构建/拉取成功后，导出docker镜像tar文件（docker/github类型；frontend类型跳过）
     save_docker_image "$package" || return 1
+    return 0
     return 0
 }
 
@@ -556,22 +666,19 @@ save_docker_image() {
     if [ -z "$depend_tag" ] || [ "$depend_tag" = "null" ] || [ "$depend_tag" = "" ]; then
         depend_tag="{{.version}}"
     fi
-    
-    # 渲染tag模板
-    local rendered_tag=$(render_template "$depend_tag" "$depend_config_file")
-    
+
     # 创建输出目录
     local image_dir="images/${depend_name}"
     mkdir -p "$image_dir"
     
-    local image_full_name="${depend_repo}/${depend_name}:${rendered_tag}"
+    local image_full_name=$(render_template_ex "${depend_repo}/${depend_name}:${depend_tag}" "$depend_config_file")
+    local tar_file=$(render_template_ex "${depend_name}-${depend_tag}.tar" "$depend_config_file")
     
     echo "=============================================="
     echo "Exporting image: $image_full_name"
     echo "=============================================="
     
     # 导出镜像为tar文件
-    local tar_file="${depend_name}-${rendered_tag}.tar"
     echo "Saving image to ${image_dir}/${tar_file}..."
     docker save -o "${image_dir}/${tar_file}" "$image_full_name"
     if [ $? -ne 0 ]; then
@@ -626,7 +733,7 @@ update_component() {
     echo "=============================================="
     
     # 渲染命令模板
-    local rendered_command=$(render_template "$command" "$depend_config_file" "$workdir")
+    local rendered_command=$(render_template_ex "$command" "$depend_config_file")
     echo "Executing: $rendered_command"
     
     # 执行命令（在指定的工作目录下）
@@ -662,15 +769,12 @@ push_image() {
         depend_tag="{{.version}}"
     fi
     
-    # 渲染tag模板
-    local rendered_tag=$(render_template "$depend_tag" "$depend_config_file")
-    
     if [ -z "$depend_name" ] || [ "$depend_name" = "null" ]; then
         echo "Error: 'name' not found for image '${package}' in ${depend_config_file}!"
         return 1
     fi
     
-    local depend_full_name="${depend_repo}/${depend_name}:${rendered_tag}"
+    local depend_full_name=$(render_template_ex "${depend_repo}/${depend_name}:${depend_tag}" "$depend_config_file")
     
     echo "=============================================="
     echo "Pushing image: $depend_full_name"
@@ -726,11 +830,7 @@ upload_image() {
         depend_tag="{{.version}}"
     fi
     
-    # 渲染tag模板
-    local rendered_tag=$(render_template "$depend_tag" "$depend_config_file")
-    
-    local depend_full_name="${depend_repo}/${depend_name}:${rendered_tag}"
-    
+    local depend_full_name=$(render_template_ex "${depend_repo}/${depend_name}:${depend_tag}" "$depend_config_file")
     echo "=============================================="
     echo "Uploading image $depend_full_name to environment: $env_name ($env_url)"
     echo "=============================================="

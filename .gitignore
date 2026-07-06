@@ -12,6 +12,7 @@
 !gen-backend-spec.sh
 !gen-manifest.sh
 !docker-pull-via.sh
+!github-fetch-release.sh
 !start-local-site.sh
 !packages.json
 !latest.json

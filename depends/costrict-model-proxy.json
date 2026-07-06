@@ -8,7 +8,7 @@
   "path": "../zgsm-ai/costrict-model-proxy",
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "build": {
-    "workdir": "",
+    "workdir": "../zgsm-ai/costrict-model-proxy",
     "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}"
   },
   "pull": {

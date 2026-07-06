@@ -1,7 +1,7 @@
 {
   "name": "costrict-admin-frontend",
   "type": "frontend",
-  "version": "1.0.65",
+  "version": "1.0.66",
   "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
   "path": "../costrict-admin",
   "enabled": true,
