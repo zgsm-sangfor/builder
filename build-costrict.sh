@@ -21,9 +21,12 @@ set -e
 #
 
 # build-costrict.sh支持以下可选参数：
-#   --push [env]      用于指定镜像推送的环境，该参数会传给build-depends.sh（构建镜像始终执行）
-#   --upload <env>    用于指定包上传的环境，该参数会传给build-components.sh
-#   --skip-dependency 跳过依赖处理（Step 1 和 Step 2），不处理 dependency 包
+#   --push [env]           用于指定镜像推送的环境，该参数会传给build-depends.sh（构建镜像始终执行）
+#   --upload <env>         用于指定包上传的环境，该参数会传给build-components.sh
+#   --skip-dependency      跳过依赖处理（Step 1 和 Step 2），不处理 dependency 包
+#   --update-dependency    检测 dependency 包变更并自动递增版本号（Step 1），默认不执行
+#   --rebuild   重新构建所有 enabled 依赖（Step 2），跳过 check-build.sh 过滤，
+#                          直接调用 build-depends.sh 不带 --packages 选项
 
 # 显示帮助信息
 show_help() {
@@ -32,27 +35,34 @@ show_help() {
     echo "构建 CoStrict 系统包"
     echo ""
     echo "选项:"
-    echo "  --skip-dependency 跳过依赖处理（Step 1 和 Step 2），不处理 dependency 包"
-    echo "  --push [env]      推送镜像到指定环境 (会传递给 build-depends.sh)"
-    echo "                    构建镜像始终执行，此选项只控制是否推送"
-    echo "                    如果 env 为空或 'def'，推送到 docker hub"
-    echo "                    否则推送到指定环境 (如 'test,prod' 或 'all')"
-    echo "  --upload <env>    指定包上传的环境 (会传递给 build-components.sh)"
-    echo "  --help, -h        显示此帮助信息"
+    echo "  --skip-dependency     跳过依赖处理（Step 1 和 Step 2），不处理 dependency 包"
+    echo "  --update-dependency   检测 dependency 包变更并自动递增版本号（Step 1）"
+    echo "                        默认不执行 Step 1，仅当指定此选项时才执行"
+    echo "  --rebuild             重新构建所有依赖（Step 2）"
+    echo "                        跳过 check-build.sh 过滤，直接调用 build-depends.sh 不带 --packages"
+    echo "  --push [env]          推送镜像到指定环境 (会传递给 build-depends.sh)"
+    echo "                        构建镜像始终执行，此选项只控制是否推送"
+    echo "                        如果 env 为空或 'def'，推送到 docker hub"
+    echo "                        否则推送到指定环境 (如 'test,prod' 或 'all')"
+    echo "  --upload <env>        指定包上传的环境 (会传递给 build-components.sh)"
+    echo "  --help, -h            显示此帮助信息"
     echo ""
     echo "执行步骤:"
-    echo "  1. 检测 dependency 包变更并自动递增版本号"
+    echo "  1. (仅 --update-dependency) 检测 dependency 包变更并自动递增版本号"
     echo "  2. 检查尚未构建的 dependency 包（构建物包括 Docker 镜像、前端页面包、可执行程序等），若有则调用 build-depends.sh 构建（可选推送镜像）"
+    echo "     (若指定 --rebuild，则跳过检查，直接构建所有依赖)"
     echo "  3. 调用 gen-backend-spec.sh 生成 backend/system-spec.json"
     echo "  4. 检测 component 包变更并自动递增版本号"
     echo "  5. 调用 gen-manifest.sh 生成系统清单，并重新检查 costrict-system 版本"
     echo "  6. 检查尚未打包的 component 包，若有则调用 build-components.sh 构建、打包并索引"
     echo ""
     echo "示例:"
-    echo "  $0                    # 构建镜像（不推送），然后构建包"
-    echo "  $0 --push             # 构建镜像并推送到 docker hub"
-    echo "  $0 --push test,prod   # 构建镜像并推送到 test 和 prod 环境"
-    echo "  $0 --upload prod      # 构建包并上传到 prod 环境"
+    echo "  $0                            # 构建镜像（不推送），然后构建包"
+    echo "  $0 --update-dependency        # 先检测 dependency 变更并递增版本，再构建镜像和包"
+    echo "  $0 --rebuild                  # 跳过检查，重新构建所有依赖"
+    echo "  $0 --push                     # 构建镜像并推送到 docker hub"
+    echo "  $0 --push test,prod           # 构建镜像并推送到 test 和 prod 环境"
+    echo "  $0 --upload prod              # 构建包并上传到 prod 环境"
     echo ""
 }
 
@@ -61,6 +71,8 @@ UPLOAD_ENV=""
 PUSH_ENV=""
 NEED_PUSH=false
 SKIP_DEPENDENCY=false
+UPDATE_DEPENDENCY=false
+REBUILD_DEPENDENCY=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -83,6 +95,14 @@ while [[ $# -gt 0 ]]; do
             SKIP_DEPENDENCY=true
             shift
             ;;
+        --update-dependency)
+            UPDATE_DEPENDENCY=true
+            shift
+            ;;
+        --rebuild)
+            REBUILD_DEPENDENCY=true
+            shift
+            ;;
         --help|-h)
             show_help
             exit 0
@@ -97,32 +117,51 @@ if [ "$SKIP_DEPENDENCY" = true ]; then
     echo "--skip-dependency is set, skipping Step 1 and Step 2 (dependency processing)..."
     echo "----------------------------------------------------------------"
 else
-    # Step 1: 调用check-update.sh，自动递增dependency包的版本号
-    echo "----------------------------------------------------------------"
-    echo "Step 1: Detecting dependency changes and auto-incrementing versions..."
-    echo "----------------------------------------------------------------"
-    ./check-update.sh --update --build-type dependency
-
-    # Step 2: 调用check-build.sh，获取尚未构建的依赖包列表，然后构建
-    echo "----------------------------------------------------------------"
-    echo "Step 2: Checking and building dependency packages (Docker images, frontend pages, executables, etc.)..."
-    echo "----------------------------------------------------------------"
-    # check-build.sh 以未构建包的数量作为退出码，当存在未构建包时返回非0，
-    # 此处使用 '|| true' 防止 set -e 中断脚本执行
-    need_build_packages=$(./check-build.sh --build-type dependency || true)
-    echo "Need build 'dependency' packages: $need_build_packages"
-
-    if [ -n "$need_build_packages" ]; then
+    # Step 1: 仅当 --update-dependency 为 true 时，调用check-update.sh自动递增dependency包的版本号
+    if [ "$UPDATE_DEPENDENCY" = true ]; then
         echo "----------------------------------------------------------------"
-        echo "Building depends..."
+        echo "Step 1: Detecting dependency changes and auto-incrementing versions..."
+        echo "----------------------------------------------------------------"
+        ./check-update.sh --update --build-type dependency
+    else
+        echo "----------------------------------------------------------------"
+        echo "--update-dependency not set, skipping Step 1 (dependency version auto-increment)..."
+        echo "----------------------------------------------------------------"
+    fi
+
+    # Step 2: 构建依赖包
+    # 若 --rebuild 为 true，跳过 check-build.sh，直接构建所有 enabled 依赖
+    # 否则先调用 check-build.sh 获取尚未构建的依赖包列表，再按需构建
+    if [ "$REBUILD_DEPENDENCY" = true ]; then
+        echo "----------------------------------------------------------------"
+        echo "Step 2: Rebuilding all enabled dependency packages (Docker images, frontend pages, executables, etc.)..."
         echo "----------------------------------------------------------------"
         if [ "$NEED_PUSH" = true ]; then
-            ./build-depends.sh --build --update --push $PUSH_ENV --packages $need_build_packages
+            ./build-depends.sh --build --update --push $PUSH_ENV
         else
-            ./build-depends.sh --build --update --packages $need_build_packages
+            ./build-depends.sh --build --update
         fi
     else
-        echo "No 'dependency' packages need building, skipping..."
+        echo "----------------------------------------------------------------"
+        echo "Step 2: Checking and building dependency packages (Docker images, frontend pages, executables, etc.)..."
+        echo "----------------------------------------------------------------"
+        # check-build.sh 以未构建包的数量作为退出码，当存在未构建包时返回非0，
+        # 此处使用 '|| true' 防止 set -e 中断脚本执行
+        need_build_packages=$(./check-build.sh --build-type dependency || true)
+        echo "Need build 'dependency' packages: $need_build_packages"
+
+        if [ -n "$need_build_packages" ]; then
+            echo "----------------------------------------------------------------"
+            echo "Building depends..."
+            echo "----------------------------------------------------------------"
+            if [ "$NEED_PUSH" = true ]; then
+                ./build-depends.sh --build --update --push $PUSH_ENV --packages $need_build_packages
+            else
+                ./build-depends.sh --build --update --packages $need_build_packages
+            fi
+        else
+            echo "No 'dependency' packages need building, skipping..."
+        fi
     fi
 fi
 

@@ -29,7 +29,7 @@ usage() {
     echo "Usage: build-components.sh [-p/--packages PACKAGES] [--type TYPE] [--key KEY_FILE] [ACTIONS]"
     echo "Options:"
     echo "  -p, --packages <list> Package list (comma-separated, e.g., \"pkg\", \"pkg1,pkg2,pkg3\")"
-    echo "  --type <type>        Package type filter (e.g., exec, conf, zip)"
+    echo "  --type <type>        Package type filter (e.g., binary, conf, zip)"
     echo "  --key <key>          Private key file (default: costrict-private.pem)"
     echo "  -h, --help           Help information"
     echo "Actions:"

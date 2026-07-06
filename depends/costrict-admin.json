@@ -23,6 +23,6 @@
   "pull": {
     "command": "./github-fetch-release.sh --package costrict-admin --os {{os}} --arch {{arch}} --version {{.version}}"
   },
-  "version": "1.0.133",
+  "version": "1.0.137",
   "description": "Utilities for backend management of Costrict"
 }
