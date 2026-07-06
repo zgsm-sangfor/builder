@@ -1,6 +1,6 @@
 {
   "name": "costrict-admin",
-  "type": "github",
+  "type": "exec",
   "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
   "path": "../costrict-admin",
   "sources": [
@@ -10,10 +10,6 @@
   "platforms": [
     {
       "os": "linux",
-      "arch": "amd64"
-    },
-    {
-      "os": "windows",
       "arch": "amd64"
     }
   ],
