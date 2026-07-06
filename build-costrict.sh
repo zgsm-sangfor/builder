@@ -25,8 +25,10 @@ set -e
 #   --upload <env>         用于指定包上传的环境，该参数会传给build-components.sh
 #   --skip-dependency      跳过依赖处理（Step 1 和 Step 2），不处理 dependency 包
 #   --update-dependency    检测 dependency 包变更并自动递增版本号（Step 1），默认不执行
-#   --rebuild   重新构建所有 enabled 依赖（Step 2），跳过 check-build.sh 过滤，
+#   --rebuild              重新构建所有 enabled 依赖（Step 2），跳过 check-build.sh 过滤，
 #                          直接调用 build-depends.sh 不带 --packages 选项
+#   --repack               重新打包所有组件（Step 6），跳过 check-build.sh 过滤，
+#                          直接调用 build-components.sh 不带 --packages 选项
 
 # 显示帮助信息
 show_help() {
@@ -40,6 +42,8 @@ show_help() {
     echo "                        默认不执行 Step 1，仅当指定此选项时才执行"
     echo "  --rebuild             重新构建所有依赖（Step 2）"
     echo "                        跳过 check-build.sh 过滤，直接调用 build-depends.sh 不带 --packages"
+    echo "  --repack           重新打包所有组件（Step 6）"
+    echo "                        跳过 check-build.sh 过滤，直接调用 build-components.sh 不带 --packages"
     echo "  --push [env]          推送镜像到指定环境 (会传递给 build-depends.sh)"
     echo "                        构建镜像始终执行，此选项只控制是否推送"
     echo "                        如果 env 为空或 'def'，推送到 docker hub"
@@ -55,11 +59,13 @@ show_help() {
     echo "  4. 检测 component 包变更并自动递增版本号"
     echo "  5. 调用 gen-manifest.sh 生成系统清单，并重新检查 costrict-system 版本"
     echo "  6. 检查尚未打包的 component 包，若有则调用 build-components.sh 构建、打包并索引"
+    echo "     (若指定 --repack，则跳过检查，直接重新打包所有组件)"
     echo ""
     echo "示例:"
     echo "  $0                            # 构建镜像（不推送），然后构建包"
     echo "  $0 --update-dependency        # 先检测 dependency 变更并递增版本，再构建镜像和包"
     echo "  $0 --rebuild                  # 跳过检查，重新构建所有依赖"
+    echo "  $0 --repack                # 跳过检查，重新打包所有组件"
     echo "  $0 --push                     # 构建镜像并推送到 docker hub"
     echo "  $0 --push test,prod           # 构建镜像并推送到 test 和 prod 环境"
     echo "  $0 --upload prod              # 构建包并上传到 prod 环境"
@@ -73,6 +79,7 @@ NEED_PUSH=false
 SKIP_DEPENDENCY=false
 UPDATE_DEPENDENCY=false
 REBUILD_DEPENDENCY=false
+REPACK_COMPONENTS=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -101,6 +108,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --rebuild)
             REBUILD_DEPENDENCY=true
+            shift
+            ;;
+        --repack)
+            REPACK_COMPONENTS=true
             shift
             ;;
         --help|-h)
@@ -192,20 +203,34 @@ echo "Step 6: Checking and building component packages (clean/build/pack/index).
 echo "----------------------------------------------------------------"
 # check-build.sh 以未打包包的数量作为退出码，当存在未打包包时返回非0，
 # 此处使用 '|| true' 防止 set -e 中断脚本执行
-need_pack_packages=$(./check-build.sh --build-type component || true)
-echo "Need build 'component' packages: $need_pack_packages"
-
-if [ -n "$need_pack_packages" ]; then
-    echo "----------------------------------------------------------------"
-    echo "Building packages..."
+# 若 --repack 为 true，跳过 check-build.sh，直接重新打包所有组件
+# 否则先调用 check-build.sh 获取尚未打包的组件包列表，再按需打包
+if [ "$REPACK_COMPONENTS" = true ]; then
+    echo "Step 6: Repackaging all component packages (clean/build/pack/index)..."
     echo "----------------------------------------------------------------"
     if [ -n "$UPLOAD_ENV" ]; then
-        ./build-components.sh --packages "$need_pack_packages" --clean --build --pack --index --upload "$UPLOAD_ENV"
+        ./build-components.sh --clean --build --pack --index --upload "$UPLOAD_ENV"
     else
-        ./build-components.sh --packages "$need_pack_packages" --clean --build --pack --index
+        ./build-components.sh --clean --build --pack --index
     fi
 else
-    echo "No 'component' packages need building, skipping..."
+    # check-build.sh 以未打包包的数量作为退出码，当存在未打包包时返回非0，
+    # 此处使用 '|| true' 防止 set -e 中断脚本执行
+    need_pack_packages=$(./check-build.sh --build-type component || true)
+    echo "Need build 'component' packages: $need_pack_packages"
+
+    if [ -n "$need_pack_packages" ]; then
+        echo "----------------------------------------------------------------"
+        echo "Building packages..."
+        echo "----------------------------------------------------------------"
+        if [ -n "$UPLOAD_ENV" ]; then
+            ./build-components.sh --packages "$need_pack_packages" --clean --build --pack --index --upload "$UPLOAD_ENV"
+        else
+            ./build-components.sh --packages "$need_pack_packages" --clean --build --pack --index
+        fi
+    else
+        echo "No 'component' packages need building, skipping..."
+    fi
 fi
 
 echo "Build costrict completed!"
