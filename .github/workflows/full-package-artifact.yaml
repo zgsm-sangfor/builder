@@ -1,0 +1,77 @@
+name: Full Package Artifact
+
+on:
+  push:
+    branches:
+      - actions-full-package-artifact
+  workflow_dispatch:
+
+jobs:
+  build-full-package:
+    name: Build Full Package Artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      contents: read
+
+    env:
+      GH_RELEASE_TOKEN: ${{ secrets.PAT_TOKEN || github.token }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install system tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq zip rsync
+
+      - name: Generate .env file
+        env:
+          ENV_CONTENT: ${{ secrets.ENV_FILE_CONTENT }}
+        run: |
+          if [ -z "$ENV_CONTENT" ]; then
+            echo "::error::ENV_FILE_CONTENT secret is required"
+            exit 1
+          fi
+          echo "$ENV_CONTENT" > .env
+
+      - name: Save signing key
+        env:
+          PEM_CONTENT: ${{ secrets.COSTRICT_PRIVATE_PEM }}
+        run: |
+          if [ -z "$PEM_CONTENT" ]; then
+            echo "::error::COSTRICT_PRIVATE_PEM secret is required"
+            exit 1
+          fi
+          echo "$PEM_CONTENT" > costrict-private.pem
+          chmod 600 costrict-private.pem
+
+      - name: Build all packages
+        run: |
+          chmod +x *.sh
+          ./build-costrict.sh --rebuild
+
+      - name: Build offline mirror archive
+        run: |
+          chmod +x *.sh
+          ./build-mirror.sh --ignore-images
+
+      - name: Prepare artifact
+        run: |
+          rm -rf artifact
+          mkdir -p artifact
+          cp packages.json artifact/
+          cp latest.json artifact/
+          cp costrict-mirror.tar.gz artifact/
+          cp -a packages artifact/packages
+
+      - name: Upload full package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: costrict-full-package-${{ github.ref_name }}-${{ github.run_number }}
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 7
