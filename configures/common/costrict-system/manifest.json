@@ -65,7 +65,7 @@
     {
       "name": "costrict-admin-backend",
       "subsystem": "backend",
-      "version": "1.0.108"
+      "version": "1.0.109"
     },
     {
       "name": "costrict-admin-frontend",
