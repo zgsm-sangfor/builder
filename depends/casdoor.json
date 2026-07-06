@@ -1,10 +1,10 @@
 {
   "name": "casdoor",
   "type": "github",
-  "version": "3.108.0",
+  "version": "2.2.5",
   "repo": "zgsm",
   "remote": "git@github.com:zgsm-sangfor/casdoor.git",
-  "path": "../source/casdoor",
+  "path": "../zgsm-ai/casdoor",
   "tag": "v{{.version}}",
   "pull": {
     "command": "docker pull {{.repo}}/{{.name}}:v{{.version}}"

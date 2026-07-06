@@ -21,9 +21,9 @@
       "file_count": 42
     },
     "costrict-admin": {
-      "version": "1.0.133",
-      "checksum": "c9bb9fbbba7e31026b04047e89ad3d3bae6cc272ed13456dc340f746a9cb6c37",
-      "file_count": 78
+      "version": "1.0.137",
+      "checksum": "",
+      "file_count": 0
     },
     "costrict-admin-backend": {
       "version": "1.0.109",
@@ -166,8 +166,8 @@
       "file_count": 4
     },
     "costrict-system": {
-      "version": "1.0.268",
-      "checksum": "41fd2f12a71ca2b893d8b96f91ed047a6e40e15a9f5b418bfb595fb49eec9610",
+      "version": "1.0.269",
+      "checksum": "abff5d3dbae6925cbc3e00d5b3a8fd64c52f1bfdaba221fd78005021a0b6e63a",
       "file_count": 1
     },
     "costrict-license-sdk": {
@@ -176,9 +176,9 @@
       "file_count": 3
     },
     "costrict-daemon": {
-      "version": "1.0.68",
-      "checksum": "1c6a778fe8ef764e573f3e14e9ae99fface8f004feaa3a03de24024d775e27f9",
-      "file_count": 70
+      "version": "1.0.137",
+      "checksum": "",
+      "file_count": 0
     },
     "oidc-auth": {
       "version": "1.0.9",

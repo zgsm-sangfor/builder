@@ -21,6 +21,7 @@
     "workdir": "../costrict-admin/utility"
   },
   "pull": {
+    "workdir": ".",
     "command": "./github-fetch-release.sh --package costrict-admin --os {{os}} --arch {{arch}} --version {{.version}}"
   },
   "version": "1.0.137",

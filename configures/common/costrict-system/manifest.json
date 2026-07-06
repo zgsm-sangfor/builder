@@ -75,12 +75,12 @@
     {
       "name": "costrict-admin",
       "subsystem": "frontend",
-      "version": "1.0.133"
+      "version": "1.0.137"
     },
     {
       "name": "costrict-daemon",
       "subsystem": "root",
-      "version": "1.0.68"
+      "version": "1.0.137"
     },
     {
       "name": "costrict-dept-sync",
