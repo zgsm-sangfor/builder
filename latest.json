@@ -26,8 +26,8 @@
       "file_count": 78
     },
     "costrict-admin-backend": {
-      "version": "1.0.108",
-      "checksum": "34ed4053d5bc5216b1506347f53c7ddb3d63aa6228b29e45da4cb971162aad56",
+      "version": "1.0.109",
+      "checksum": "aff5056dac4098fbaa616035d81d65495eab636a25f37c7c890122363d58bbfb",
       "file_count": 4
     },
     "costrict-admin-frontend": {
@@ -116,8 +116,8 @@
       "file_count": 5
     },
     "client-manager": {
-      "version": "1.0.11",
-      "checksum": "9efb595f6abdd10c29b483b24da5df3ea162c391b311457540f1c656246b80bc",
+      "version": "1.0.12",
+      "checksum": "007b355be77ba799034da3d29a0076c3987f105a442ab07af5b9a0560baf8673",
       "file_count": 6
     },
     "etcd": {
@@ -166,8 +166,8 @@
       "file_count": 4
     },
     "costrict-system": {
-      "version": "1.0.266",
-      "checksum": "d1f0d9ace534ea010d64d40673cb6cfb9bd5c70e2da030134f1db44c08b33ecb",
+      "version": "1.0.268",
+      "checksum": "41fd2f12a71ca2b893d8b96f91ed047a6e40e15a9f5b418bfb595fb49eec9610",
       "file_count": 1
     },
     "costrict-license-sdk": {
