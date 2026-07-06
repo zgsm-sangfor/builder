@@ -65,7 +65,7 @@
     {
       "name": "costrict-admin-backend",
       "subsystem": "backend",
-      "version": "1.0.109"
+      "version": "1.0.110"
     },
     {
       "name": "costrict-admin-frontend",
@@ -120,7 +120,7 @@
     {
       "name": "firmware",
       "subsystem": "root",
-      "version": "1.0.136"
+      "version": "1.0.137"
     },
     {
       "name": "frontend",
