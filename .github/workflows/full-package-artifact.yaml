@@ -49,10 +49,27 @@ jobs:
           echo "$PEM_CONTENT" > costrict-private.pem
           chmod 600 costrict-private.pem
 
-      - name: Build current program dependencies
+      - name: Download current program release binaries
         run: |
           chmod +x *.sh
-          ./build-depends.sh --packages costrict-admin,costrict-daemon --build
+          ADMIN_VERSION="$(jq -r '.version' depends/costrict-admin.json)"
+          DAEMON_VERSION="$(jq -r '.version' depends/costrict-daemon.json)"
+
+          ./github-fetch-release.sh \
+            --package costrict-admin \
+            --repo zgsm-sangfor/costrict-admin \
+            --os linux \
+            --arch amd64 \
+            --version "$ADMIN_VERSION" \
+            --output "packages/costrict-admin/linux/amd64/${ADMIN_VERSION}/costrict-admin"
+
+          ./github-fetch-release.sh \
+            --package costrict-daemon \
+            --repo zgsm-sangfor/costrict-admin \
+            --os linux \
+            --arch amd64 \
+            --version "$DAEMON_VERSION" \
+            --output "packages/costrict-daemon/linux/amd64/${DAEMON_VERSION}/costrict-daemon"
 
       - name: Build current program install packages
         run: |
