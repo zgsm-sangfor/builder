@@ -1,6 +1,6 @@
 {
   "name": "costrict-admin",
-  "type": "github",
+  "type": "exec",
   "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
   "path": "../costrict-admin",
   "sources": [
@@ -11,16 +11,13 @@
     {
       "os": "linux",
       "arch": "amd64"
-    },
-    {
-      "os": "windows",
-      "arch": "amd64"
     }
   ],
   "build": {
     "workdir": "../costrict-admin/utility"
   },
   "pull": {
+    "workdir": ".",
     "command": "./github-fetch-release.sh --package costrict-admin --os {{os}} --arch {{arch}} --version {{.version}}"
   },
   "version": "1.0.137",
