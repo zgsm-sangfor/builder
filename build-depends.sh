@@ -532,7 +532,7 @@ build_other_dependency() {
     local rendered_command=$(render_template_ex "$depend_command" "$depend_config_file")
     echo "Executing: $rendered_command"
     
-    if [ "$depend_type" = "frontend" ] || [ "$depend_type" = "docker" ] || [ "$depend_type" = "exec" ]; then
+    # if [ "$depend_type" = "frontend" ] || [ "$depend_type" = "docker" ] || [ "$depend_type" = "exec" ]; then
         # docker和frontend类型：需要本地代码，所以需要先检查源码目录是否存在，不存在则从remote克隆
         if [ ! -d "$depend_path" ]; then
             if [ -z "$depend_remote" ] || [ "$depend_remote" = "null" ]; then
@@ -547,7 +547,7 @@ build_other_dependency() {
             fi
             echo "Successfully cloned to '$depend_path'"
         fi
-    fi
+    # fi
 
     if [ "$depend_type" = "github" ]; then
         # github类型：镜像已由github action自动编译上传，仅需从镜像仓库拉取
