@@ -1,7 +1,7 @@
 {
   "name": "oidc-auth",
-  "type": "docker",
-  "version": "1.3.2",
+  "type": "github",
+  "version": "1.3.1",
   "remote": "git@github.com:zgsm-sangfor/oidc-auth.git",
   "repo": "zgsm",
   "path": "../zgsm-ai/oidc-auth",
