@@ -6,15 +6,13 @@ set -e
 # build-mirror.sh - 构建离线安装包 costrict-mirror.tar.gz
 #
 # 选项:
-#   --build           先调用 build-costrict.sh 进行构建
 #   --ignore-images   打包时忽略 images 目录
 #   --update-static   强制更新 costrict-static 内容（即使本地已存在）
 #
 # 流程:
-#   Step 1: 根据 --build 选项决定是否调用 build-costrict.sh
-#   Step 2: 获取/更新 costrict-static 的内容
-#   Step 3: 打包 site 目录并拷贝到 costrict-static 下
-#   Step 4: 将 costrict-static、packages、images 打包为 costrict-mirror.tar.gz
+#   Step 1: 获取/更新 costrict-static 的内容
+#   Step 2: 打包 site 目录并拷贝到 costrict-static 下
+#   Step 3: 将 costrict-static、packages、images 打包为 costrict-mirror.tar.gz
 #
 
 BASE_URL="https://zgsm.sangfor.com"
@@ -31,37 +29,28 @@ show_help() {
     echo "构建 CoStrict 离线安装包 costrict-mirror.tar.gz"
     echo ""
     echo "选项:"
-    echo "  --build           先调用 build-costrict.sh 进行构建"
     echo "  --ignore-images   打包时忽略 images 目录"
     echo "  --update-static   强制更新 costrict-static 内容（即使本地已存在）"
     echo "  --help, -h        显示此帮助信息"
     echo ""
     echo "执行步骤:"
-    echo "  1. 根据 --build 选项决定是否调用 build-costrict.sh"
-    echo "  2. 获取/更新 costrict-static 的内容（从 ${BASE_URL} 下载 MANIFEST 及其列出的文件）"
-    echo "  3. 打包 site 目录为 ${SITE_TAR} 并拷贝到 ${STATIC_DIR} 下"
-    echo "  4. 将 ${STATIC_DIR}、packages、images 打包为 ${OUTPUT_FILE}"
+    echo "  1. 获取/更新 costrict-static 的内容（从 ${BASE_URL} 下载 MANIFEST 及其列出的文件）"
+    echo "  2. 打包 site 目录为 ${SITE_TAR} 并拷贝到 ${STATIC_DIR} 下"
+    echo "  3. 将 ${STATIC_DIR}、packages、images 打包为 ${OUTPUT_FILE}"
     echo ""
     echo "示例:"
-    echo "  $0                              # 仅打包（不构建，不忽略 images，已有静态文件不更新）"
-    echo "  $0 --build                      # 先构建再打包"
-    echo "  $0 --build --ignore-images      # 构建并打包，但不包含 images"
+    echo "  $0                              # 仅打包（不忽略 images，已有静态文件不更新）"
+    echo "  $0 --ignore-images              # 打包但不包含 images"
     echo "  $0 --update-static              # 强制更新静态文件后打包"
-    echo "  $0 --build --update-static      # 构建、强制更新静态文件后打包"
     echo ""
 }
 
 # 解析参数
-NEED_BUILD=false
 IGNORE_IMAGES=false
 UPDATE_STATIC=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --build)
-            NEED_BUILD=true
-            shift
-            ;;
         --ignore-images)
             IGNORE_IMAGES=true
             shift
@@ -83,26 +72,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 #
-# Step 1: 根据 --build 选项决定是否调用 build-costrict.sh
-#
-if [ "$NEED_BUILD" = true ]; then
-    echo "----------------------------------------------------------------"
-    echo "Step 1: 调用 build-costrict.sh 进行构建..."
-    echo "----------------------------------------------------------------"
-    ./build-costrict.sh
-    echo ""
-    echo "build-costrict.sh 构建完成。"
-else
-    echo "----------------------------------------------------------------"
-    echo "Step 1: 未指定 --build 选项，跳过构建步骤。"
-    echo "----------------------------------------------------------------"
-fi
-
-#
-# Step 2: 获取/更新 costrict-static 的内容
+# Step 1: 获取/更新 costrict-static 的内容
 #
 echo "----------------------------------------------------------------"
-echo "Step 2: 获取/更新 ${STATIC_DIR} 内容..."
+echo "Step 1: 获取/更新 ${STATIC_DIR} 内容..."
 echo "----------------------------------------------------------------"
 
 # 创建 costrict-static 目录（如果不存在）
@@ -146,13 +119,6 @@ download_file() {
         echo "  [错误] 非法文件路径（包含 ..）: ${file_path}"
         return 1
     fi
-
-    # # 安全检查：路径必须以 costrict-static/ 开头，确保文件落在该目录下
-    # local prefix="${STATIC_DIR}/"
-    # if [[ "${file_path}" != "${prefix}"* ]]; then
-    #     echo "  [错误] 非法文件路径（不在 ${STATIC_DIR}/ 目录下）: ${file_path}"
-    #     return 1
-    # fi
 
     # 安全检查：路径不能为空
     if [[ -z "${file_path}" ]]; then
@@ -212,11 +178,11 @@ else
 fi
 
 #
-# Step 3: 打包 site 目录并拷贝到 costrict-static 下
+# Step 2: 打包 site 目录并拷贝到 costrict-static 下
 #
 echo ""
 echo "----------------------------------------------------------------"
-echo "Step 3: 打包 site 目录..."
+echo "Step 2: 打包 site 目录..."
 echo "----------------------------------------------------------------"
 
 if [ -d "${SITE_DIR}" ]; then
@@ -232,11 +198,11 @@ else
 fi
 
 #
-# Step 4: 打包 costrict-static、packages、images 为 costrict-mirror.tar.gz
+# Step 3: 打包 costrict-static、packages、images 为 costrict-mirror.tar.gz
 #
 echo ""
 echo "----------------------------------------------------------------"
-echo "Step 4: 打包离线安装包 ${OUTPUT_FILE}..."
+echo "Step 3: 打包离线安装包 ${OUTPUT_FILE}..."
 echo "----------------------------------------------------------------"
 
 # 构建 tar 命令的参数列表
@@ -259,6 +225,8 @@ fi
 # 根据 --ignore-images 决定是否包含 images
 if [ "$IGNORE_IMAGES" = true ]; then
     echo "已指定 --ignore-images，跳过 images 目录。"
+    echo "正在下载 nginx-1.27.1.tar 镜像..."
+    download_file "./nginx-1.27.1.tar"
 else
     if [ -d "images" ]; then
         TAR_ARGS+=("images")

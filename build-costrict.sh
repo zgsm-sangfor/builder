@@ -21,14 +21,20 @@ set -e
 #
 
 # build-costrict.sh支持以下可选参数：
-#   --push [env]           用于指定镜像推送的环境，该参数会传给build-depends.sh（构建镜像始终执行）
-#   --upload <env>         用于指定包上传的环境，该参数会传给build-components.sh
-#   --skip-dependency      跳过依赖处理（Step 1 和 Step 2），不处理 dependency 包
-#   --update-dependency    检测 dependency 包变更并自动递增版本号（Step 1），默认不执行
-#   --rebuild              重新构建所有 enabled 依赖（Step 2），跳过 check-build.sh 过滤，
-#                          直接调用 build-depends.sh 不带 --packages 选项
-#   --repack               重新打包所有组件（Step 6），跳过 check-build.sh 过滤，
-#                          直接调用 build-components.sh 不带 --packages 选项
+#   --update    检测 dependency 包变更并自动递增版本号（Step 1），默认不执行
+#   --build <target>       指定要构建的依赖包列表（Step 2），传给 build-depends.sh 的 --packages 选项
+#                          target 为逗号分隔的包名列表（如 "casdoor,chat-rag"），或下列值之一：
+#                            all  - 构建所有 enabled 依赖
+#                            auto - 自动检测需要构建的依赖（默认行为，通过 check-build.sh 检测）
+#   --push <ENV>           作为 --build 的子动作，指定镜像推送的环境，会传给 build-depends.sh
+#                          构建镜像始终执行，此选项只控制是否推送。
+#                          ENV 必须指定；'docker' 推送到 docker hub；
+#                          否则推送到指定环境 (如 'test,prod' 或 'all')。
+#   --pack <target>        指定要打包的组件包列表（Step 6），传给 build-components.sh 的 --packages 选项
+#                          target 为逗号分隔的包名列表（如 "firmware,costrict-system"），或下列值之一：
+#                            all  - 构建所有组件包
+#                            auto - 自动检测需要构建的组件包（默认行为，通过 check-build.sh 检测）
+#   --upload <env>         作为 --pack 的子动作，指定包上传的环境，会传给 build-components.sh
 
 # 显示帮助信息
 show_help() {
@@ -37,38 +43,45 @@ show_help() {
     echo "构建 CoStrict 系统包"
     echo ""
     echo "选项:"
-    echo "  --skip-dependency     跳过依赖处理（Step 1 和 Step 2），不处理 dependency 包"
-    echo "  --update-dependency   检测 dependency 包变更并自动递增版本号（Step 1）"
+    echo "  --update   检测 dependency 包变更并自动递增版本号（Step 1）"
     echo "                        默认不执行 Step 1，仅当指定此选项时才执行"
-    echo "  --rebuild             重新构建所有依赖（Step 2）"
-    echo "                        跳过 check-build.sh 过滤，直接调用 build-depends.sh 不带 --packages"
-    echo "  --repack           重新打包所有组件（Step 6）"
-    echo "                        跳过 check-build.sh 过滤，直接调用 build-components.sh 不带 --packages"
-    echo "  --push [env]          推送镜像到指定环境 (会传递给 build-depends.sh)"
+    echo "  --build <target>      指定要构建的依赖包（Step 2）"
+    echo "                        target 为逗号分隔的包名列表（如 \"casdoor,chat-rag\"），或："
+    echo "                          all  - 构建所有 enabled 依赖"
+    echo "                          auto - 自动检测需要构建的依赖（默认行为）"
+    echo "  --push <ENV>          作为 --build 的子动作，推送镜像到指定环境 (会传递给 build-depends.sh)"
     echo "                        构建镜像始终执行，此选项只控制是否推送"
-    echo "                        如果 env 为空或 'def'，推送到 docker hub"
-    echo "                        否则推送到指定环境 (如 'test,prod' 或 'all')"
-    echo "  --upload <env>        指定包上传的环境 (会传递给 build-components.sh)"
+    echo "                        ENV 必须指定：'docker' 推送到 docker hub，"
+    echo "                        'all' 推送到所有环境，"
+    echo "                        或指定逗号分隔的环境列表 (如 'test,prod')"
+    echo "  --pack <target>       指定要打包的组件包（Step 6）"
+    echo "                        target 为逗号分隔的包名列表（如 \"firmware,costrict-system\"），或："
+    echo "                          all  - 构建所有组件包"
+    echo "                          auto - 自动检测需要构建的组件包（默认行为）"
+    echo "  --upload <env>        作为 --pack 的子动作，指定包上传的环境 (会传递给 build-components.sh)"
     echo "  --help, -h            显示此帮助信息"
     echo ""
     echo "执行步骤:"
-    echo "  1. (仅 --update-dependency) 检测 dependency 包变更并自动递增版本号"
+    echo "  1. (仅 --update) 检测 dependency 包变更并自动递增版本号"
     echo "  2. 检查尚未构建的 dependency 包（构建物包括 Docker 镜像、前端页面包、可执行程序等），若有则调用 build-depends.sh 构建（可选推送镜像）"
-    echo "     (若指定 --rebuild，则跳过检查，直接构建所有依赖)"
+    echo "     (若指定 --build <target>，则按指定目标构建：all=全部, auto=自动检测, 或指定包名列表)"
     echo "  3. 调用 gen-backend-spec.sh 生成 backend/system-spec.json"
     echo "  4. 检测 component 包变更并自动递增版本号"
     echo "  5. 调用 gen-manifest.sh 生成系统清单，并重新检查 costrict-system 版本"
     echo "  6. 检查尚未打包的 component 包，若有则调用 build-components.sh 构建、打包并索引"
-    echo "     (若指定 --repack，则跳过检查，直接重新打包所有组件)"
+    echo "     (若指定 --pack <target>，则按指定目标打包：all=全部, auto=自动检测, 或指定包名列表)"
     echo ""
     echo "示例:"
-    echo "  $0                            # 构建镜像（不推送），然后构建包"
-    echo "  $0 --update-dependency        # 先检测 dependency 变更并递增版本，再构建镜像和包"
-    echo "  $0 --rebuild                  # 跳过检查，重新构建所有依赖"
-    echo "  $0 --repack                # 跳过检查，重新打包所有组件"
-    echo "  $0 --push                     # 构建镜像并推送到 docker hub"
-    echo "  $0 --push test,prod           # 构建镜像并推送到 test 和 prod 环境"
-    echo "  $0 --upload prod              # 构建包并上传到 prod 环境"
+    echo "  $0                                    # 构建镜像（不推送），然后构建包"
+    echo "  $0 --update                # 先检测 dependency 变更并递增版本，再构建镜像和包"
+    echo "  $0 --build all                        # 跳过检查，构建所有依赖"
+    echo "  $0 --build casdoor,chat-rag           # 构建指定的依赖包"
+    echo "  $0 --build auto --push docker         # 构建镜像并推送到 docker hub"
+    echo "  $0 --build auto --push test,prod      # 构建镜像并推送到 test 和 prod 环境"
+    echo "  $0 --build auto --push all            # 构建镜像并推送到所有环境"
+    echo "  $0 --pack all                         # 跳过检查，重新打包所有组件"
+    echo "  $0 --pack firmware,costrict-system    # 打包指定的组件"
+    echo "  $0 --pack auto --upload prod          # 构建包并上传到 prod 环境"
     echo ""
 }
 
@@ -76,43 +89,32 @@ show_help() {
 UPLOAD_ENV=""
 PUSH_ENV=""
 NEED_PUSH=false
-SKIP_DEPENDENCY=false
-UPDATE_DEPENDENCY=false
-REBUILD_DEPENDENCY=false
-REPACK_COMPONENTS=false
+NEED_UPDATE=false
+BUILD_TARGET=""
+PACK_TARGET=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
         --push)
             NEED_PUSH=true
-            # 检查下一个参数是否是选项（以-开头）或为空
-            if [[ -n "$2" && ! "$2" =~ ^- ]]; then
-                PUSH_ENV="$2"
-                shift 2
-            else
-                PUSH_ENV=""
-                shift
-            fi
+            PUSH_ENV="$2"
+            shift 2
             ;;
         --upload)
             UPLOAD_ENV="$2"
             shift 2
             ;;
-        --skip-dependency)
-            SKIP_DEPENDENCY=true
+        --update)
+            NEED_UPDATE=true
             shift
             ;;
-        --update-dependency)
-            UPDATE_DEPENDENCY=true
-            shift
+        --build)
+            BUILD_TARGET="$2"
+            shift 2
             ;;
-        --rebuild)
-            REBUILD_DEPENDENCY=true
-            shift
-            ;;
-        --repack)
-            REPACK_COMPONENTS=true
-            shift
+        --pack)
+            PACK_TARGET="$2"
+            shift 2
             ;;
         --help|-h)
             show_help
@@ -123,57 +125,65 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
-if [ "$SKIP_DEPENDENCY" = true ]; then
+
+PUSH_OPT=""
+if [ "$NEED_PUSH" = true ]; then
+    PUSH_OPT="--push $PUSH_ENV"
+fi
+
+UPLOAD_OPT=""
+if [ -n "$UPLOAD_ENV" ]; then
+    PUSH_OPT="--upload $UPLOAD_ENV"
+fi
+
+# Step 1: 仅当 --update 为 true 时，调用check-update.sh自动递增dependency包的版本号
+if [ "$NEED_UPDATE" = true ]; then
     echo "----------------------------------------------------------------"
-    echo "--skip-dependency is set, skipping Step 1 and Step 2 (dependency processing)..."
+    echo "Step 1: Detecting dependency changes and auto-incrementing versions..."
     echo "----------------------------------------------------------------"
+    ./check-update.sh --update --build-type dependency
 else
-    # Step 1: 仅当 --update-dependency 为 true 时，调用check-update.sh自动递增dependency包的版本号
-    if [ "$UPDATE_DEPENDENCY" = true ]; then
-        echo "----------------------------------------------------------------"
-        echo "Step 1: Detecting dependency changes and auto-incrementing versions..."
-        echo "----------------------------------------------------------------"
-        ./check-update.sh --update --build-type dependency
-    else
-        echo "----------------------------------------------------------------"
-        echo "--update-dependency not set, skipping Step 1 (dependency version auto-increment)..."
-        echo "----------------------------------------------------------------"
-    fi
+    echo "----------------------------------------------------------------"
+    echo "--update not set, skipping Step 1 (dependency version auto-increment)..."
+    echo "----------------------------------------------------------------"
+fi
 
-    # Step 2: 构建依赖包
-    # 若 --rebuild 为 true，跳过 check-build.sh，直接构建所有 enabled 依赖
-    # 否则先调用 check-build.sh 获取尚未构建的依赖包列表，再按需构建
-    if [ "$REBUILD_DEPENDENCY" = true ]; then
-        echo "----------------------------------------------------------------"
-        echo "Step 2: Rebuilding all enabled dependency packages (Docker images, frontend pages, executables, etc.)..."
-        echo "----------------------------------------------------------------"
-        if [ "$NEED_PUSH" = true ]; then
-            ./build-depends.sh --build --update --push $PUSH_ENV
-        else
-            ./build-depends.sh --build --update
-        fi
-    else
-        echo "----------------------------------------------------------------"
-        echo "Step 2: Checking and building dependency packages (Docker images, frontend pages, executables, etc.)..."
-        echo "----------------------------------------------------------------"
-        # check-build.sh 以未构建包的数量作为退出码，当存在未构建包时返回非0，
-        # 此处使用 '|| true' 防止 set -e 中断脚本执行
-        need_build_packages=$(./check-build.sh --build-type dependency || true)
-        echo "Need build 'dependency' packages: $need_build_packages"
+# Step 2: 构建依赖包
+# 若 --build 未指定（BUILD_TARGET 为空），跳过依赖包构建
+# 若 --build all，跳过 check-build.sh，直接构建所有 enabled 依赖
+# 若 --build 指定了包名列表，跳过 check-build.sh，直接构建指定包
+# 若 --build auto，先调用 check-build.sh 获取尚未构建的依赖包列表，再按需构建
+if [ -z "$BUILD_TARGET" ]; then
+    echo "----------------------------------------------------------------"
+    echo "--build not set, skipping Step 2 (dependency package build)..."
+    echo "----------------------------------------------------------------"
+elif [ "$BUILD_TARGET" = "all" ]; then
+    echo "----------------------------------------------------------------"
+    echo "Step 2: Building all enabled dependency packages (Docker images, frontend pages, executables, etc.)..."
+    echo "----------------------------------------------------------------"
+    ./build-depends.sh --build --update $PUSH_OPT
+elif [ "$BUILD_TARGET" = "auto" ]; then
+    echo "----------------------------------------------------------------"
+    echo "Step 2: Checking and building dependency packages (Docker images, frontend pages, executables, etc.)..."
+    echo "----------------------------------------------------------------"
+    # check-build.sh 以未构建包的数量作为退出码，当存在未构建包时返回非0，
+    # 此处使用 '|| true' 防止 set -e 中断脚本执行
+    need_build_packages=$(./check-build.sh --build-type dependency || true)
+    echo "Need build 'dependency' packages: $need_build_packages"
 
-        if [ -n "$need_build_packages" ]; then
-            echo "----------------------------------------------------------------"
-            echo "Building depends..."
-            echo "----------------------------------------------------------------"
-            if [ "$NEED_PUSH" = true ]; then
-                ./build-depends.sh --build --update --push $PUSH_ENV --packages $need_build_packages
-            else
-                ./build-depends.sh --build --update --packages $need_build_packages
-            fi
-        else
-            echo "No 'dependency' packages need building, skipping..."
-        fi
+    if [ -n "$need_build_packages" ]; then
+        echo "----------------------------------------------------------------"
+        echo "Building depends..."
+        echo "----------------------------------------------------------------"
+        ./build-depends.sh --build --update $PUSH_OPT --packages $need_build_packages
+    else
+        echo "No 'dependency' packages need building, skipping..."
     fi
+else
+    echo "----------------------------------------------------------------"
+    echo "Step 2: Building specified dependency packages: $BUILD_TARGET ..."
+    echo "----------------------------------------------------------------"
+    ./build-depends.sh --build --update $PUSH_OPT --packages $BUILD_TARGET
 fi
 
 # Step 3: 调用gen-backend-spec.sh，更新backend/system-spec.json
@@ -197,23 +207,24 @@ echo "----------------------------------------------------------------"
 # gen-manifest.sh 可能修改了costrict-system的内容，重新检查并递增其版本
 ./check-update.sh --update --build-type component -p costrict-system
 
-# Step 6: 调用check-build.sh，获取尚未打包的组件包列表，然后构建
-echo "----------------------------------------------------------------"
-echo "Step 6: Checking and building component packages (clean/build/pack/index)..."
-echo "----------------------------------------------------------------"
-# check-build.sh 以未打包包的数量作为退出码，当存在未打包包时返回非0，
-# 此处使用 '|| true' 防止 set -e 中断脚本执行
-# 若 --repack 为 true，跳过 check-build.sh，直接重新打包所有组件
-# 否则先调用 check-build.sh 获取尚未打包的组件包列表，再按需打包
-if [ "$REPACK_COMPONENTS" = true ]; then
-    echo "Step 6: Repackaging all component packages (clean/build/pack/index)..."
+# Step 6: 打包组件包
+# 若 --pack 未指定（PACK_TARGET 为空），跳过组件包打包
+# 若 --pack all，跳过 check-build.sh，直接构建所有组件包
+# 若 --pack 指定了包名列表，跳过 check-build.sh，直接打包指定组件
+# 若 --pack auto，先调用 check-build.sh 获取尚未打包的组件包列表，再按需打包
+if [ -z "$PACK_TARGET" ]; then
     echo "----------------------------------------------------------------"
-    if [ -n "$UPLOAD_ENV" ]; then
-        ./build-components.sh --clean --build --pack --index --upload "$UPLOAD_ENV"
-    else
-        ./build-components.sh --clean --build --pack --index
-    fi
-else
+    echo "--pack not set, skipping Step 6 (component package build)..."
+    echo "----------------------------------------------------------------"
+elif [ "$PACK_TARGET" = "all" ]; then
+    echo "----------------------------------------------------------------"
+    echo "Step 6: Building all component packages (clean/build/pack/index)..."
+    echo "----------------------------------------------------------------"
+    ./build-components.sh --clean --build --pack --index $UPLOAD_OPT
+elif [ "$PACK_TARGET" = "auto" ]; then
+    echo "----------------------------------------------------------------"
+    echo "Step 6: Checking and building component packages (clean/build/pack/index)..."
+    echo "----------------------------------------------------------------"
     # check-build.sh 以未打包包的数量作为退出码，当存在未打包包时返回非0，
     # 此处使用 '|| true' 防止 set -e 中断脚本执行
     need_pack_packages=$(./check-build.sh --build-type component || true)
@@ -223,14 +234,15 @@ else
         echo "----------------------------------------------------------------"
         echo "Building packages..."
         echo "----------------------------------------------------------------"
-        if [ -n "$UPLOAD_ENV" ]; then
-            ./build-components.sh --packages "$need_pack_packages" --clean --build --pack --index --upload "$UPLOAD_ENV"
-        else
-            ./build-components.sh --packages "$need_pack_packages" --clean --build --pack --index
-        fi
+        ./build-components.sh --packages "$need_pack_packages" --clean --build --pack --index $UPLOAD_OPT
     else
         echo "No 'component' packages need building, skipping..."
     fi
+else
+    echo "----------------------------------------------------------------"
+    echo "Step 6: Building specified component packages: $PACK_TARGET ..."
+    echo "----------------------------------------------------------------"
+    ./build-components.sh --packages "$PACK_TARGET" --clean --build --pack --index $UPLOAD_OPT
 fi
 
 echo "Build costrict completed!"

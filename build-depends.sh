@@ -80,11 +80,12 @@
 #   推送目标环境的相关参数，由.env中的环境变量(DH_ENV_NAMES, DH_ENV_URLS, DH_ENV_USERS, DH_ENV_PASSWORDS)定义。
 #
 # 选项说明：
-#   --push [<ENV>]      推送镜像。如果参数为空或包含"def"，则推送到docker hub；
-#                       否则上传到指定环境（沿用upload选项逻辑）。每种环境由四个参数指定：
+#   --push [<ENV>]      推送镜像。如果参数为"docker"，则推送到docker hub；
+#                       否则从DH_ENV_NAMES获取相关推送目标（上传到指定环境）。
+#                       每种环境由四个参数指定：
 #                       名字(name), URL(url), 用户名(user)，密码(password)
 #                       上传方式是，使用docker login登录（使用环境相关参数），然后docker push推送
-#                       注意：仅对github/docker类型生效，exec类型跳过此步骤
+#                       注意：仅对github/docker类型生效，exec/frontend类型跳过此步骤
 #
 
 source ./.env
@@ -97,11 +98,11 @@ usage() {
     echo "Actions:"
     echo "  --build                      Need build depends"
     echo "  --update                     Update component information using the built dependencies"
-    echo "  --push [<ENV>]               Push depends. If ENV is empty or contains 'def', push to docker hub;"
+    echo "  --push <ENV>                 Push depends. ENV must be specified; 'docker' pushes to docker hub,"
     echo "                               otherwise upload to specified environments (comma-separated env list)"
     echo "                               Supported envs: names from .env DH_ENV_NAMES array (${DH_ENV_NAMES[*]})"
-    echo "                               Keywords: def (${DH_ENV_NAMES[0]}), all (${DH_ENV_NAMES[*]})"
-    echo "                               Examples: \"--push\", \"--push def\", \"--push test,prod\", \"--push all\", \"--push test,all\""
+    echo "                               Keywords: docker (push to docker hub), all (${DH_ENV_NAMES[*]})"
+    echo "                               Examples: \"--push docker\", \"--push test,prod\", \"--push all\", \"--push test,all\""
     exit 1
 }
 
@@ -165,14 +166,14 @@ is_module_enabled() {
 }
 
 enable_push() {
-    NEED_PUSH=true
     local input="$1"
     
-    # 如果参数为空，则推送到 docker hub
+    # 如果参数为空，则不推送
     if [ -z "$input" ]; then
-        PUSH_TO_DOCKER_HUB=true
         return
     fi
+    
+    NEED_PUSH=true
     
     # 支持逗号分隔的多个环境
     IFS=',' read -ra env_list <<< "$input"
@@ -183,8 +184,8 @@ enable_push() {
         env_item=$(echo "$env_item" | xargs)
         
         case "$env_item" in
-            def)
-                # def 表示推送到 docker hub
+            docker)
+                # docker 表示推送到 docker hub
                 PUSH_TO_DOCKER_HUB=true
                 ;;
             all)

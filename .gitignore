@@ -30,6 +30,5 @@
 !site/**
 !.github/
 !.github/**
-!builds/
-!builds/**
 !costrict-static
+!artifact-latest

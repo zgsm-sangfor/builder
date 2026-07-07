@@ -13,5 +13,6 @@
     "workdir": "./configures/common/casdoor",
     "command": "echo IMAGE_CASDOOR={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
   },
+  "enabled": false,
   "description": "User Authentication Management System"
 }
