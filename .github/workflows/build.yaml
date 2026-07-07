@@ -98,16 +98,13 @@ jobs:
           # 如果 tag 已存在则跳过（幂等）
           if git rev-parse "${TAG_NAME}" >/dev/null 2>&1; then
             echo "Tag ${TAG_NAME} already exists, skipping..."
-            echo "tag_created=false" >> $GITHUB_ENV
           else
             git tag -a "${TAG_NAME}" -m "Release ${TAG_NAME}"
             git push origin "${TAG_NAME}"
             echo "Tag ${TAG_NAME} created and pushed"
-            echo "tag_created=true" >> $GITHUB_ENV
           fi
 
       - name: Create Release
-        if: env.tag_created == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.tag_name }}
