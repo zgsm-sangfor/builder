@@ -1,7 +1,7 @@
 {
   "name": "client-manager",
   "type": "docker",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "remote": "git@github.com:zgsm-ai/client-manager.git",
   "repo": "zgsm",
   "path": "../services/client-manager",

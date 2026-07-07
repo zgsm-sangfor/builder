@@ -55,17 +55,17 @@
     {
       "name": "client-manager",
       "subsystem": "backend",
-      "version": "1.0.12"
+      "version": "1.0.13"
     },
     {
       "name": "code-completion",
       "subsystem": "backend",
-      "version": "1.7.104"
+      "version": "1.7.105"
     },
     {
       "name": "costrict-admin-backend",
       "subsystem": "backend",
-      "version": "1.0.110"
+      "version": "1.0.111"
     },
     {
       "name": "costrict-admin-frontend",
@@ -75,12 +75,12 @@
     {
       "name": "costrict-admin",
       "subsystem": "frontend",
-      "version": "1.0.137"
+      "version": "1.0.138"
     },
     {
       "name": "costrict-daemon",
       "subsystem": "root",
-      "version": "1.0.137"
+      "version": "1.0.138"
     },
     {
       "name": "costrict-dept-sync",
@@ -90,7 +90,7 @@
     {
       "name": "costrict-model-proxy",
       "subsystem": "backend",
-      "version": "1.0.9"
+      "version": "1.0.10"
     },
     {
       "name": "costrict-web",
@@ -140,7 +140,7 @@
     {
       "name": "oidc-auth",
       "subsystem": "backend",
-      "version": "1.0.9"
+      "version": "1.0.10"
     },
     {
       "name": "portal",

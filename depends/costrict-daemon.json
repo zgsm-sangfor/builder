@@ -19,6 +19,6 @@
   "pull": {
     "command": "mkdir -p ../packages/costrict-daemon/{{.os}}/{{.arch}}/{{.version}} && curl -fSL -o ../packages/costrict-daemon/{{.os}}/{{.arch}}/{{.version}}/costrict-daemon https://github.com/zgsm-sangfor/costrict-admin/releases/download/v{{.version}}/costrict-daemon-{{.os}}-{{.arch}}-v{{.version}}"
   },
-  "version": "1.0.137",
+  "version": "1.0.138",
   "description": "The daemon of costrict"
 }

@@ -3,7 +3,7 @@
   "type": "zip",
   "subsystem": "backend",
   "path": "./configures",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Casdoor认证客户端",
   "display_name": "Casdoor认证客户端",
   "dependences": [

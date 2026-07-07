@@ -1,7 +1,7 @@
 {
   "name": "code-completion",
   "type": "docker",
-  "version": "1.7.105",
+  "version": "1.7.106",
   "remote": "git@github.com:zgsm-ai/code-completions-go.git",
   "repo": "zgsm",
   "path": "../services/code-completions-go",

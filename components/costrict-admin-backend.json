@@ -4,7 +4,7 @@
   "subsystem": "backend",
   "title": "CoStrict后端管理",
   "path": "./configures",
-  "version": "1.0.110",
+  "version": "1.0.111",
   "description": "CoStrict管理服务的后端服务",
   "display_name": "costrict-admin后端服务"
 }

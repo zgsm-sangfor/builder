@@ -1,7 +1,7 @@
 {
   "name": "costrict-model-proxy",
   "type": "docker",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "remote": "git@github.com:zgsm-sangfor/costrict-model-proxy.git",
   "repo": "ghcr.io/zgsm-sangfor",
   "tag": "v{{.version}}",
