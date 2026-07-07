@@ -10,7 +10,7 @@
     "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}"
   },
   "pull": {
-    "command": "docker-pull-via.sh --proxy-id hub.dbin.site/{{.repo}}/{{.name}}:{{.tag}} --image-id  {{.repo}}/{{.name}}:v{{.version}}"
+    "command": "docker pull  {{.repo}}/{{.name}}:v{{.version}}"
   },
   "update": {
     "workdir": "./configures/common/code-completion",
