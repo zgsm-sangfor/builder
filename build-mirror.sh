@@ -82,7 +82,7 @@ echo "----------------------------------------------------------------"
 mkdir -p "${STATIC_DIR}"
 
 # 先尝试从 GitHub Releases 下载 costrict-static.tar，将其中的 linux 目录解压到 costrict-static 下
-STATIC_TAR_URL="https://github.com/zgsm-sangfor/costrict-static/releases/download/v1.0.0/costrict-static.tar"
+STATIC_TAR_URL="https://github.com/zgsm-sangfor/costrict-static/releases/download/v1.1.0/costrict-static.tar"
 STATIC_TAR_FILE="costrict-static.tar"
 
 echo "正在尝试从 GitHub Releases 下载 ${STATIC_TAR_FILE}..."
