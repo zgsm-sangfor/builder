@@ -39,6 +39,7 @@ if [ ! -f "init.sh" ]; then
     exit 1
 fi
 
+chmod +x *.sh
 echo "正在执行 init.sh ..."
 bash init.sh
 
