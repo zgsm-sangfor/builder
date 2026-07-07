@@ -1,4 +1,4 @@
-name: Build and Upload artifact
+name: Build and Release costrict-mirror.tar.gz
 
 on:
   push:
@@ -6,8 +6,8 @@ on:
       - main
 
 jobs:
-  build-and-upload:
-    name: Build And Upload
+  build-and-release:
+    name: Build And Release
     runs-on: ubuntu-latest
     if: ${{ !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[no ci]') }}
     permissions:
@@ -92,17 +92,30 @@ jobs:
           fi
 
       - name: Read version and create tag
+        id: tag
         run: |
           VERSION=$(jq -r '.version' components/costrict-system.json)
           TAG_NAME="v${VERSION}"
           echo "Version from costrict-system.json: ${VERSION}"
           echo "Creating tag: ${TAG_NAME}"
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_ENV
 
           # 如果 tag 已存在则跳过（幂等）
           if git rev-parse "${TAG_NAME}" >/dev/null 2>&1; then
             echo "Tag ${TAG_NAME} already exists, skipping..."
+            echo "tag_created=false" >> $GITHUB_ENV
           else
             git tag -a "${TAG_NAME}" -m "Release ${TAG_NAME}"
             git push origin "${TAG_NAME}"
             echo "Tag ${TAG_NAME} created and pushed"
+            echo "tag_created=true" >> $GITHUB_ENV
           fi
+
+      - name: Create Release
+        if: env.tag_created == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ env.tag_name }}
+          tag_name: ${{ env.tag_name }}
+          files: artifact/**
+          generate_release_notes: true
