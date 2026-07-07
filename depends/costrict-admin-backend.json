@@ -1,6 +1,6 @@
 {
   "name": "costrict-admin-backend",
-  "type": "github",
+  "type": "github-docker",
   "version": "1.0.137",
   "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
   "repo": "zgsm",
@@ -15,7 +15,7 @@
     "command": "export DOCKER_BUILDKIT=1 && docker build -f ./Dockerfile --build-arg VERSION={{.version}} .. -t {{.repo}}/{{.name}}:v{{.version}}"
   },
   "pull": {
-    "command": "docker pull {{.repo}}/{{.name}}:v{{.version}}"
+    "command": "docker-pull-via.sh --proxy-id hub.dbin.site/{{.repo}}/{{.name}}:{{.tag}} --image-id  {{.repo}}/{{.name}}:v{{.version}}"
   },
   "update": {
     "workdir": "./configures/common/costrict-admin-backend",

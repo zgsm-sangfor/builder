@@ -1,6 +1,6 @@
 {
   "name": "cotun",
-  "type": "github",
+  "type": "github-docker",
   "version": "1.3.13",
   "remote": "git@github.com:zgsm-sangfor/cotun.git",
   "repo": "zgsm",

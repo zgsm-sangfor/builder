@@ -542,7 +542,7 @@ check_package_dirty() {
         local result=$(calculate_multi_directory "$package_type" "$package_path" "$json_file")
         new_checksum=$(echo "$result" | head -n1)
         new_file_count=$(echo "$result" | tail -n1)
-    elif [ "$package_type" = "github" ]; then
+    elif [ "$package_type" = "github-docker" ]; then
         check_github_package "$json_file" "$package_name" "$package_version"
         return $?
     elif [ "$package_type" = "binary" ]; then
@@ -550,7 +550,7 @@ check_package_dirty() {
         return $?
     else
         # 非法类型
-        log "ERROR" "Invalid package type '$package_type' for package '$package_name'. Valid types: conf, zip, frontend, exec, docker, github, binary"
+        log "ERROR" "Invalid package type '$package_type' for package '$package_name'. Valid types: conf, zip, frontend, exec, docker, github-docker, binary"
         return 1
     fi
     

@@ -1,6 +1,6 @@
 {
   "name": "client-manager",
-  "type": "github",
+  "type": "github-docker",
   "version": "1.0.14",
   "remote": "git@github.com:zgsm-ai/client-manager.git",
   "repo": "zgsm",
@@ -10,7 +10,7 @@
     "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}"
   },
   "pull": {
-    "command": "docker pull {{.repo}}/{{.name}}:v{{.version}}"
+    "command": "docker-pull-via.sh --proxy-id ghcr.io/zgsm-sangfor/{{.name}}:{{.tag}} --image-id  {{.repo}}/{{.name}}:v{{.version}}"
   },
   "update": {
     "workdir": "./configures/common/client-manager",

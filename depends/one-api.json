@@ -1,6 +1,6 @@
 {
   "name": "one-api",
-  "type": "github",
+  "type": "github-docker",
   "version": "0.11.2",
   "remote": "git@github.com:zgsm-sangfor/one-api.git",
   "path": "../source/new-api",

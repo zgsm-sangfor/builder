@@ -8,7 +8,7 @@
 #   编译结果输出到 packages/{name}/{os}/{arch}/{version}/ 目录，
 #   后续由 build-components.sh 对编译结果进行签名打包。
 #
-#   对于type为"docker"或"github"的依赖包，构建/拉取docker镜像，
+#   对于type为"docker"或"github-docker"的依赖包，构建/拉取docker镜像，
 #   构建成功后将镜像导出为tar文件保存到 images/{packageName}/ 目录下。
 #
 #   对于type为"frontend"的依赖包，构建阶段行为与"docker"一致（本地clone源码并执行build命令），
@@ -33,10 +33,10 @@
 #        "description": "Utilities for backend management of Costrict"
 #      }
 #
-#   github类型示例：
+#   github-docker类型示例：
 #     {
 #        "name": "costrict-model-proxy",
-#        "type": "github",
+#        "type": "github-docker",
 #        "version": "1.0.1",
 #        "remote": "git@github.com:zgsm-sangfor/costrict-model-proxy.git",
 #        "repo": "zgsm",
@@ -55,7 +55,7 @@
 #   字段说明：
 #   - name: 模块名
 #   - version: 模块的版本
-#   - type: 依赖类型，"exec"为编译多平台二进制程序，"github"为从镜像仓库拉取，"docker"为本地构建docker镜像，"frontend"为构建前端静态资源（构建阶段与docker一致，但不涉及docker镜像的保存/推送）
+#   - type: 依赖类型，"exec"为编译多平台二进制程序，"github-docker"为从镜像仓库拉取，"docker"为本地构建docker镜像，"frontend"为构建前端静态资源（构建阶段与docker一致，但不涉及docker镜像的保存/推送）
 #   - path: 源码目录路径（用于git clone目标目录；workdir默认值）
 #   - remote: git仓库地址（在path目录不存在时用于clone）
 #   - description: 模块描述
@@ -65,7 +65,7 @@
 #   - build.command: 编译命令（可选，支持{{.version}}/{{.os}}/{{.arch}}/{{.output}}模板变量；默认使用python ./build.py）
 #   - build.workdir: 执行编译命令的工作目录（可选，默认值为.path）
 #
-#   github/docker类型专用字段：
+#   github-docker/docker类型专用字段：
 #   - repo: 镜像在docker hub中的仓库名（必填）
 #   - tag: 镜像的标签（可选，默认值为'{{.version}}'）
 #   - build.command: 构建镜像的命令
@@ -85,10 +85,14 @@
 #                       每种环境由四个参数指定：
 #                       名字(name), URL(url), 用户名(user)，密码(password)
 #                       上传方式是，使用docker login登录（使用环境相关参数），然后docker push推送
-#                       注意：仅对github/docker类型生效，exec/frontend类型跳过此步骤
+#                       注意：仅对github-docker/docker类型生效，exec/frontend类型跳过此步骤
 #
 
 source ./.env
+
+# 将脚本所在目录加入 PATH，以便直接调用同目录下的其他脚本
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export PATH="$SCRIPT_DIR:$PATH"
 
 usage() {
     echo "Usage: build-depends.sh [OPTIONS] [ACTIONS]"
@@ -412,7 +416,7 @@ build_single_platform() {
     return $?
 }
 
-# Function to build a docker/github/frontend-type dependency (docker 镜像拉取/构建 或 前端静态资源构建)
+# Function to build a docker/github-docker/frontend-type dependency (docker 镜像拉取/构建 或 前端静态资源构建)
 # 参数: $1 - package, $2 - config_file, $3 - name, $4 - path, $5 - version, $6 - type
 build_other_dependency() {
     local package="$1"
@@ -427,8 +431,8 @@ build_other_dependency() {
     local depend_command=""
     local depend_workdir=""
     
-    if [ "$depend_type" = "github" ]; then
-        # github类型：从.pull.command获取命令，从.pull.workdir获取工作目录（默认值为.path）
+    if [ "$depend_type" = "github-docker" ]; then
+        # github-docker类型：从.pull.command获取命令，从.pull.workdir获取工作目录（默认值为.path）
         depend_command=$(jq -r ".pull.command // empty" "$depend_config_file")
         depend_workdir=$(jq -r ".pull.workdir // empty" "$depend_config_file")
     elif [ "$depend_type" = "frontend" ]; then
@@ -550,8 +554,8 @@ build_other_dependency() {
         fi
     # fi
 
-    if [ "$depend_type" = "github" ]; then
-        # github类型：镜像已由github action自动编译上传，仅需从镜像仓库拉取
+    if [ "$depend_type" = "github-docker" ]; then
+        # github-docker类型：镜像已由github action自动编译上传，仅需从镜像仓库拉取
         (cd "$depend_workdir" && bash -c "$rendered_command")
         if [ $? -ne 0 ]; then
             echo "Error: Pull failed for dependency $depend_name (type=$depend_type)"
@@ -640,7 +644,7 @@ build_dependency() {
     return $?
 }
 
-# 对 docker/github 类型的依赖包导出镜像tar文件；
+# 对 docker/github-docker 类型的依赖包导出镜像tar文件；
 # 对 exec/frontend 类型跳过（不涉及 docker 镜像）。
 # 参数: $1 - package name
 save_docker_image() {
@@ -657,7 +661,7 @@ save_docker_image() {
         return 0
     fi
 
-    # 以下仅处理 docker / github 类型
+    # 以下仅处理 docker / github-docker 类型
     local depend_name=$(jq -r ".name // empty" "$depend_config_file")
     local depend_version=$(jq -r ".version // empty" "$depend_config_file")
     local depend_repo=$(jq -r ".repo // empty" "$depend_config_file")
@@ -915,7 +919,7 @@ process_package() {
         echo "Skipping update step for ${package_name}..."
     fi
     
-    # push 操作仅对 docker/github 类型生效，exec / frontend 类型跳过
+    # push 操作仅对 docker/github-docker 类型生效，exec / frontend 类型跳过
     if [ "$NEED_PUSH" = true ]; then
         if [ "$depend_type" = "exec" ] || [ "$depend_type" = "frontend" ]; then
             echo "Skipping push step for ${depend_type}-type package '${package_name}' (no docker image to push)..."
@@ -990,10 +994,10 @@ process_packages() {
     echo "All packages processed successfully!"
 }
 
-# 检查docker命令是否可用（仅 github/docker 类型需要，exec / frontend 类型不需要）
+# 检查docker命令是否可用（仅 github-docker/docker 类型需要，exec / frontend 类型不需要）
 if ! command -v docker >/dev/null 2>&1; then
     echo "Warning: docker command not found. Only exec-type and frontend-type packages can be built without Docker."
-    echo "  For github/docker type packages, please install Docker."
+    echo "  For github-docker/docker type packages, please install Docker."
 fi
 
 # 检查jq工具是否可用
