@@ -59,5 +59,5 @@ load_install_env() {
     log "INFO" "系统安装目录: $COSTRICT_BACKEND_DIR"
     log "INFO" "数据存储目录: $COSTRICT_DATA_DIR"
 }
-
-load_install_env
+# 这个工具脚本不检查安装目录
+# load_install_env
