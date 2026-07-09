@@ -29,7 +29,7 @@ usage() {
     echo "Usage: build-components.sh [-p/--packages PACKAGES] [--type TYPE] [--key KEY_FILE] [ACTIONS]"
     echo "Options:"
     echo "  -p, --packages <list> Package list (comma-separated, e.g., \"pkg\", \"pkg1,pkg2,pkg3\")"
-    echo "  --type <type>        Package type filter (e.g., binary, conf, zip)"
+    echo "  --type <type>        Package type filter (e.g., exec, conf, zip)"
     echo "  --key <key>          Private key file (default: costrict-private.pem)"
     echo "  -h, --help           Help information"
     echo "Actions:"
@@ -400,14 +400,14 @@ build_package() {
     echo "=============================================="
     echo "Building package: $package, version: $package_version, path: $package_path, type: $package_type"
     echo "=============================================="
-    if [ "binary" == "$package_type" ]; then
+    if [ "exec" == "$package_type" ]; then
         build_app "${package}" "${package_version}" "${package_path}" "${package_platforms}" "${package_config_file}"
     elif [ "zip" == "$package_type" ]; then
         build_zip "${package}" "${package_version}" "${package_path}" "${package_platforms}"
     elif [ "conf" == "$package_type" ]; then
         build_conf "${package}" "${package_version}" "${package_path}" "${package_platforms}"
     else
-        echo "Error: Unknown package type '${package_type}' for package '${package}', currently only binary/zip/conf are supported."
+        echo "Error: Unknown package type '${package_type}' for package '${package}', currently only exec/zip/conf are supported."
         exit 1
     fi
 }

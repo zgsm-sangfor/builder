@@ -215,14 +215,13 @@ unregister_services() {
 }
 
 remove_backend_dir() {
-    log "INFO" "检查并删除安装目录..."
+    log "INFO" "检查并删除安装目录: $COSTRICT_BACKEND_DIR..."
     
     if [[ -d "$COSTRICT_BACKEND_DIR" ]]; then
-        log "INFO" "删除目录: $COSTRICT_BACKEND_DIR"
         sudo rm -rf "$COSTRICT_BACKEND_DIR"
-        log "INFO" "已删除: $COSTRICT_BACKEND_DIR"
+        log "INFO" "安装目录已删除: $COSTRICT_BACKEND_DIR"
     else
-        log "INFO" "目录不存在: $COSTRICT_BACKEND_DIR"
+        log "INFO" "安装目录不存在: $COSTRICT_BACKEND_DIR"
     fi
 }
 
@@ -232,14 +231,13 @@ remove_data_dir() {
         return 0
     fi
     
-    log "INFO" "检查并删除数据存储目录..."
+    log "INFO" "检查并删除数据存储目录: $COSTRICT_DATA_DIR/backend..."
     
     if [[ -d "$COSTRICT_DATA_DIR/backend" ]]; then
-        log "INFO" "删除目录: $COSTRICT_DATA_DIR/backend"
         sudo rm -rf "$COSTRICT_DATA_DIR/backend"
-        log "INFO" "已删除: $COSTRICT_DATA_DIR/backend"
+        log "INFO" "数据目录已删除: $COSTRICT_DATA_DIR/backend"
     else
-        log "INFO" "目录不存在: $COSTRICT_DATA_DIR/backend"
+        log "INFO" "数据目录不存在: $COSTRICT_DATA_DIR/backend"
     fi
 }
 

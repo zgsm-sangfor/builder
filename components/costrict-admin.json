@@ -1,6 +1,6 @@
 {
   "name": "costrict-admin",
-  "type": "binary",
+  "type": "exec",
   "subsystem": "frontend",
   "path": "../packages",
   "platforms": [

@@ -11,7 +11,7 @@
     "command": "export DOCKER_BUILDKIT=1 && docker build -f ./Dockerfile --build-arg VERSION={{.version}} .. -t {{.repo}}/{{.name}}:v{{.version}}"
   },
   "pull": {
-    "command": "./docker-pull-via.sh --image-id {{.repo}}/{{.name}}:v{{.version}} --proxy-id hub.dbin.site/{{.repo}}/{{.name}}:v{{.version}}"
+    "command": "docker-pull-via.sh --image-id {{.repo}}/{{.name}}:v{{.version}} --proxy-id hub.dbin.site/{{.repo}}/{{.name}}:v{{.version}}"
   },
   "update": {
     "workdir": "./configures/common/oneapi",

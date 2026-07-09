@@ -192,8 +192,9 @@ fix_permissions() {
         "${COSTRICT_DATA_DIR}/backend/oneapi/data"
         "${COSTRICT_DATA_DIR}/backend/codereview"
         "${COSTRICT_DATA_DIR}/backend/costrict-web"
+        "${COSTRICT_DATA_DIR}/backend/costrict-web/api"
+        "${COSTRICT_DATA_DIR}/backend/costrict-web/api/data"
     )
-    
     log "INFO" "开始修正目录权限..."
     
     for dir in "${dirs[@]}"; do

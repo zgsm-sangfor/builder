@@ -1,6 +1,6 @@
 {
   "name": "costrict-daemon",
-  "type": "binary",
+  "type": "exec",
   "subsystem": "root",
   "path": "../packages",
   "platforms": [

@@ -302,7 +302,7 @@ render_template_ex() {
     echo "$result"
 }
 
-# Function to build exec-type binary for multiple platforms (编译多平台二进制可执行程序)
+# Function to build exec-type for multiple platforms (编译多平台二进制可执行程序)
 # 将 build-components.sh 中的 build_app 逻辑迁移至此，build-components.sh 仅负责签名打包
 # 参数: $1 - package_name, $2 - version, $3 - source_dir, $4 - platforms_json, $5 - package_config_file
 build_exec_binary() {
@@ -631,7 +631,7 @@ build_dependency() {
         local source_dir="$current_dir/$depend_path"
         
         echo "=============================================="
-        echo "Building exec binary: $depend_name, version: $depend_version"
+        echo "Building exec: $depend_name, version: $depend_version"
         echo "Path: $depend_path"
         echo "Platforms: $depend_platforms"
         echo "=============================================="

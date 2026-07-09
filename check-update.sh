@@ -380,6 +380,8 @@ calculate_multi_directory() {
         local result=""
         if [ "$type" = "exec" ]; then
             result=$(calculate_go_directory_checksum "$dir")
+        elif [ "$type" = "docker" ]; then
+            result=$(calculate_directory_checksum "$dir")
         else
             result=$(calculate_frontend_checksum "$dir" "$json_file")
         fi
@@ -502,7 +504,7 @@ check_package_dirty() {
     
     local package_name=$(basename "$json_file" .json)
     
-    # 从components目录的JSON文件中读取包信息
+    # 从JSON文件中读取包信息
     local package_version=$(jq -r ".version // empty" "$json_file")
     local package_path=$(jq -r ".path // empty" "$json_file")
     local package_type=$(jq -r ".type // empty" "$json_file")
@@ -519,39 +521,56 @@ check_package_dirty() {
         return 1
     fi
     
-    # 根据包类型计算CHECKSUM和文件数
+    # 根据BUILD_TYPE和包类型计算CHECKSUM和文件数
     local new_checksum=""
     local new_file_count=0
     
-    if [ "$package_type" = "conf" ]; then
-        # conf类型：path、target跨所有平台查找文件
-        if [ -z "$package_target" ] || [ "$package_target" = "null" ] || [ "$package_target" = "" ]; then
-            log "WARN" "No target found for conf package '$package_name', skipping..."
-            return 1
-        fi
-        local result=$(calculate_conf_package_checksum "$package_path" "$package_target")
-        new_checksum=$(echo "$result" | head -n1)
-        new_file_count=$(echo "$result" | tail -n1)
-    elif [ "$package_type" = "zip" ]; then
-        # zip类型：跨所有平台查找目录
-        local result=$(calculate_zip_package_checksum "$package_path" "$package_name")
-        new_checksum=$(echo "$result" | head -n1)
-        new_file_count=$(echo "$result" | tail -n1)
-    elif [ "$package_type" = "exec" ] || [ "$package_type" = "docker" ] || [ "$package_type" = "frontend" ]; then
-        # exec/docker/frontend类型：扫描主目录及sources目录
-        local result=$(calculate_multi_directory "$package_type" "$package_path" "$json_file")
-        new_checksum=$(echo "$result" | head -n1)
-        new_file_count=$(echo "$result" | tail -n1)
-    elif [ "$package_type" = "github-docker" ]; then
-        check_github_package "$json_file" "$package_name" "$package_version"
-        return $?
-    elif [ "$package_type" = "binary" ]; then
-        check_binary_package "$json_file" "$package_name" "$package_version"
-        return $?
-    else
-        # 非法类型
-        log "ERROR" "Invalid package type '$package_type' for package '$package_name'. Valid types: conf, zip, frontend, exec, docker, github-docker, binary"
-        return 1
+    if [ "$BUILD_TYPE" = "dependency" ]; then
+        # dependency: 类型为 exec / docker / frontend / github-docker
+        case "$package_type" in
+            exec|docker|frontend)
+                # exec/docker/frontend类型：扫描主目录及sources目录
+                local result=$(calculate_multi_directory "$package_type" "$package_path" "$json_file")
+                new_checksum=$(echo "$result" | head -n1)
+                new_file_count=$(echo "$result" | tail -n1)
+                ;;
+            github-docker)
+                check_github_package "$json_file" "$package_name" "$package_version"
+                return $?
+                ;;
+            *)
+                log "ERROR" "Invalid dependency type '$package_type' for package '$package_name'. Valid types: exec, docker, frontend, github-docker"
+                return 1
+                ;;
+        esac
+    elif [ "$BUILD_TYPE" = "component" ]; then
+        # component: 类型为 binary/ exec / conf / zip
+        case "$package_type" in
+            exec|binary)
+                check_binary_package "$json_file" "$package_name" "$package_version"
+                return $?
+                ;;
+            conf)
+                # conf类型：path、target跨所有平台查找文件
+                if [ -z "$package_target" ] || [ "$package_target" = "null" ] || [ "$package_target" = "" ]; then
+                    log "WARN" "No target found for conf package '$package_name', skipping..."
+                    return 1
+                fi
+                local result=$(calculate_conf_package_checksum "$package_path" "$package_target")
+                new_checksum=$(echo "$result" | head -n1)
+                new_file_count=$(echo "$result" | tail -n1)
+                ;;
+            zip)
+                # zip类型：跨所有平台查找目录
+                local result=$(calculate_zip_package_checksum "$package_path" "$package_name")
+                new_checksum=$(echo "$result" | head -n1)
+                new_file_count=$(echo "$result" | tail -n1)
+                ;;
+            *)
+                log "ERROR" "Invalid component type '$package_type' for package '$package_name'. Valid types: binary, conf, zip"
+                return 1
+                ;;
+        esac
     fi
     
     if [ -z "$new_checksum" ]; then
