@@ -47,7 +47,7 @@ jobs:
 
       - name: Run build-costrict.sh
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           chmod +x *.sh
           ./build-costrict.sh --update --build all --pack all
