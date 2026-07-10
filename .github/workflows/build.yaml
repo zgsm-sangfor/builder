@@ -46,6 +46,8 @@ jobs:
           ssh-keyscan -p ${prod_port} ${prod_host} >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Run build-costrict.sh
+        env:
+          GH_TOKEN: ${{ secret.GITHUB_TOKEN }}
         run: |
           chmod +x *.sh
           ./build-costrict.sh --update --build all --pack all
