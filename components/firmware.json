@@ -3,6 +3,6 @@
   "type": "zip",
   "subsystem": "root",
   "path": "./configures",
-  "version": "1.0.138",
+  "version": "1.0.139",
   "description": "The firmware of the backend system"
 }
