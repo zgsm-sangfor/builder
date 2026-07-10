@@ -41,8 +41,8 @@
       "file_count": 1
     },
     "firmware": {
-      "version": "1.0.137",
-      "checksum": "144a835988316ec94147fd92a1dd02188e2c3c96ad81f898d229bede07a929d2",
+      "version": "1.0.138",
+      "checksum": "f25755ab5b9b3037886d5f487236aa37b1579856c94f75dde621edb4f8d4e72a",
       "file_count": 34
     },
     "frontend": {
@@ -166,8 +166,8 @@
       "file_count": 4
     },
     "costrict-system": {
-      "version": "1.0.272",
-      "checksum": "8fb810a74128249a08554c8255fc180df01d2398db7e9983005a61c482b5bc72",
+      "version": "1.0.273",
+      "checksum": "ed5b9b3cadc8648fe7d2177dadeec68880c407444148f4d7010bc6d0bccea350",
       "file_count": 1
     },
     "costrict-license-sdk": {

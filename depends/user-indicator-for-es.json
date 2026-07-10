@@ -1,6 +1,6 @@
 {
   "name": "user-indicator-for-es",
-  "type": "github-docker",
+  "type": "docker",
   "version": "0.0.20",
   "remote": "git@github.com:zgsm-ai/user-indicator-for-es.git",
   "repo": "ghcr.io/zgsm-sangfor",

@@ -1,6 +1,6 @@
 {
   "name": "casdoor",
-  "type": "github-docker",
+  "type": "docker",
   "version": "2.2.5",
   "repo": "zgsm",
   "remote": "git@github.com:zgsm-sangfor/casdoor.git",

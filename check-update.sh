@@ -16,6 +16,7 @@ UPDATE_VERSION=false
 VERBOSE=false
 PACKAGES=""
 BUILD_TYPE="component"
+USE_LOCAL_MODE=false
 
 # 配置文件路径（将在参数解析后根据BUILD_TYPE设置）
 JSONS_DIR=""
@@ -24,11 +25,12 @@ LATEST_JSON="latest.json"
 
 # 打印帮助信息的函数
 print_usage() {
-    echo "Usage: check-update.sh [-u|--update] [-p|--packages PACKAGE1,PACKAGE2,...] [-t|--build-type TYPE] [-h|--help] [-v|--verbose]"
+    echo "Usage: check-update.sh [-u|--update] [-p|--packages PACKAGE1,PACKAGE2,...] [-t|--build-type TYPE] [--local] [-h|--help] [-v|--verbose]"
     echo "Options:"
     echo "  -t, --build-type      Build type: dependency or component (default: component)"
     echo "  -p, --packages        Only check specified packages (comma-separated list)"
     echo "  -u, --update          Update package version when checksum changes"
+    echo "  --local               Use local mode: check by local directory checksum (default: check by GitHub tag for docker type)"
     echo "  -v, --verbose         Show checksum calculation details for each file"
     echo "  -h, --help            Show this help message"
 }
@@ -43,11 +45,11 @@ log() {
 # 参数: $1 - JSON文件路径
 # 返回值: 0=启用, 1=禁用
 is_module_enabled() {
-    local json_file="$1"
+    local package_file="$1"
     
     # 检查enabled字段，如果不存在则默认为启用(true)
     # 使用 jq 的布尔逻辑：当 enabled 不存在或不为 false/字符串"false" 时返回真
-    local is_enabled=$(jq -r 'if .enabled == false or .enabled == "false" then "false" else "true" end' "$json_file" 2>/dev/null)
+    local is_enabled=$(jq -r 'if .enabled == false or .enabled == "false" then "false" else "true" end' "$package_file" 2>/dev/null)
     
     # 如果enabled字段的值为false（布尔值或字符串），则禁用
     if [ "$is_enabled" = "false" ]; then
@@ -142,10 +144,10 @@ calculate_go_directory_checksum() {
 # 输出格式：第一行checksum，第二行文件数
 # 参数：
 #   $1: dir - 要扫描的目录
-#   $2: json_file - JSON配置文件路径（用于读取excludes字段）
+#   $2: package_file - JSON配置文件路径（用于读取excludes字段）
 calculate_frontend_checksum() {
     local dir="$1"
-    local json_file="$2"
+    local package_file="$2"
     
     if [ ! -d "$dir" ]; then
         prompt_verbose "$dir is not a directory"
@@ -160,9 +162,9 @@ calculate_frontend_checksum() {
     local find_exclude_args=("-path" "*/.git/*" "-o" "-path" "*/dist/*" "-o" "-path" "*/node_modules/*")
     
     # 从JSON文件中读取自定义excludes，并检查是否重复
-    local exclude_count=$(jq -r '.excludes | length // 0' "$json_file" 2>/dev/null)
+    local exclude_count=$(jq -r '.excludes | length // 0' "$package_file" 2>/dev/null)
     for ((i=0; i<exclude_count; i++)); do
-        local exclude=$(jq -r ".excludes[$i] // empty" "$json_file" 2>/dev/null)
+        local exclude=$(jq -r ".excludes[$i] // empty" "$package_file" 2>/dev/null)
         if [ -n "$exclude" ] && [ "$exclude" != "null" ]; then
             # 检查是否已经存在
             local duplicate=false
@@ -266,11 +268,11 @@ calculate_zip_package_checksum() {
 # 参数: $1 - JSON配置文件路径, $2 - 包名
 # 输出格式：第一行最新版本号（去掉v前缀），第二行checksum（最新tag）
 fetch_github_latest() {
-    local json_file="$1"
+    local package_file="$1"
     local package_name="$2"
     
-    local package_remote=$(jq -r ".remote // empty" "$json_file")
-    local package_path=$(jq -r ".path // empty" "$json_file")
+    local package_remote=$(jq -r ".remote // empty" "$package_file")
+    local package_path=$(jq -r ".path // empty" "$package_file")
     
     # 检查remote字段
     if [ -z "$package_remote" ] || [ "$package_remote" = "null" ]; then
@@ -328,22 +330,22 @@ fetch_github_latest() {
 # 参数：
 #   $1: type - 包类型（exec 或 frontend）
 #   $2: path - 主目录路径（git仓库路径，sources不存在时作为checksum目标）
-#   $3: json_file - JSON配置文件路径
+#   $3: package_file - JSON配置文件路径
 # 输出格式：第一行checksum，第二行文件数
 calculate_multi_directory() {
     local type="$1"
     local path="$2"
-    local json_file="$3"
+    local package_file="$3"
 
     # 确定需要计算checksum的目录列表：
     # - sources 字段存在且非空时，使用 sources 数组中的所有路径
     # - sources 字段不存在或为空时，使用 path 字段的值
     local dirs_to_check=()
-    local sources_count=$(jq -r '.sources | length // 0' "$json_file" 2>/dev/null)
+    local sources_count=$(jq -r '.sources | length // 0' "$package_file" 2>/dev/null)
 
     if [ "$sources_count" -gt 0 ]; then
         for ((i=0; i<sources_count; i++)); do
-            local source_dir=$(jq -r ".sources[$i] // empty" "$json_file")
+            local source_dir=$(jq -r ".sources[$i] // empty" "$package_file")
             if [ -n "$source_dir" ] && [ "$source_dir" != "null" ]; then
                 dirs_to_check+=("$source_dir")
             fi
@@ -355,9 +357,9 @@ calculate_multi_directory() {
     # 检查主目录（git仓库路径）是否存在，如果不存在则从remote克隆
     # 无论sources是否存在，都需要确保path仓库已克隆（sources通常是path的子目录）
     if [ ! -d "$path" ]; then
-        local remote=$(jq -r ".remote // empty" "$json_file" 2>/dev/null)
+        local remote=$(jq -r ".remote // empty" "$package_file" 2>/dev/null)
         if [ -z "$remote" ] || [ "$remote" = "null" ] || [ "$remote" = "" ]; then
-            log "ERROR" "Path '$path' does not exist and no remote URL configured in $(basename "$json_file")"
+            log "ERROR" "Path '$path' does not exist and no remote URL configured in $(basename "$package_file")"
             return 1
         fi
         log "INFO" "Path '$path' does not exist, cloning from $remote ..."
@@ -383,7 +385,7 @@ calculate_multi_directory() {
         elif [ "$type" = "docker" ]; then
             result=$(calculate_directory_checksum "$dir")
         else
-            result=$(calculate_frontend_checksum "$dir" "$json_file")
+            result=$(calculate_frontend_checksum "$dir" "$package_file")
         fi
 
         local dir_checksum=$(echo "$result" | head -n1)
@@ -407,7 +409,7 @@ calculate_multi_directory() {
 # 递增包的patch版本号
 # 第一个参数为需要修改的文件路径
 increment_patch_version() {
-    local package_config_file="$1"
+    local package_file="$1"
     local current_version="$2"
 
     # 自动递增 patch 版本号
@@ -418,54 +420,50 @@ increment_patch_version() {
     local NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
 
     # 使用 jq 更新指定JSON文件的版本号
-    jq "(.version) |= \"$NEW_VERSION\"" "$package_config_file" > "$package_config_file.tmp"
-
-    if [ $? -ne 0 ]; then
-        rm -f "$package_config_file.tmp"
-        log "ERROR" "Failed to update package version in $package_config_file"
-        exit 1
-    fi
-    mv "$package_config_file.tmp" "$package_config_file"
+    jq "(.version) |= \"$NEW_VERSION\"" "$package_file" > "$package_file.tmp"
+    mv "$package_file.tmp" "$package_file"
     
     echo "$NEW_VERSION"
 }
 
 # 检查github类型包：从远程仓库获取最新tag来确定版本
 # 参数:
-#   $1: json_file - JSON 配置文件路径
+#   $1: package_file - JSON 配置文件路径
 #   $2: package_name - 包名
 #   $3: package_version - 当前版本号
 # 返回值: 0=已修改, 1=未修改
-check_github_package() {
-    local json_file="$1"
+check_github_latest() {
+    local package_file="$1"
     local package_name="$2"
     local package_version="$3"
     
-    local result=$(fetch_github_latest "$json_file" "$package_name")
+    local result=$(fetch_github_latest "$package_file" "$package_name")
     local latest_version=$(echo "$result" | head -n1)
     local new_checksum=$(echo "$result" | tail -n1)
     
     # 如果与JSON中的版本不一致，更新JSON中的版本号
     if [ -n "$latest_version" ] && [ "$latest_version" != "$package_version" ]; then
         log "MODIFIED" "GitHub tag version changed for '$package_name': $package_version -> $latest_version"
-        jq "(.version) |= \"$latest_version\"" "$json_file" > "$json_file.tmp"
-        mv "$json_file.tmp" "$json_file"
-        # 更新latest.json
-        jq ".${LATEST_FIELD_NAME}[\"$package_name\"] = {\"version\": \"$latest_version\", \"checksum\": \"$new_checksum\", \"file_count\": 0}" "$LATEST_JSON" > "$LATEST_JSON.tmp"
-        mv "$LATEST_JSON.tmp" "$LATEST_JSON"
+        if [ "$UPDATE_VERSION" = true ]; then
+            jq "(.version) |= \"$latest_version\"" "$package_file" > "$package_file.tmp"
+            mv "$package_file.tmp" "$package_file"
+            # 更新latest.json
+            jq ".${LATEST_FIELD_NAME}[\"$package_name\"] = {\"version\": \"$latest_version\", \"checksum\": \"$new_checksum\", \"file_count\": 0}" "$LATEST_JSON" > "$LATEST_JSON.tmp"
+            mv "$LATEST_JSON.tmp" "$LATEST_JSON"
+        fi
         return 0
     fi
     return 1
 }
 
-# 检查binary类型包：version字段与depends/${componentName}.json中的version保持一致
+# 检查binary类型包的版本是否发生变化：version字段与depends/${componentName}.json中的version保持一致
 # 参数:
-#   $1: json_file - JSON 配置文件路径
+#   $1: package_file - JSON 配置文件路径
 #   $2: package_name - 包名
 #   $3: package_version - 当前版本号
 # 返回值: 0=已修改, 1=未修改
-check_binary_package() {
-    local json_file="$1"
+check_binary_modified() {
+    local package_file="$1"
     local package_name="$2"
     local package_version="$3"
     
@@ -483,12 +481,14 @@ check_binary_package() {
     # 如果版本不一致，同步为depends中的版本
     if [ "$package_version" != "$depends_version" ]; then
         log "MODIFIED" "Binary package '$package_name' version synced from depends: $package_version -> $depends_version"
-        jq "(.version) |= \"$depends_version\"" "$json_file" > "$json_file.tmp"
-        mv "$json_file.tmp" "$json_file"
+        if [ "$UPDATE_VERSION" = true ]; then
+            jq "(.version) |= \"$depends_version\"" "$package_file" > "$package_file.tmp"
+            mv "$package_file.tmp" "$package_file"
 
-        # 更新latest.json
-        jq ".${LATEST_FIELD_NAME}[\"$package_name\"] = {\"version\": \"$depends_version\", \"checksum\": \"\", \"file_count\": 0}" "$LATEST_JSON" > "$LATEST_JSON.tmp"
-        mv "$LATEST_JSON.tmp" "$LATEST_JSON"
+            # 更新latest.json
+            jq ".${LATEST_FIELD_NAME}[\"$package_name\"] = {\"version\": \"$depends_version\", \"checksum\": \"\", \"file_count\": 0}" "$LATEST_JSON" > "$LATEST_JSON.tmp"
+            mv "$LATEST_JSON.tmp" "$LATEST_JSON"
+        fi
         return 0
     fi
     return 1
@@ -496,19 +496,19 @@ check_binary_package() {
 
 # 处理单个包
 # 参数:
-#   $1: json_file - JSON 配置文件路径
+#   $1: package_file - JSON 配置文件路径
 # 返回值: 0=已修改, 1=未修改
 check_package_dirty() {
-    local json_file="$1"
+    local package_file="$1"
     local modified=false
     
-    local package_name=$(basename "$json_file" .json)
+    local package_name=$(basename "$package_file" .json)
     
     # 从JSON文件中读取包信息
-    local package_version=$(jq -r ".version // empty" "$json_file")
-    local package_path=$(jq -r ".path // empty" "$json_file")
-    local package_type=$(jq -r ".type // empty" "$json_file")
-    local package_target=$(jq -r ".target // empty" "$json_file")
+    local package_version=$(jq -r ".version // empty" "$package_file")
+    local package_path=$(jq -r ".path // empty" "$package_file")
+    local package_type=$(jq -r ".type // empty" "$package_file")
+    local package_target=$(jq -r ".target // empty" "$package_file")
     # 检查version字段是否存在
     if [ -z "$package_version" ] || [ "$package_version" = "null" ] || [ "$package_version" = "" ]; then
         log "WARN" "No version found for package '$package_name', skipping..."
@@ -524,30 +524,38 @@ check_package_dirty() {
     # 根据BUILD_TYPE和包类型计算CHECKSUM和文件数
     local new_checksum=""
     local new_file_count=0
-    
     if [ "$BUILD_TYPE" = "dependency" ]; then
-        # dependency: 类型为 exec / docker / frontend / github-docker
+        # dependency: 类型为 exec / docker / frontend
         case "$package_type" in
-            exec|docker|frontend)
-                # exec/docker/frontend类型：扫描主目录及sources目录
-                local result=$(calculate_multi_directory "$package_type" "$package_path" "$json_file")
+            exec|frontend)
+                # exec/frontend类型：扫描主目录及sources目录
+                local result=$(calculate_multi_directory "$package_type" "$package_path" "$package_file")
                 new_checksum=$(echo "$result" | head -n1)
                 new_file_count=$(echo "$result" | tail -n1)
                 ;;
-            github-docker)
-                check_github_package "$json_file" "$package_name" "$package_version"
-                return $?
+            docker)
+                # docker类型：根据USE_LOCAL_MODE选择检查方式
+                if [ "$USE_LOCAL_MODE" = true ]; then
+                    # 本地模式：通过本地目录checksum检测版本变化
+                    local result=$(calculate_multi_directory "$package_type" "$package_path" "$package_file")
+                    new_checksum=$(echo "$result" | head -n1)
+                    new_file_count=$(echo "$result" | tail -n1)
+                else
+                    # 远程模式：通过GitHub tag检测版本变化
+                    check_github_latest "$package_file" "$package_name" "$package_version"
+                    return $?
+                fi
                 ;;
             *)
-                log "ERROR" "Invalid dependency type '$package_type' for package '$package_name'. Valid types: exec, docker, frontend, github-docker"
+                log "ERROR" "Invalid dependency type '$package_type' for package '$package_name'. Valid types: exec, docker, frontend"
                 return 1
                 ;;
         esac
     elif [ "$BUILD_TYPE" = "component" ]; then
-        # component: 类型为 binary/ exec / conf / zip
+        # component: 类型为 binary / exec / conf / zip
         case "$package_type" in
             exec|binary)
-                check_binary_package "$json_file" "$package_name" "$package_version"
+                check_binary_modified "$package_file" "$package_name" "$package_version"
                 return $?
                 ;;
             conf)
@@ -585,8 +593,10 @@ check_package_dirty() {
     if [ "$old_version" = "null" ]; then
         # 首次记录
         log "MODIFIED" "First time recording package '$package_name': version=$package_version, files=$new_file_count"
-        jq ".${LATEST_FIELD_NAME}[\"$package_name\"] = {\"version\": \"$package_version\", \"checksum\": \"$new_checksum\", \"file_count\": $new_file_count}" "$LATEST_JSON" > "$LATEST_JSON.tmp"
-        mv "$LATEST_JSON.tmp" "$LATEST_JSON"
+        if [ "$UPDATE_VERSION" = true ]; then
+            jq ".${LATEST_FIELD_NAME}[\"$package_name\"] = {\"version\": \"$package_version\", \"checksum\": \"$new_checksum\", \"file_count\": $new_file_count}" "$LATEST_JSON" > "$LATEST_JSON.tmp"
+            mv "$LATEST_JSON.tmp" "$LATEST_JSON"
+        fi
         modified=true
     elif [ "$package_version" = "$old_version" ]; then
         # 版本号未变
@@ -597,7 +607,7 @@ check_package_dirty() {
             # 版本号未变但CHECKSUM变了
             if [ "$UPDATE_VERSION" = true ]; then
                 # 启用自动版本递增
-                local new_version=$(increment_patch_version "$json_file" "$package_version")
+                local new_version=$(increment_patch_version "$package_file" "$package_version")
                 log "MODIFIED" "Update version for '$package_name': $package_version -> $new_version"
                 
                 # 更新latest.json
@@ -620,9 +630,11 @@ check_package_dirty() {
             log "MODIFIED" "Module '$package_name' version updated: $old_version -> $package_version"
         fi
         
-        # 更新latest.json
-        jq ".${LATEST_FIELD_NAME}[\"$package_name\"] = {\"version\": \"$package_version\", \"checksum\": \"$new_checksum\", \"file_count\": $new_file_count}" "$LATEST_JSON" > "$LATEST_JSON.tmp"
-        mv "$LATEST_JSON.tmp" "$LATEST_JSON"
+        if [ "$UPDATE_VERSION" = true ]; then
+            # 更新latest.json
+            jq ".${LATEST_FIELD_NAME}[\"$package_name\"] = {\"version\": \"$package_version\", \"checksum\": \"$new_checksum\", \"file_count\": $new_file_count}" "$LATEST_JSON" > "$LATEST_JSON.tmp"
+            mv "$LATEST_JSON.tmp" "$LATEST_JSON"
+        fi
         modified=true
     fi
     
@@ -653,12 +665,12 @@ main() {
     fi
     local package_count=0
     local checked_count=0
-    for json_file in "$JSONS_DIR"/*.json; do
-        [ -f "$json_file" ] || continue
+    for package_file in "$JSONS_DIR"/*.json; do
+        [ -f "$package_file" ] || continue
         
         package_count=$((package_count + 1))
 
-        local package_name=$(basename "$json_file" .json)
+        local package_name=$(basename "$package_file" .json)
         # 如果指定了packages选项，检查当前包是否在目标列表中
         local should_process=true
         if [ ${#target_packages[@]} -gt 0 ]; then
@@ -671,7 +683,7 @@ main() {
             done
         else
             # 检查模块是否启用，如果禁用则跳过
-            if ! is_module_enabled "$json_file"; then
+            if ! is_module_enabled "$package_file"; then
                 # log "INFO" "Module '$package_name' is disabled, skipping..."
                 skip_packages+=("$package_name")
                 continue
@@ -680,7 +692,7 @@ main() {
         
         if [ "$should_process" = true ]; then
             checked_count=$((checked_count + 1))
-            if check_package_dirty "$json_file"; then
+            if check_package_dirty "$package_file"; then
                 modified_packages+=("$package_name")
             fi
         fi
@@ -688,7 +700,11 @@ main() {
     
     prompt "=============================================="
     if [ ${#modified_packages[@]} -gt 0 ]; then
-        prompt "Check completed. $LATEST_JSON has been updated."
+        if [ "$UPDATE_VERSION" = true ]; then
+            prompt "Check completed. $LATEST_JSON has been updated."
+        else
+            prompt "Check completed. Changes detected (no files updated, use --update to apply)."
+        fi
         prompt ""
         prompt "Modified packages (${#modified_packages[@]}):"
         for pkg in "${modified_packages[@]}"; do
@@ -715,7 +731,7 @@ main() {
 }
 
 # Parse command line options
-args=$(getopt -o uhp:vt: --long help,update,packages:,verbose,build-type: -n 'check-update.sh' -- "$@")
+args=$(getopt -o uhp:vt: --long help,update,packages:,verbose,build-type:,local -n 'check-update.sh' -- "$@")
 [ $? -ne 0 ] && print_usage && exit 1
 
 eval set -- "$args"
@@ -732,6 +748,7 @@ while true; do
             fi
             shift 2
             ;;
+        --local) USE_LOCAL_MODE=true; shift;;
         -v|--verbose) VERBOSE=true; shift;;
         -h|--help) print_usage; exit 0;;
         --) shift; break;;

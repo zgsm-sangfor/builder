@@ -55,8 +55,8 @@ prompt_verbose() {
 
 # 检查模块是否被启用
 is_module_enabled() {
-    local json_file="$1"
-    local is_enabled=$(jq -r 'if .enabled == false or .enabled == "false" then "false" else "true" end' "$json_file" 2>/dev/null)
+    local package_file="$1"
+    local is_enabled=$(jq -r 'if .enabled == false or .enabled == "false" then "false" else "true" end' "$package_file" 2>/dev/null)
     if [ "$is_enabled" = "false" ]; then
         return 1
     fi
@@ -66,16 +66,16 @@ is_module_enabled() {
 # 根据 build.json 检查单个包是否已构建
 # 参数:
 #   $1: type      - "component" 或 "dependency"
-#   $2: json_file - JSON 配置文件路径
+#   $2: package_file - JSON 配置文件路径
 #   $3: use_name  - 是否使用 JSON 中的 name 字段作为路径名（dependency=true, component=false）
 # 返回值: 0=已构建, 1=未构建
 check_package_build() {
     local type="$1"
-    local json_file="$2"
+    local package_file="$2"
     local use_name="${3:-false}"
-    local package_name=$(basename "$json_file" .json)
+    local package_name=$(basename "$package_file" .json)
 
-    local version=$(jq -r ".version // empty" "$json_file")
+    local version=$(jq -r ".version // empty" "$package_file")
     if [ -z "$version" ] || [ "$version" = "null" ] || [ "$version" = "" ]; then
         log "WARN" "No version found for '$package_name', skipping..."
         return 0
@@ -84,7 +84,7 @@ check_package_build() {
     # dependency 类型使用 JSON 中的 name 字段，fallback 到文件名
     local path_name="$package_name"
     if [ "$use_name" = "true" ]; then
-        local json_name=$(jq -r ".name // empty" "$json_file")
+        local json_name=$(jq -r ".name // empty" "$package_file")
         if [ -n "$json_name" ] && [ "$json_name" != "null" ] && [ "$json_name" != "" ]; then
             path_name="$json_name"
         fi
@@ -134,11 +134,11 @@ main_check() {
     local total=0
     local checked=0
 
-    for json_file in "${PACKAGES_DIR}"/*.json; do
-        [ -f "$json_file" ] || continue
+    for package_file in "${PACKAGES_DIR}"/*.json; do
+        [ -f "$package_file" ] || continue
         total=$((total + 1))
 
-        local pkg=$(basename "$json_file" .json)
+        local pkg=$(basename "$package_file" .json)
 
         if [ ${#target_packages[@]} -gt 0 ]; then
             # 指定了包列表，精确匹配
@@ -154,14 +154,14 @@ main_check() {
             fi
         else
             # 未指定包列表，跳过禁用的模块
-            if ! is_module_enabled "$json_file"; then
+            if ! is_module_enabled "$package_file"; then
                 skipped+=("$pkg")
                 continue
             fi
         fi
 
         checked=$((checked + 1))
-        if ! check_package_build "$type" "$json_file" "$use_name"; then
+        if ! check_package_build "$type" "$package_file" "$use_name"; then
             not_built+=("$pkg")
         fi
     done

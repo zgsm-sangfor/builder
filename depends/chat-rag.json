@@ -1,6 +1,6 @@
 {
   "name": "chat-rag",
-  "type": "github-docker",
+  "type": "docker",
   "version": "1.2.8",
   "remote": "https://github.com/zgsm-ai/chat-rag.git",
   "repo": "zgsm",

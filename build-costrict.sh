@@ -28,13 +28,21 @@ set -e
 #                            auto - 自动检测需要构建的依赖（默认行为，通过 check-build.sh 检测）
 #   --push <ENV>           作为 --build 的子动作，指定镜像推送的环境，会传给 build-depends.sh
 #                          构建镜像始终执行，此选项只控制是否推送。
-#                          ENV 必须指定；'docker' 推送到 docker hub；
-#                          否则推送到指定环境 (如 'test,prod' 或 'all')。
+#                          ENV 必须指定；支持逗号分隔的环境列表或关键字：
+#                          关键字：docker（推送到 docker hub）
+#                            hub（推送到 docker hub + DH_ENV_NAMES 中的所有环境）
+#                            nfs（推送到 NFS_ENV_NAMES 中的所有环境）
+#                            all（推送到 docker hub + DH_ENV_NAMES + NFS_ENV_NAMES 中的所有环境）
+#                          环境名：具体环境名称（需在 DH_ENV_NAMES 或 NFS_ENV_NAMES 中存在）
+#                          示例：--push docker, --push hub, --push nfs, --push test,prod,
+#                                --push all, --push test,hub
 #   --pack <target>        指定要打包的组件包列表（Step 6），传给 build-components.sh 的 --packages 选项
 #                          target 为逗号分隔的包名列表（如 "firmware,costrict-system"），或下列值之一：
 #                            all  - 构建所有组件包
 #                            auto - 自动检测需要构建的组件包（默认行为，通过 check-build.sh 检测）
 #   --upload <env>         作为 --pack 的子动作，指定包上传的环境，会传给 build-components.sh
+
+source ./.env
 
 # 显示帮助信息
 show_help() {
@@ -43,22 +51,34 @@ show_help() {
     echo "构建 CoStrict 系统包"
     echo ""
     echo "选项:"
-    echo "  --update   检测 dependency 包变更并自动递增版本号（Step 1）"
+    echo "  --update              检测 dependency 包变更并自动递增版本号（Step 1）"
     echo "                        默认不执行 Step 1，仅当指定此选项时才执行"
     echo "  --build <target>      指定要构建的依赖包（Step 2）"
     echo "                        target 为逗号分隔的包名列表（如 \"casdoor,chat-rag\"），或："
     echo "                          all  - 构建所有 enabled 依赖"
-    echo "                          auto - 自动检测需要构建的依赖（默认行为）"
-    echo "  --push <ENV>          作为 --build 的子动作，推送镜像到指定环境 (会传递给 build-depends.sh)"
+    echo "                          auto - 自动检测需要构建的依赖"
+    echo "                        无此选项，则无需构建依赖包"
+    echo "    --push <ENV>        作为 --build 的子动作，推送镜像到指定环境 (会传递给 build-depends.sh)"
     echo "                        构建镜像始终执行，此选项只控制是否推送"
-    echo "                        ENV 必须指定：'docker' 推送到 docker hub，"
-    echo "                        'all' 推送到所有环境，"
-    echo "                        或指定逗号分隔的环境列表 (如 'test,prod')"
+    echo "                        ENV 必须指定；支持逗号分隔的环境列表或关键字："
+    echo "                        docker    - 推送到 docker hub"
+    echo "                        hub       - 推送到 docker hub + DH_ENV_NAMES(${DH_ENV_NAMES[*]})"
+    echo "                        nfs       - 推送到 NFS_ENV_NAMES(${NFS_ENV_NAMES[*]})"
+    echo "                        all       - 推送到所有环境（docker + DH_ENV_NAMES(${DH_ENV_NAMES[*]})"
+    echo "                                                          + NFS_ENV_NAMES(${NFS_ENV_NAMES[*]})）"
+    echo "                        <custom>  - 具体环境名称，可选范围：DH_ENV_NAMES(${DH_ENV_NAMES[*]})"
+    echo "                                                          或 NFS_ENV_NAMES(${NFS_ENV_NAMES[*]})"
+    echo "                        Examples: \"--push docker\", \"--push hub\", \"--push nfs\","
+    echo "                                  \"--push test,prod\", \"--push all\", \"--push test,hub\""
+    echo "    --local             作为 --build 的子选项，将 --local 传递给"
+    echo "                        check-update.sh（Step 1）和 build-depends.sh（Step 2），"
+    echo "                        使它们仅使用本地已存在的项目信息，不尝试从远程拉取"
     echo "  --pack <target>       指定要打包的组件包（Step 6）"
     echo "                        target 为逗号分隔的包名列表（如 \"firmware,costrict-system\"），或："
     echo "                          all  - 构建所有组件包"
-    echo "                          auto - 自动检测需要构建的组件包（默认行为）"
-    echo "  --upload <env>        作为 --pack 的子动作，指定包上传的环境 (会传递给 build-components.sh)"
+    echo "                          auto - 自动检测需要构建的组件包"
+    echo "                        无此选项，则无需构建组件包"
+    echo "    --upload <env>      作为 --pack 的子动作，指定包上传的环境 (会传递给 build-components.sh)"
     echo "  --help, -h            显示此帮助信息"
     echo ""
     echo "执行步骤:"
@@ -73,10 +93,12 @@ show_help() {
     echo ""
     echo "示例:"
     echo "  $0                                    # 构建镜像（不推送），然后构建包"
-    echo "  $0 --update                # 先检测 dependency 变更并递增版本，再构建镜像和包"
+    echo "  $0 --update                           # 先检测 dependency 变更并递增版本，再构建镜像和包"
     echo "  $0 --build all                        # 跳过检查，构建所有依赖"
     echo "  $0 --build casdoor,chat-rag           # 构建指定的依赖包"
     echo "  $0 --build auto --push docker         # 构建镜像并推送到 docker hub"
+    echo "  $0 --build auto --push hub            # 构建镜像并推送到 docker hub + DH 环境"
+    echo "  $0 --build auto --push nfs            # 构建镜像并推送到 NFS 环境"
     echo "  $0 --build auto --push test,prod      # 构建镜像并推送到 test 和 prod 环境"
     echo "  $0 --build auto --push all            # 构建镜像并推送到所有环境"
     echo "  $0 --pack all                         # 跳过检查，重新打包所有组件"
@@ -88,15 +110,14 @@ show_help() {
 # 解析参数
 UPLOAD_ENV=""
 PUSH_ENV=""
-NEED_PUSH=false
 NEED_UPDATE=false
+NEED_LOCAL=false
 BUILD_TARGET=""
 PACK_TARGET=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
         --push)
-            NEED_PUSH=true
             PUSH_ENV="$2"
             shift 2
             ;;
@@ -116,6 +137,10 @@ while [[ $# -gt 0 ]]; do
             PACK_TARGET="$2"
             shift 2
             ;;
+        --local)
+            NEED_LOCAL=true
+            shift
+            ;;
         --help|-h)
             show_help
             exit 0
@@ -127,8 +152,13 @@ while [[ $# -gt 0 ]]; do
 done
 
 PUSH_OPT=""
-if [ "$NEED_PUSH" = true ]; then
+if [ -n "$PUSH_ENV" ]; then
     PUSH_OPT="--push $PUSH_ENV"
+fi
+
+LOCAL_OPT=""
+if [ "$NEED_LOCAL" = true ]; then
+    LOCAL_OPT="--local"
 fi
 
 UPLOAD_OPT=""
@@ -141,7 +171,7 @@ if [ "$NEED_UPDATE" = true ]; then
     echo "----------------------------------------------------------------"
     echo "Step 1: Detecting dependency changes and auto-incrementing versions..."
     echo "----------------------------------------------------------------"
-    ./check-update.sh --update --build-type dependency
+    ./check-update.sh --update --build-type dependency $LOCAL_OPT
 else
     echo "----------------------------------------------------------------"
     echo "--update not set, skipping Step 1 (dependency version auto-increment)..."
@@ -161,7 +191,7 @@ elif [ "$BUILD_TARGET" = "all" ]; then
     echo "----------------------------------------------------------------"
     echo "Step 2: Building all enabled dependency packages (Docker images, frontend pages, executables, etc.)..."
     echo "----------------------------------------------------------------"
-    ./build-depends.sh --build --update $PUSH_OPT
+    ./build-depends.sh --build --update $PUSH_OPT $LOCAL_OPT
 elif [ "$BUILD_TARGET" = "auto" ]; then
     echo "----------------------------------------------------------------"
     echo "Step 2: Checking and building dependency packages (Docker images, frontend pages, executables, etc.)..."
@@ -175,7 +205,7 @@ elif [ "$BUILD_TARGET" = "auto" ]; then
         echo "----------------------------------------------------------------"
         echo "Building depends..."
         echo "----------------------------------------------------------------"
-        ./build-depends.sh --build --update $PUSH_OPT --packages $need_build_packages
+        ./build-depends.sh --build --update $PUSH_OPT $LOCAL_OPT --packages $need_build_packages
     else
         echo "No 'dependency' packages need building, skipping..."
     fi
@@ -183,7 +213,7 @@ else
     echo "----------------------------------------------------------------"
     echo "Step 2: Building specified dependency packages: $BUILD_TARGET ..."
     echo "----------------------------------------------------------------"
-    ./build-depends.sh --build --update $PUSH_OPT --packages $BUILD_TARGET
+    ./build-depends.sh --build --update $PUSH_OPT $LOCAL_OPT --packages $BUILD_TARGET
 fi
 
 # Step 3: 调用gen-backend-spec.sh，更新backend/system-spec.json

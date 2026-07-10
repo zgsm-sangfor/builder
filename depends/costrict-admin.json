@@ -18,7 +18,7 @@
   },
   "pull": {
     "workdir": ".",
-    "command": "./github-fetch-release.sh --package costrict-admin --os {{os}} --arch {{arch}} --version {{.version}}"
+    "command": "github-fetch-release.sh --package costrict-admin --os {{os}} --arch {{arch}} --version {{.version}}"
   },
   "version": "1.0.138",
   "description": "Utilities for backend management of Costrict"

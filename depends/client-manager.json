@@ -1,6 +1,6 @@
 {
   "name": "client-manager",
-  "type": "github-docker",
+  "type": "docker",
   "version": "1.0.14",
   "remote": "git@github.com:zgsm-ai/client-manager.git",
   "repo": "zgsm",

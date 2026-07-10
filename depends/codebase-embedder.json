@@ -1,6 +1,6 @@
 {
   "name": "codebase-embedder",
-  "type": "github-docker",
+  "type": "docker",
   "version": "0.2.6",
   "remote": "https://github.com/zgsm-sangfor/codebase-embedder.git",
   "repo": "zgsm",

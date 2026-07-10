@@ -41,8 +41,8 @@ usage() {
     echo "  -h, --help           显示帮助信息"
     echo ""
     echo "Examples:"
-    echo "  ./github-fetch-release.sh --os linux --arch amd64 --version 1.0.133 --package costrict-admin"
-    echo "  ./github-fetch-release.sh --os darwin --arch arm64 --version 1.0.1 --package costrict-model-proxy --repo zgsm-sangfor/costrict-model-proxy"
+    echo "  github-fetch-release.sh --os linux --arch amd64 --version 1.0.133 --package costrict-admin"
+    echo "  github-fetch-release.sh --os darwin --arch arm64 --version 1.0.1 --package costrict-model-proxy --repo zgsm-sangfor/costrict-model-proxy"
     exit 1
 }
 
@@ -53,7 +53,7 @@ PACKAGE_VERSION=""
 PACKAGE_NAME=""
 PACKAGE_REPO=""
 PACKAGE_URL=""
-OUTPUT_DIR="../packages"
+OUTPUT_DIR="./packages"
 OUTPUT_FILE=""
 
 # 解析命令行选项
