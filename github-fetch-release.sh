@@ -151,11 +151,16 @@ if [ -z "$PACKAGE_URL" ]; then
 fi
 
 #
-# 通过 GitHub API 查询 Release 中匹配 OS/ARCH 的资产下载 URL
-# 参数: repo, version, os, arch
-# 返回: 匹配的 browser_download_url，若未找到则返回空字符串
+# 通过 GitHub API 查询 Release 中匹配 OS/ARCH 的资产 API URL
+# 说明：返回 API URL（如 https://api.github.com/repos/.../releases/assets/123）
+#       而非 browser_download_url，因为私有仓库的 browser_download_url
+#       会重定向到 objects.githubusercontent.com，跨主机重定向时 curl
+#       会剥离 Authorization 头导致 404。
+#       使用 API URL 下载（同主机重定向）可保留认证头。
+# 参数: repo, version, os, arch, package
+# 返回: 匹配的资产 API URL（url 字段），若未找到则返回空字符串
 #
-fetch_release_asset_url() {
+fetch_release_asset_api_url() {
     local repo="$1"
     local version="$2"
     local target_os="$3"
@@ -182,18 +187,17 @@ fetch_release_asset_url() {
         return 1
     fi
 
-    # 从 assets 数组中查找匹配的资产
+    # 从 assets 数组中查找匹配的资产，返回 API url 字段（非 browser_download_url）
     # 匹配规则：资产文件名中同时包含 package 名称、os 和 arch（不区分大小写）
-    # 优先精确匹配，若无则回退到包含匹配
-    local download_url
-    download_url=$(echo "$api_response" | jq -r --arg pkg "$target_package" --arg os "$target_os" --arg arch "$target_arch" \
-        '.assets[] | select(.name | ascii_downcase | (contains($pkg) and contains($os) and contains($arch))) | .browser_download_url' 2>/dev/null | head -1)
+    local asset_url
+    asset_url=$(echo "$api_response" | jq -r --arg pkg "$target_package" --arg os "$target_os" --arg arch "$target_arch" \
+        '.assets[] | select(.name | ascii_downcase | (contains($pkg) and contains($os) and contains($arch))) | .url' 2>/dev/null | head -1)
 
-    if [ -z "$download_url" ] || [ "$download_url" = "null" ]; then
+    if [ -z "$asset_url" ] || [ "$asset_url" = "null" ]; then
         return 1
     fi
 
-    echo "$download_url"
+    echo "$asset_url"
     return 0
 }
 
@@ -229,8 +233,12 @@ if [ $? -ne 0 ]; then
 fi
 
 # 下载release文件
-# 优先使用 GH_TOKEN 或 GITHUB_TOKEN 环境变量进行认证（支持私有仓库）
-do_download() {
+# 说明：
+#   - 公共仓库：直接用 browser_download_url 下载（无需认证）
+#   - 私有仓库：必须通过 GitHub API 资产端点下载，因为 browser_download_url
+#     会重定向到 objects.githubusercontent.com，跨主机重定向时 curl 会剥离
+#     Authorization 头，导致 404。API 端点（api.github.com）同主机重定向保留认证头。
+do_download_direct() {
     local url="$1"
     local output="$2"
 
@@ -243,16 +251,37 @@ do_download() {
     fi
 }
 
-do_download "${PACKAGE_URL}" "${TARGET_FILE}"
+# 通过 GitHub API 资产端点下载（适用于私有仓库）
+# API URL 格式: https://api.github.com/repos/{owner}/{repo}/releases/assets/{asset_id}
+# 需要设置 Accept: application/octet-stream 以获取二进制内容
+do_download_api() {
+    local api_url="$1"
+    local output="$2"
+
+    if [ -n "${GH_TOKEN}" ]; then
+        curl -fSL -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/octet-stream" -o "${output}" "${api_url}"
+    elif [ -n "${GITHUB_TOKEN}" ]; then
+        curl -fSL -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/octet-stream" -o "${output}" "${api_url}"
+    else
+        curl -fSL -H "Accept: application/octet-stream" -o "${output}" "${api_url}"
+    fi
+}
+
+#
+# 下载策略：
+#   1. 优先尝试直接 URL（适合公共仓库或 URL 由用户通过 --url 显式指定）
+#   2. 若失败且 URL 是自动生成的，通过 GitHub API 获取资产 API URL 重试
+#      （API URL 重定向在 api.github.com 同主机内，认证头不会丢失）
+#
+do_download_direct "${PACKAGE_URL}" "${TARGET_FILE}"
 DOWNLOAD_EXIT_CODE=$?
 
-# 如果下载失败且 URL 是自动生成的，尝试通过 GitHub API 查找正确的资产 URL
 if [ $DOWNLOAD_EXIT_CODE -ne 0 ] && [ "$AUTO_GENERATED_URL" = true ]; then
-    echo "Direct URL failed (404 or other error), trying GitHub API to discover the correct asset URL..."
-    API_URL=$(fetch_release_asset_url "$PACKAGE_REPO" "$PACKAGE_VERSION" "$PACKAGE_OS" "$PACKAGE_ARCH" "$PACKAGE_NAME")
-    if [ $? -eq 0 ] && [ -n "$API_URL" ]; then
-        echo "Found asset via API: ${API_URL}"
-        do_download "${API_URL}" "${TARGET_FILE}"
+    echo "Direct URL failed, trying GitHub API to discover asset..."
+    ASSET_API_URL=$(fetch_release_asset_api_url "$PACKAGE_REPO" "$PACKAGE_VERSION" "$PACKAGE_OS" "$PACKAGE_ARCH" "$PACKAGE_NAME")
+    if [ $? -eq 0 ] && [ -n "$ASSET_API_URL" ]; then
+        echo "Found asset API URL: ${ASSET_API_URL}"
+        do_download_api "${ASSET_API_URL}" "${TARGET_FILE}"
         DOWNLOAD_EXIT_CODE=$?
     else
         echo "Warning: Could not find matching asset via GitHub API for ${PACKAGE_NAME} (os=${PACKAGE_OS}, arch=${PACKAGE_ARCH})"
