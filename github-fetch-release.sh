@@ -178,7 +178,19 @@ if [ $? -ne 0 ]; then
 fi
 
 # 下载release文件
-curl -fSL -o "${TARGET_FILE}" "${PACKAGE_URL}"
+# 优先使用 GH_TOKEN 或 GITHUB_TOKEN 环境变量进行认证（支持私有仓库）
+AUTH_HEADER=""
+if [ -n "${GH_TOKEN}" ]; then
+    AUTH_HEADER="-H \"Authorization: Bearer ${GH_TOKEN}\""
+elif [ -n "${GITHUB_TOKEN}" ]; then
+    AUTH_HEADER="-H \"Authorization: Bearer ${GITHUB_TOKEN}\""
+fi
+
+if [ -n "${AUTH_HEADER}" ]; then
+    eval curl -fSL ${AUTH_HEADER} -o "\"${TARGET_FILE}\"" "\"${PACKAGE_URL}\""
+else
+    curl -fSL -o "${TARGET_FILE}" "${PACKAGE_URL}"
+fi
 if [ $? -ne 0 ]; then
     echo "Error: Failed to download from: ${PACKAGE_URL}"
     rm -f "${TARGET_FILE}"
