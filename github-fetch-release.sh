@@ -138,13 +138,64 @@ if [ -z "$PACKAGE_REPO" ]; then
     PACKAGE_REPO="zgsm-sangfor/${PACKAGE_NAME}"
 fi
 
+# 标记是否由脚本自动生成的URL（用于后续判断是否需要尝试API回退）
+AUTO_GENERATED_URL=false
+
 # 如果未指定URL，则自动拼接
 if [ -z "$PACKAGE_URL" ]; then
+    AUTO_GENERATED_URL=true
     PACKAGE_URL="https://github.com/${PACKAGE_REPO}/releases/download/v${PACKAGE_VERSION}/${PACKAGE_NAME}-${PACKAGE_OS}-${PACKAGE_ARCH}-v${PACKAGE_VERSION}"
     if [ "$PACKAGE_OS" = "windows" ]; then
         PACKAGE_URL="${PACKAGE_URL}.exe"
     fi
 fi
+
+#
+# 通过 GitHub API 查询 Release 中匹配 OS/ARCH 的资产下载 URL
+# 参数: repo, version, os, arch
+# 返回: 匹配的 browser_download_url，若未找到则返回空字符串
+#
+fetch_release_asset_url() {
+    local repo="$1"
+    local version="$2"
+    local target_os="$3"
+    local target_arch="$4"
+    local target_package="$5"
+
+    local api_url="https://api.github.com/repos/${repo}/releases/tags/v${version}"
+    local auth_header=""
+    if [ -n "${GH_TOKEN}" ]; then
+        auth_header="Authorization: Bearer ${GH_TOKEN}"
+    elif [ -n "${GITHUB_TOKEN}" ]; then
+        auth_header="Authorization: Bearer ${GITHUB_TOKEN}"
+    fi
+
+    # 调用 GitHub API 获取 release 信息
+    local api_response
+    if [ -n "${auth_header}" ]; then
+        api_response=$(curl -sfL -H "${auth_header}" "${api_url}" 2>/dev/null)
+    else
+        api_response=$(curl -sfL "${api_url}" 2>/dev/null)
+    fi
+
+    if [ $? -ne 0 ] || [ -z "$api_response" ]; then
+        return 1
+    fi
+
+    # 从 assets 数组中查找匹配的资产
+    # 匹配规则：资产文件名中同时包含 package 名称、os 和 arch（不区分大小写）
+    # 优先精确匹配，若无则回退到包含匹配
+    local download_url
+    download_url=$(echo "$api_response" | jq -r --arg pkg "$target_package" --arg os "$target_os" --arg arch "$target_arch" \
+        '.assets[] | select(.name | ascii_downcase | (contains($pkg) and contains($os) and contains($arch))) | .browser_download_url' 2>/dev/null | head -1)
+
+    if [ -z "$download_url" ] || [ "$download_url" = "null" ]; then
+        return 1
+    fi
+
+    echo "$download_url"
+    return 0
+}
 
 # 构建目标路径（Windows平台追加 .exe 后缀）
 if [ -z "$OUTPUT_FILE" ]; then
@@ -179,19 +230,36 @@ fi
 
 # 下载release文件
 # 优先使用 GH_TOKEN 或 GITHUB_TOKEN 环境变量进行认证（支持私有仓库）
-AUTH_HEADER=""
-if [ -n "${GH_TOKEN}" ]; then
-    AUTH_HEADER="-H \"Authorization: Bearer ${GH_TOKEN}\""
-elif [ -n "${GITHUB_TOKEN}" ]; then
-    AUTH_HEADER="-H \"Authorization: Bearer ${GITHUB_TOKEN}\""
+do_download() {
+    local url="$1"
+    local output="$2"
+
+    if [ -n "${GH_TOKEN}" ]; then
+        curl -fSL -H "Authorization: Bearer ${GH_TOKEN}" -o "${output}" "${url}"
+    elif [ -n "${GITHUB_TOKEN}" ]; then
+        curl -fSL -H "Authorization: Bearer ${GITHUB_TOKEN}" -o "${output}" "${url}"
+    else
+        curl -fSL -o "${output}" "${url}"
+    fi
+}
+
+do_download "${PACKAGE_URL}" "${TARGET_FILE}"
+DOWNLOAD_EXIT_CODE=$?
+
+# 如果下载失败且 URL 是自动生成的，尝试通过 GitHub API 查找正确的资产 URL
+if [ $DOWNLOAD_EXIT_CODE -ne 0 ] && [ "$AUTO_GENERATED_URL" = true ]; then
+    echo "Direct URL failed (404 or other error), trying GitHub API to discover the correct asset URL..."
+    API_URL=$(fetch_release_asset_url "$PACKAGE_REPO" "$PACKAGE_VERSION" "$PACKAGE_OS" "$PACKAGE_ARCH" "$PACKAGE_NAME")
+    if [ $? -eq 0 ] && [ -n "$API_URL" ]; then
+        echo "Found asset via API: ${API_URL}"
+        do_download "${API_URL}" "${TARGET_FILE}"
+        DOWNLOAD_EXIT_CODE=$?
+    else
+        echo "Warning: Could not find matching asset via GitHub API for ${PACKAGE_NAME} (os=${PACKAGE_OS}, arch=${PACKAGE_ARCH})"
+    fi
 fi
 
-if [ -n "${AUTH_HEADER}" ]; then
-    eval curl -fSL ${AUTH_HEADER} -o "\"${TARGET_FILE}\"" "\"${PACKAGE_URL}\""
-else
-    curl -fSL -o "${TARGET_FILE}" "${PACKAGE_URL}"
-fi
-if [ $? -ne 0 ]; then
+if [ $DOWNLOAD_EXIT_CODE -ne 0 ]; then
     echo "Error: Failed to download from: ${PACKAGE_URL}"
     rm -f "${TARGET_FILE}"
     exit 1
