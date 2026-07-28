@@ -166,8 +166,8 @@
       "file_count": 4
     },
     "costrict-system": {
-      "version": "1.0.274",
-      "checksum": "f6f4de5ec9b65d9f0906f92ffe905b2a6ad921d0bc9607ca1c6a02ba1311a420",
+      "version": "1.0.275",
+      "checksum": "5c0fae9256e1576f69bfc9646682dfd296df0824a4b8ff1bb9e3e66acca173d5",
       "file_count": 1
     },
     "costrict-license-sdk": {
@@ -236,8 +236,8 @@
       "file_count": 3
     },
     "costrict-model-proxy": {
-      "version": "1.0.11",
-      "checksum": "8f945f8ee0aceba855943ab66131e49455e82f89de03016126b642ac1f97662c",
+      "version": "1.0.12",
+      "checksum": "cc17eb636165ce16f1b91ee4184c925d6704e5e0e0106186f9ad1d6b6349dfba",
       "file_count": 8
     },
     "license-manager": {
@@ -246,13 +246,13 @@
       "file_count": 8
     },
     "costrict-web": {
-      "version": "1.0.19",
-      "checksum": "1b2607202546b2c13ae6c8a922f714dda9ce669fa822510fc84cfd37e0411915",
+      "version": "1.0.20",
+      "checksum": "ef0ef6614af35b6738a8549ab0c46f8e12c41b21cc1baed2b1a2325eae609e30",
       "file_count": 10
     },
     "efficiency-dashboard": {
-      "version": "1.0.12",
-      "checksum": "035c7b1cef7800b14f87cdcb843fc077b2fa0630b90d3f7885ce00ee03eea467",
+      "version": "1.0.13",
+      "checksum": "9bef8946974eab63c5e715d3bdeb46dd9229d31e1ee903d048cfd8e7e4b39274",
       "file_count": 12
     },
     "costrict-admin-dashboard": {
@@ -301,13 +301,13 @@
       "file_count": 4
     },
     "chat-indicator-statistics": {
-      "version": "1.0.5",
-      "checksum": "99e5943d56288e0e62fbef8a7cb54dbad5d04fcdf3bf029a1ff661a0e841242c",
+      "version": "1.0.6",
+      "checksum": "eb2b2d00a979cf03e60328189c46c76a42cfaf35c64a268806e995e9efe21755",
       "file_count": 5
     },
     "costrict-dept-sync": {
-      "version": "1.0.17",
-      "checksum": "c3b27ecc03929ba70e880f8a98ab923e61186ec5750f7806aa288698f4376917",
+      "version": "1.0.18",
+      "checksum": "7c53e74cb8f88aa0912e01227a2ba8c24c9d50f9eed8c863515d7b2f855810d1",
       "file_count": 6
     }
   },
@@ -388,9 +388,9 @@
       "file_count": 0
     },
     "costrict-model-proxy": {
-      "version": "0.0.5",
-      "checksum": "2cfdd217d3fd82a30829cccf8fc8f9d8f63ddf4e7cecab42cf7390b32922a968",
-      "file_count": 2
+      "version": "0.1.0",
+      "checksum": "v0.1.0",
+      "file_count": 0
     },
     "license-manager": {
       "version": "1.0.5",

@@ -45,7 +45,7 @@
     {
       "name": "chat-indicator-statistics",
       "subsystem": "backend",
-      "version": "1.0.5"
+      "version": "1.0.6"
     },
     {
       "name": "chat-rag",
@@ -85,17 +85,17 @@
     {
       "name": "costrict-dept-sync",
       "subsystem": "backend",
-      "version": "1.0.17"
+      "version": "1.0.18"
     },
     {
       "name": "costrict-model-proxy",
       "subsystem": "backend",
-      "version": "1.0.11"
+      "version": "1.0.12"
     },
     {
       "name": "costrict-web",
       "subsystem": "backend",
-      "version": "1.0.19"
+      "version": "1.0.20"
     },
     {
       "name": "credit-manager",
@@ -105,7 +105,7 @@
     {
       "name": "efficiency-dashboard",
       "subsystem": "backend",
-      "version": "1.0.12"
+      "version": "1.0.13"
     },
     {
       "name": "es",
