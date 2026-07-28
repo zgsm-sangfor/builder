@@ -118,7 +118,7 @@ curl -i http://$APISIX_ADDR/apisix/admin/upstreams -H "$AUTH" -H "$TYPE" -X PUT 
   }'
 
 curl -i http://$APISIX_ADDR/apisix/admin/routes -H "$AUTH" -H "$TYPE" -X PUT -d '{
-  "uri": "/cloud/*",
+  "uris": ["/cloud/*","/cloud"],
   "name": "costrict-web-portal",
   "id": "costrict-web-portal",
   "methods": [
