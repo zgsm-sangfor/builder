@@ -13,6 +13,18 @@
     },
     {
       "service_name": "costrict-web-worker"
+    },
+    {
+      "service_name": "costrict-web-cs-user",
+      "display_name": "costrict-web的用户中心服务"
+    },
+    {
+      "service_name": "costrict-web-workflow-backend",
+      "display_name": "costrict-web工作流后端服务"
+    },
+    {
+      "service_name": "costrict-web-workflow-web",
+      "display_name": "costrict-web工作流前端服务"
     }
   ]
 }

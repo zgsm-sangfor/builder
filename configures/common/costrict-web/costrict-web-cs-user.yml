@@ -1,0 +1,50 @@
+services:
+  costrict-web-cs-user:
+    image: ${IMAGE_COSTRICT_WEB_CS_USER}
+    restart: always
+    user: "1000:1000"
+    environment:
+      TZ: "Asia/Shanghai"
+      CS_USER_HTTP_PORT: "8081"
+      CS_USER_HTTP_MODE: "release"
+      # 数据库（与 k8s cs-user-values.yaml 对齐，指向项目内 postgres 的 cs_user 库）
+      CS_USER_POSTGRES_HOST: postgres
+      CS_USER_POSTGRES_PORT: "5432"
+      CS_USER_POSTGRES_DATABASE: cs_user
+      CS_USER_POSTGRES_USER: "${POSTGRES_USER}"
+      CS_USER_POSTGRES_PASSWORD: "${PASSWORD_POSTGRES}"
+      CS_USER_POSTGRES_SSLMODE: disable
+      # 内部访问令牌（与 api 的 USER_SERVICE_INTERNAL_TOKEN 同值）
+      CS_USER_INTERNAL_TOKEN: "${PASSWORD_COSTRICT_WEB_CS_USER_TOKEN}"
+      # JWT 签发
+      CS_USER_JWT_SIGNING_KEY_PATH: /etc/cs-user/jwt.pem
+      CS_USER_JWT_ISSUER: cs-user
+      CS_USER_JWT_TTL: "168h"
+      CS_USER_JWT_AUDIENCE: "cs-cloud,app-ai-native,csc"
+      # 事件总线（用户创建事件 outbox → api）
+      CS_USER_EVENT_TARGET_URL: "http://costrict-web-api:8080/api/internal/users/created"
+      CS_USER_EVENT_TARGET_TOKEN: "server-gateway-password"
+      CS_USER_EVENT_POLL_INTERVAL: "1s"
+      CS_USER_EVENT_BATCH_SIZE: "50"
+      CS_USER_EVENT_MAX_ATTEMPTS: "0"
+      CS_USER_EVENT_BACKOFF_BASE: "2s"
+      CS_USER_EVENT_BACKOFF_MAX: "5m"
+      CS_USER_EVENT_HTTP_TIMEOUT: "5s"
+      # Casdoor（extraEnv，与 k8s cs-user-values.yaml 对齐）
+      CS_USER_CASDOOR_ENDPOINT: "http://casdoor:8000"
+      CS_USER_CASDOOR_ISSUER: "http://casdoor:8000"
+      CS_USER_VERIFY_AUTOCREATE_UNKNOWN_USERS: "true"
+    volumes:
+      - ./cs-user/jwt.pem:/etc/cs-user/jwt.pem:ro
+      - ${COSTRICT_DATA_DIR}/backend/costrict-web/cs-user/logs:/app/logs
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - shenma
+    depends_on:
+      postgres:
+        condition: service_healthy

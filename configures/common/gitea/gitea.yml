@@ -1,0 +1,29 @@
+services:
+  gitea:
+    image: ${IMAGE_GITEA}
+    restart: always
+    user: "1000:1000"
+    environment:
+      USER_UID: "1000"
+      USER_GID: "1000"
+      # 数据库复用项目现有 postgres（库 gitea 由 initdb.d/10-create-db.sql 创建）
+      GITEA__database__DB_TYPE: postgres
+      GITEA__database__HOST: postgres:5432
+      GITEA__database__NAME: gitea
+      GITEA__database__USER: "${POSTGRES_USER}"
+      GITEA__database__PASSWD: "${PASSWORD_POSTGRES}"
+    ports:
+      - "${PORT_GITEA}:3000"
+      - "${PORT_GITEA_SSH}:22"
+    volumes:
+      - ${COSTRICT_DATA_DIR}/gitea/data:/data
+      - ./conf/app.ini:/data/gitea/conf/app.ini
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - shenma
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started

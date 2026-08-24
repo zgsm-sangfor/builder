@@ -6,11 +6,11 @@ services:
       TZ: "Asia/Shanghai"
       LOG_LEVEL: "info"
       CONCURRENCY: "5"
-      DATABASE_URL: "postgres://${POSTGRES_USER}:${PASSWORD_POSTGRES}@postgres:5432/costrict_db?sslmode=disable"
+      DATABASE_URL: "postgres://${POSTGRES_USER}:${PASSWORD_POSTGRES}@postgres:5432/costrict_web?sslmode=disable"
       REDIS_URL: "redis://redis:6379"
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: costrict_db
+      DB_NAME: costrict_web
       DB_USER: "${POSTGRES_USER}"
       DB_PASSWORD: "${PASSWORD_POSTGRES}"
       REDIS_HOST: redis
@@ -22,12 +22,34 @@ services:
       CASDOOR_CLIENT_ID: "${OIDC_AUTH_CLIENT_ID}"
       CASDOOR_CLIENT_SECRET: "${OIDC_AUTH_CLIENT_SECRET}"
       CASDOOR_CALLBACK_URL: "${COSTRICT_BASEURL}/cloud-api/api/auth/callback"
+      # LLM 配置
+      LLM_API_KEY: "${PASSWORD_COSTRICT_WEB_LLM_API_KEY:-}"
+      LLM_MODEL: "glm-4-plus"
+      LLM_BASE_URL: "https://open.bigmodel.cn/api/paas/v4"
+      # Embedding 配置
+      EMBEDDING_API_KEY: "${PASSWORD_COSTRICT_WEB_EMBEDDING_API_KEY:-}"
+      EMBEDDING_MODEL: "embedding-3"
+      EMBEDDING_BASE_URL: "https://open.bigmodel.cn/api/paas/v4"
+      EMBEDDING_DIMENSIONS: "1024"
+      # 存储配置
       STORAGE_PATH: "/app/data/artifacts"
+      # 安全扫描配置
       SCAN_ENABLED: "true"
       SCAN_LLM_MODEL: "glm-4-plus"
       SCAN_LLM_TIMEOUT_SECONDS: "30"
       SCAN_LLM_MAX_INPUT_TOKENS: "6000"
       SCAN_WORKER_CONCURRENCY: "2"
+      # V4 Git registry（与 api 的 CS_BOT_TOKEN_KEY 同值）
+      CS_BOT_TOKEN_KEY: "${PASSWORD_COSTRICT_WEB_CS_BOT_TOKEN}"
+      # Gitea 回调 Cloud 的公网基址（含 Ingress 前缀）；worker 自动拼 /api/internal/git-sync/<server_id>
+      GIT_SYSTEM_WEBHOOK_BASE_URL: "${COSTRICT_BASEURL}/cloud-api"
+      GIT_SYSTEM_HOOK_RECONCILE_INTERVAL_SECONDS: "300"
+      GIT_CAPABILITY_WORKER_CONCURRENCY: "8"
+      GIT_CAPABILITY_DISCOVERY_EXCLUDED_OWNERS: "costrict-plugin-marketplace,costrict-capabilities"
+      GIT_CAPABILITY_RECONCILE_INTERVAL: "10m"
+      GIT_CAPABILITY_RECONCILE_BATCH_SIZE: "50"
+      GIT_CAPABILITY_RECONCILE_DRAIN_BUDGET: "30s"
+      PLUGIN_GIT_MIRROR_OWNER: "costrict-plugin-marketplace"
     volumes:
       - ${COSTRICT_DATA_DIR}/backend/costrict-web/api/data:/app/data
       - ${COSTRICT_DATA_DIR}/backend/costrict-web/worker/logs:/app/logs

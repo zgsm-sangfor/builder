@@ -1,0 +1,11 @@
+{
+  "component_name": "gitea",
+  "services": [
+    {
+      "service_name": "gitea",
+      "display_name": "Gitea Git服务",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_GITEA }}",
+      "health_url": "http://localhost:{{ .PORT_GITEA }}/api/v1/version"
+    }
+  ]
+}

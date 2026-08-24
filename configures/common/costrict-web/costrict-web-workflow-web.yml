@@ -1,0 +1,20 @@
+services:
+  costrict-web-workflow-web:
+    image: ${IMAGE_COSTRICT_WEB_WORKFLOW_WEB}
+    restart: always
+    user: "1000:1000"
+    environment:
+      TZ: "Asia/Shanghai"
+      # web 中间件 request-time 读取，转发 API 请求到后端 service（与 k8s workflow-values.yaml web.extraEnv 对齐）
+      REMOTE_API_URL: "http://costrict-web-workflow-backend:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - shenma
+    depends_on:
+      costrict-web-workflow-backend:
+        condition: service_healthy

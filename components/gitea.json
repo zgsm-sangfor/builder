@@ -1,0 +1,9 @@
+{
+  "name": "gitea",
+  "type": "zip",
+  "subsystem": "backend",
+  "path": "./configures",
+  "version": "1.0.0",
+  "display_name": "Gitea",
+  "description": "轻量级 Git 服务，用于 capability/插件仓库托管"
+}

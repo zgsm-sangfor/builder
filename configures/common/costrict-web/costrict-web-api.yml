@@ -8,18 +8,20 @@ services:
       PORT: "8080"
       LOG_LEVEL: "info"
       RUN_MIGRATIONS: "true"
-      DATABASE_URL: "postgres://${POSTGRES_USER}:${PASSWORD_POSTGRES}@postgres:5432/costrict_db?sslmode=disable"
+      DATABASE_URL: "postgres://${POSTGRES_USER}:${PASSWORD_POSTGRES}@postgres:5432/costrict_web?sslmode=disable"
       REDIS_URL: "redis://redis:6379"
       COSTRICT_CLOUD_BASE_URL: "https://app.costrict.ai"
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: costrict_db
+      DB_NAME: costrict_web
       DB_USER: "${POSTGRES_USER}"
       DB_PASSWORD: "${PASSWORD_POSTGRES}"
       REDIS_HOST: redis
       REDIS_PORT: 6379
       # 取消安全cookie
       COOKIE_SECURE: false
+      COOKIE_DOMAIN: "${COSTRICT_HOST}"
+      CLAWAGENT_ENCRYPTION_KEY: "${PASSWORD_COSTRICT_WEB_CLAWAGENT_ENCRYPTION_KEY:-12345678901234567890123456789012}"
       ARTIFACT_STORAGE_PATH: /app/data/artifacts
       FRONTEND_URLS: "${COSTRICT_BASEURL}/cloud/,${COSTRICT_BASEURL}/cloud-api/,${COSTRICT_BASEURL}"
       INTERNAL_SECRET: "server-gateway-password"
@@ -29,6 +31,38 @@ services:
       CASDOOR_CLIENT_ID: "${OIDC_AUTH_CLIENT_ID}"
       CASDOOR_CLIENT_SECRET: "${OIDC_AUTH_CLIENT_SECRET}"
       CASDOOR_CALLBACK_URL: "${COSTRICT_BASEURL}/cloud-api/api/auth/callback"
+      # cs-user 对接（对应 k8s cs-user-values.yaml）
+      USER_SERVICE_WRITE_MODE: "readonly"
+      USER_SERVICE_BACKEND: "rpc"
+      JWT_SIGN_MODE: "dual"
+      USER_SERVICE_URL: "http://costrict-web-cs-user:8081"
+      USER_SERVICE_INTERNAL_TOKEN: "${PASSWORD_COSTRICT_WEB_CS_USER_TOKEN}"
+      # team（workflow）
+      CS_BOT_TOKEN_KEY: "${PASSWORD_COSTRICT_WEB_CS_BOT_TOKEN}"
+      TEAM_DIRECTORY_URL: "http://costrict-web-workflow-backend:8080"
+      # 部门同步
+      DEPT_SYNC_URL: "http://costrict-dept-sync:8080"
+      DEPT_SYNC_API_KEY: "${APIKEY_COSTRICT_DEPT_SYNC_DEFAULT}"
+      CORS_ALLOWED_ORIGINS: "${COSTRICT_BASEURL}"
+      # 存储：默认本地；如需 S3 可设置 ARTIFACT_STORAGE_BACKEND=s3 并填 S3_* 变量
+      ARTIFACT_STORAGE_BACKEND: "${ARTIFACT_STORAGE_BACKEND:-local}"
+      S3_ENDPOINT: "${S3_ENDPOINT:-}"
+      S3_BUCKET: "${S3_BUCKET:-}"
+      S3_REGION: "${S3_REGION:-us-east-1}"
+      S3_FORCE_PATH_STYLE: "${S3_FORCE_PATH_STYLE:-true}"
+      AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID:-}"
+      AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY:-}"
+      AWS_EC2_METADATA_DISABLED: "${AWS_EC2_METADATA_DISABLED:-true}"
+      # workflow 集成（对应 k8s workflow-values.yaml MULTICA_INTEGRATION_SECRET）
+      MULTICA_API_URL: "http://costrict-web-workflow-backend:8080"
+      MULTICA_INTEGRATION_SECRET: "${PASSWORD_COSTRICT_WEB_MULTICA_SECRET}"
+      # V4 Git registry（Git-backed capability，costrict-web PR#224），与 worker 保持一致
+      PLUGIN_GIT_MIRROR_OWNER: "costrict-plugin-marketplace"
+      GIT_CAPABILITY_DISCOVERY_EXCLUDED_OWNERS: "costrict-plugin-marketplace,costrict-capabilities"
+      GIT_IMPORT_OFFICIAL_OWNERS: "costrict-capabilities"
+      GIT_IMPORT_CATALOG_REGISTRY_ID: "00000000-0000-0000-0000-000000000001"
+      GIT_IMPORT_CATALOG_SOURCE_NAMESPACE: "official-catalog"
+      # 通知渠道（当前默认关闭）
       CHANNEL_WECHAT_ENABLED: "false"
       CHANNEL_WECOM_WEBHOOK_ENABLED: "false"
       CHANNEL_WECOM_ENABLED: "false"
@@ -41,17 +75,13 @@ services:
       WECOM_BOT_PROXY_URL: ""
       WECOM_BOT_PROXY_AUTH_TOKEN: ""
       WECOM_BOT_QR_CODE_URL: ""
-    
       STORAGE_PATH: "/app/data/artifacts"
       SCAN_ENABLED: "true"
       SCAN_LLM_MODEL: "glm-4-plus"
       SCAN_LLM_TIMEOUT_SECONDS: "30"
       SCAN_LLM_MAX_INPUT_TOKENS: "6000"
       SCAN_WORKER_CONCURRENCY: "2"
-      CLAWAGENT_ENCRYPTION_KEY: ""
       BOOTSTRAP_PLATFORM_ADMIN_UNIVERSAL_IDS: ""
-      DEPT_SYNC_URL: "http://costrict-dept-sync:8080"
-      DEPT_SYNC_API_KEY: "${APIKEY_COSTRICT_DEPT_SYNC_DEFAULT}"
     volumes:
       - ${COSTRICT_DATA_DIR}/backend/costrict-web/api/data:/app/data
       - ${COSTRICT_DATA_DIR}/backend/costrict-web/api/logs:/app/logs

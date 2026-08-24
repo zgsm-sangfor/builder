@@ -95,6 +95,11 @@
       "description": "分布式键值存储，用于配置管理和服务发现"
     },
     {
+      "component_name": "gitea",
+      "display_name": "Gitea",
+      "description": "轻量级 Git 服务，用于 capability/插件仓库托管"
+    },
+    {
       "component_name": "license-manager",
       "display_name": "CoStrict授权服务",
       "description": "CoStrict授权服务"
@@ -217,6 +222,21 @@
       "service_name": "costrict-web-worker"
     },
     {
+      "component_name": "costrict-web",
+      "service_name": "costrict-web-cs-user",
+      "display_name": "costrict-web的用户中心服务"
+    },
+    {
+      "component_name": "costrict-web",
+      "service_name": "costrict-web-workflow-backend",
+      "display_name": "costrict-web工作流后端服务"
+    },
+    {
+      "component_name": "costrict-web",
+      "service_name": "costrict-web-workflow-web",
+      "display_name": "costrict-web工作流前端服务"
+    },
+    {
       "component_name": "credit-manager",
       "service_name": "credit-manager",
       "health_url": "http://localhost:8098/healthz"
@@ -243,6 +263,13 @@
       "component_name": "etcd",
       "service_name": "etcd",
       "health_url": "http://localhost:32382/health"
+    },
+    {
+      "component_name": "gitea",
+      "service_name": "gitea",
+      "display_name": "Gitea Git服务",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_GITEA }}",
+      "health_url": "http://localhost:{{ .PORT_GITEA }}/api/v1/version"
     },
     {
       "component_name": "license-manager",

@@ -12,6 +12,17 @@ services:
       GATEWAY_REGION: "default"
       GATEWAY_CAPACITY: "100"
       INTERNAL_SECRET: "server-gateway-password"
+      # Nacos 动态 endpoint（与 k8s gateway-values.yaml 对齐）
+      # GATEWAY_NACOS_SERVER_ADDR: "nacos:8848"
+      # GATEWAY_NACOS_NAMESPACE_ID: "costrict"
+      # GATEWAY_NACOS_GROUP: "COSTRICT_WEB"
+      # GATEWAY_NACOS_DATA_ID: "gateway-endpoint"
+      # GATEWAY_NACOS_TIMEOUT_MS: "5000"
+      # GATEWAY_NACOS_USERNAME: "costrict"
+      # GATEWAY_NACOS_PASSWORD: "costrict"
+      # GATEWAY_NACOS_ACCESS_TOKEN: ""
+      # GATEWAY_NACOS_API_BASE_URL_DATA_ID: "gateway-endpoint"
+      # GATEWAY_API_BASE_URL: "gateway-api-base-url"
     ports:
       - "${PORT_COSTRICT_WEB_GATEWAY:-30277}:8081/tcp"
     healthcheck:

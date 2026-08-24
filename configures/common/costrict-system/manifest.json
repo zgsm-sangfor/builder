@@ -95,7 +95,7 @@
     {
       "name": "costrict-web",
       "subsystem": "backend",
-      "version": "1.0.20"
+      "version": "1.0.21"
     },
     {
       "name": "credit-manager",
@@ -126,6 +126,11 @@
       "name": "frontend",
       "subsystem": "root",
       "version": "1.0.6"
+    },
+    {
+      "name": "gitea",
+      "subsystem": "backend",
+      "version": "1.0.0"
     },
     {
       "name": "license-manager",
