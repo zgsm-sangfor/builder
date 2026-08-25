@@ -13,6 +13,7 @@
 !gen-manifest.sh
 !docker-pull-via.sh
 !github-fetch-release.sh
+!local-build.sh
 !start-local-site.sh
 !packages.json
 !latest.json
