@@ -225,8 +225,8 @@ fi
 # 根据 --ignore-images 决定是否包含 images
 if [ "$IGNORE_IMAGES" = true ]; then
     echo "已指定 --ignore-images，跳过 images 目录。"
-    echo "正在下载 nginx-1.27.1.tar 镜像..."
-    download_file "./nginx-1.27.1.tar"
+    echo "正在下载 nginx-1.31.1.tar 镜像..."
+    download_file "./nginx-1.31.1.tar"
 else
     if [ -d "images" ]; then
         TAR_ARGS+=("images")
