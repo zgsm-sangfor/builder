@@ -17,5 +17,4 @@ logPostOnly = true
 origin =
 enableGzip = true
 ldapServerPort = 10389
-initDataFile = "/init_data.json"
 initDataNewOnly = false

@@ -11,6 +11,5 @@ services:
     volumes:
       - ${COSTRICT_DATA_DIR}/backend/casdoor/logs:/data/logs
       - ./conf/app.conf:/conf/app.conf
-      - ./init_data.json:/init_data.json
     networks:
       - shenma
