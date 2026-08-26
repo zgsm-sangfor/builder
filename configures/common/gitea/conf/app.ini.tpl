@@ -27,8 +27,8 @@ DISABLE_SSH = false
 SSH_PORT = {{PORT_GITEA_SSH}}
 SSH_LISTEN_PORT = 22
 LFS_START_SERVER = true
-# 部署时自动生成
-LFS_JWT_SECRET =
+# 随机生成的测试key
+LFS_JWT_SECRET = HFe8sx6WrReQOLIpdQ5ExfhMCEVvPHvoCRI2zflcp6A
 
 [database]
 PATH = /data/gitea/gitea.db
@@ -144,7 +144,8 @@ DISABLE_GIT_HOOKS = true
 INSTALL_LOCK = true
 # 运行时生成
 SECRET_KEY =
-INTERNAL_TOKEN =
+# token,这是随机生成的测试key
+INTERNAL_TOKEN = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYmYiOjE3ODc3NDAzMzV9.m7-0lll6oU2133fC1IDaW_ekQJIvzLJtM33Q_pF2NQA
 PASSWORD_HASH_ALGO =
 
 [lfs]
@@ -169,8 +170,8 @@ DEFAULT_MERGE_STYLE = merge
 DEFAULT_TRUST_MODEL = committer
 
 [oauth2]
-# 部署后生成
-JWT_SECRET =
+# 随机生成的测试key
+JWT_SECRET = bpFZ2ZzMlklnQvY5gObp_x07qyq2pACEEbWEhj22Qs4
 
 
 [cache]
