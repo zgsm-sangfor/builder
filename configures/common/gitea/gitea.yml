@@ -16,8 +16,8 @@ services:
       - "${PORT_GITEA}:3000"
       - "${PORT_GITEA_SSH}:22"
     volumes:
-      - ${COSTRICT_DATA_DIR}/gitea/data:/data
-      - ./conf/app.ini:/data/gitea/conf/app.ini
+      - ${COSTRICT_DATA_DIR}/backend/gitea/data:/data
+      # 数据目录授权和 app.ini 安装由部署前准备脚本完成
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     networks:

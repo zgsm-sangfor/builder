@@ -1,6 +1,7 @@
 {
   "name": "gitea",
   "type": "zip",
+  "enabled": false,
   "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.0",

@@ -33,6 +33,3 @@ services:
       start_period: 40s
     networks:
       - shenma
-    depends_on:
-      costrict-web-api:
-        condition: service_healthy

@@ -52,11 +52,8 @@ services:
       PLUGIN_GIT_MIRROR_OWNER: "costrict-plugin-marketplace"
     volumes:
       - ${COSTRICT_DATA_DIR}/backend/costrict-web/api/data:/app/data
-      - ${COSTRICT_DATA_DIR}/backend/costrict-web/worker/logs:/app/logs
     networks:
       - shenma
     depends_on:
       postgres:
-        condition: service_healthy
-      costrict-web-api:
         condition: service_healthy
