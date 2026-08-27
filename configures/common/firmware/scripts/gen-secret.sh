@@ -31,6 +31,42 @@ gen_base64() {
     echo "$result"
 }
 
+gen_n_str_and_base64() {
+    local bytes=$1
+    
+    # 检查参数是否提供
+    if [[ -z "$bytes" ]]; then
+        echo "错误: 请指定字节数"
+        echo "用法: gen_base64 <字节数>"
+        return 1
+    fi
+    
+    # 检查参数是否为数字
+    if ! [[ "$bytes" =~ ^[0-9]+$ ]]; then
+        echo "错误: 字节数必须是正整数"
+        return 1
+    fi
+    
+    # 检查字节数是否大于0
+    if [[ "$bytes" -le 0 ]]; then
+        echo "错误: 字节数必须大于0"
+        return 1
+    fi
+    
+    # 生成随机数据并编码为base64
+    # 方法1: 使用/dev/urandom (Linux/Mac)
+    if [[ -f /dev/urandom ]]; then
+        head -c "$bytes" /dev/urandom | base64
+    # 方法2: 使用openssl (备选)
+    elif command -v openssl &> /dev/null; then
+        openssl rand "$bytes" | base64
+    else
+        echo "错误: 无法生成随机数据，请安装openssl或确保/dev/urandom可用"
+        return 1
+    fi
+}
+
+
 # 生成十六进制格式的随机密钥
 gen_hex() {
     local size=$1
