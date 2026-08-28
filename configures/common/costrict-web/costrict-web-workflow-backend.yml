@@ -31,7 +31,7 @@ services:
       CS_USER_INTERNAL_TOKEN: "${PASSWORD_COSTRICT_WEB_CS_USER_TOKEN}"
       TEAM_NAMESPACE_API_BASE_URL: "http://costrict-web-api:8080"
       TEAM_NAMESPACE_TENANT_ID: "default"
-      TEAM_NAMESPACE_INTERNAL_SERVICE_TOKEN: "server-gateway-password"
+      TEAM_NAMESPACE_INTERNAL_SERVICE_TOKEN: "${COSTRICT_WEB_INTERNAL_SECRET}"
       CLOUD_API_BASE_URL: "http://costrict-web-api:8080"
       # Gitea 插件市场
       CSC_PLUGIN_MARKETPLACE_NAME: "costrict-plugins"
@@ -57,7 +57,7 @@ services:
       JWT_SECRET: "${PASSWORD_COSTRICT_WEB_JWT_SECRET}"
       # 只能走 extraEnv 的变量（cmd/server/main.go、internal/handler/config.go 读取）
       COSTRICT_API_INTERNAL: "http://costrict-web-api:8080"
-      COSTRICT_INTERNAL_SECRET: "server-gateway-password"
+      COSTRICT_INTERNAL_SECRET: "${COSTRICT_WEB_INTERNAL_SECRET}"
       SERVER_URL: "${COSTRICT_BASEURL}/workflow-web"
       BUILTIN_PLUGIN_API_BASE_URL: "http://costrict-web-api:8080"
       MULTICA_INTEGRATION_SECRET: "${PASSWORD_COSTRICT_WEB_MULTICA_SECRET}"

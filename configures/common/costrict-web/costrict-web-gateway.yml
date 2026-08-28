@@ -11,7 +11,7 @@ services:
       GATEWAY_INTERNAL_URL: "http://costrict-web-gateway:8081"
       GATEWAY_REGION: "default"
       GATEWAY_CAPACITY: "100"
-      INTERNAL_SECRET: "server-gateway-password"
+      INTERNAL_SECRET: "${COSTRICT_WEB_INTERNAL_SECRET}"
       # Nacos 动态 endpoint（与 k8s gateway-values.yaml 对齐）
       # GATEWAY_NACOS_SERVER_ADDR: "nacos:8848"
       # GATEWAY_NACOS_NAMESPACE_ID: "costrict"

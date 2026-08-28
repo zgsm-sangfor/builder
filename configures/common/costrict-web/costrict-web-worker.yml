@@ -16,7 +16,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       FRONTEND_URLS: "${COSTRICT_BASEURL}/cloud-portal"
-      INTERNAL_SECRET: "server-gateway-password"
+      INTERNAL_SECRET: "${COSTRICT_WEB_INTERNAL_SECRET}"
       CASDOOR_ENDPOINT: "${COSTRICT_BASEURL}"
       CASDOOR_INTERNAL_ENDPOINT: "http://casdoor:8000"
       CASDOOR_CLIENT_ID: "${OIDC_AUTH_CLIENT_ID}"

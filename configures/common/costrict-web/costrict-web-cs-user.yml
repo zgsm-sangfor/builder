@@ -23,7 +23,7 @@ services:
       CS_USER_JWT_AUDIENCE: "cs-cloud,app-ai-native,csc"
       # 事件总线（用户创建事件 outbox → api）
       CS_USER_EVENT_TARGET_URL: "http://costrict-web-api:8080/api/internal/users/created"
-      CS_USER_EVENT_TARGET_TOKEN: "server-gateway-password"
+      CS_USER_EVENT_TARGET_TOKEN: "${COSTRICT_WEB_INTERNAL_SECRET}"
       CS_USER_EVENT_POLL_INTERVAL: "1s"
       CS_USER_EVENT_BATCH_SIZE: "50"
       CS_USER_EVENT_MAX_ATTEMPTS: "0"
