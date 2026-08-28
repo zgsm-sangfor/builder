@@ -7,8 +7,8 @@ services:
         condition: service_healthy
     environment:
       TZ: Asia/Shanghai
-    ports:
-      - "${PORT_EFFICIENCY_DASHBOARD_KBCLI}:8080"
+    # ports:
+    #   - "${PORT_EFFICIENCY_DASHBOARD_KBCLI}:8080"
     volumes:
       - ./config/kbcli/config.yaml:/app/config.yaml:ro
       - ${COSTRICT_DATA_DIR}/backend/efficiency-dashboard/user-indicator/task:/app/task:ro

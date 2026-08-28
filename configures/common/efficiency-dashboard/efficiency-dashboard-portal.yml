@@ -6,8 +6,8 @@ services:
       - efficiency-dashboard-server
     environment:
       TZ: Asia/Shanghai
-    ports:
-      - "${PORT_EFFICIENCY_DASHBOARD_PORTAL}:80"
+    # ports:
+    #   - "${PORT_EFFICIENCY_DASHBOARD_PORTAL}:80"
     volumes:
       - ./config/portal/nginx.conf:/etc/nginx/nginx.conf:ro
     healthcheck:
