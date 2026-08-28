@@ -134,6 +134,9 @@ replace_secrets() {
                 base64)
                     secret=$(gen_base64 "$size")
                     ;;
+                gen_n_str_and_base64)
+                    secret=$(gen_n_str_and_base64 "$size")
+                    ;;
                 hex)
                     secret=$(gen_hex "$size")
                     ;;
@@ -192,6 +195,7 @@ usage() {
     echo ""
     echo "Supported marker formats:"
     echo "  {{base64 <size>}}   Generate a base64-encoded random string"
+    echo "  {{gen_n_str_and_base64 <bytes>}} Generate random bytes and encode them as base64"
     echo "  {{hex <size>}}      Generate a hexadecimal random string"
     echo "  {{password <size>}} Generate a password with letters, numbers, and special characters"
     echo ""

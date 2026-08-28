@@ -35,9 +35,9 @@ services:
       CLOUD_API_BASE_URL: "http://costrict-web-api:8080"
       # Gitea 插件市场
       CSC_PLUGIN_MARKETPLACE_NAME: "costrict-plugins"
-      CSC_PLUGIN_MARKETPLACE_REPO: "https://gitea.costrict.ai/costrict-plugins-repo/marketplace.git"
-      GITEA_BASE_URL: "http://gitea:3000/"
-      GITEA_PUBLIC_BASE_URL: "http://${COSTRICT_HOST}:${PORT_GITEA}"
+      CSC_PLUGIN_MARKETPLACE_REPO: "${COSTRICT_BASEURL}/cloud-api/api/marketplace/costrict-plugins/marketplace.json"
+      GITEA_BASE_URL: "http://${COSTRICT_HOST}:33000"
+      GITEA_PUBLIC_BASE_URL: "http://${COSTRICT_HOST}:33000"
       # workflow 角色 LLM（当前关闭）
       WORKFLOW_ROLE_RESOLUTION_ENABLED: "false"
       WORKFLOW_ROLE_LLM_PROVIDER: ""
