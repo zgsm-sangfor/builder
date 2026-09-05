@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# 运行方式
+# ./local-build.sh --cache-dir ./build-cache/
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

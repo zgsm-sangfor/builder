@@ -48,6 +48,11 @@ userIndicatorConfig:
   enableSyncUserInfo: false
   reportIntervalMinutes: 20
 
+knowledgeUsageConfig:
+    esIndex: "costrict_kb_usage_events_v1"
+    maxBatchSize: 0
+    processTimeOut: 10000
+
 chatIndicatorConfig:
   enable: true
   esIndex: "costrict_chat_metrics_v4"
