@@ -82,7 +82,7 @@ services:
       SCAN_LLM_TIMEOUT_SECONDS: "30"
       SCAN_LLM_MAX_INPUT_TOKENS: "6000"
       SCAN_WORKER_CONCURRENCY: "2"
-      BOOTSTRAP_PLATFORM_ADMIN_UNIVERSAL_IDS: ""
+      BOOTSTRAP_PLATFORM_ADMIN_UNIVERSAL_IDS: "71a1332e-3641-462e-9b7b-ce0f45198f77" # 默认costrict用户id
     volumes:
       - ${COSTRICT_DATA_DIR}/backend/costrict-web/api/data:/app/data
     healthcheck:

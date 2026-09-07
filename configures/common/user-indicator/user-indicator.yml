@@ -4,7 +4,6 @@ services:
     volumes:
       - ./config.yaml:/app/config.yaml:ro
       - ${COSTRICT_DATA_DIR}/backend/user-indicator/data:/app/data
-      - ${COSTRICT_DATA_DIR}/backend/chat-rag/logs:/mnt/logs
     environment:
       - GIN_MODE=release
     restart: unless-stopped
