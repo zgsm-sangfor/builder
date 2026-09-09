@@ -11,9 +11,20 @@ services:
       GATEWAY_INTERNAL_URL: "http://costrict-web-gateway:8081"
       GATEWAY_REGION: "default"
       GATEWAY_CAPACITY: "100"
-      INTERNAL_SECRET: "server-gateway-password"
-    ports:
-      - "${PORT_COSTRICT_WEB_GATEWAY:-30277}:8081/tcp"
+      INTERNAL_SECRET: "${COSTRICT_WEB_INTERNAL_SECRET}"
+      # Nacos 动态 endpoint（与 k8s gateway-values.yaml 对齐）
+      # GATEWAY_NACOS_SERVER_ADDR: "nacos:8848"
+      # GATEWAY_NACOS_NAMESPACE_ID: "costrict"
+      # GATEWAY_NACOS_GROUP: "COSTRICT_WEB"
+      # GATEWAY_NACOS_DATA_ID: "gateway-endpoint"
+      # GATEWAY_NACOS_TIMEOUT_MS: "5000"
+      # GATEWAY_NACOS_USERNAME: "costrict"
+      # GATEWAY_NACOS_PASSWORD: "costrict"
+      # GATEWAY_NACOS_ACCESS_TOKEN: ""
+      # GATEWAY_NACOS_API_BASE_URL_DATA_ID: "gateway-endpoint"
+      # GATEWAY_API_BASE_URL: "gateway-api-base-url"
+    # ports:
+    #   - "${PORT_COSTRICT_WEB_GATEWAY:-30277}:8081/tcp"
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health"]
       interval: 30s
@@ -22,6 +33,3 @@ services:
       start_period: 40s
     networks:
       - shenma
-    depends_on:
-      costrict-web-api:
-        condition: service_healthy

@@ -5,5 +5,7 @@ services:
 
 networks:
   shenma:
+    # 统一修改维costrict网卡,方便特殊服务连接
+    name: costrict
     driver: bridge
 

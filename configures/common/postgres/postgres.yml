@@ -9,6 +9,8 @@ services:
       POSTGRES_PASSWORD: "${PASSWORD_POSTGRES}"
     volumes:
       - ${COSTRICT_DATA_DIR}/backend/postgres/data:/var/lib/postgresql/data
+      # 怎加挂载目录，用于其他特殊sql的执行
+      - ${COSTRICT_DATA_DIR}/backend/postgres/sql:/mnt/sql
       - ./initdb.d:/docker-entrypoint-initdb.d:ro
     ports:
       - "${PORT_POSTGRES}:5432/tcp"

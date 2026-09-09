@@ -6,7 +6,7 @@ services:
       TZ: "Asia/Shanghai"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    ports:
-      - "${PORT_PROMETHEUS}:9090"
+    # ports:
+    #   - "${PORT_PROMETHEUS}:9090"
     networks:
       - shenma

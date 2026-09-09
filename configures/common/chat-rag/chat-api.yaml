@@ -5,6 +5,8 @@ Port: 8888
 
 # Logging configuration
 Log:
+  storageType: "disk"
+  errorLogMode: sampled
   LogFilePath: "/data/logs/"
   LokiEndpoint: "http://loki:3100/loki/api/v1/push"
   LogScanIntervalSec: 10

@@ -45,7 +45,7 @@
     {
       "name": "chat-indicator-statistics",
       "subsystem": "backend",
-      "version": "1.0.5"
+      "version": "1.0.6"
     },
     {
       "name": "chat-rag",
@@ -65,7 +65,7 @@
     {
       "name": "costrict-admin-backend",
       "subsystem": "backend",
-      "version": "1.0.112"
+      "version": "1.0.113"
     },
     {
       "name": "costrict-admin-frontend",
@@ -95,12 +95,12 @@
     {
       "name": "costrict-dept-sync",
       "subsystem": "backend",
-      "version": "1.0.17"
+      "version": "1.0.18"
     },
     {
       "name": "costrict-model-proxy",
       "subsystem": "backend",
-      "version": "1.0.11"
+      "version": "1.0.12"
     },
     {
       "name": "costrict-orgd",
@@ -110,7 +110,7 @@
     {
       "name": "costrict-web",
       "subsystem": "backend",
-      "version": "1.0.19"
+      "version": "1.0.21"
     },
     {
       "name": "credit-manager",
@@ -120,7 +120,7 @@
     {
       "name": "efficiency-dashboard",
       "subsystem": "backend",
-      "version": "1.0.12"
+      "version": "1.0.13"
     },
     {
       "name": "es",
@@ -141,6 +141,11 @@
       "name": "frontend",
       "subsystem": "root",
       "version": "1.0.6"
+    },
+    {
+      "name": "gitea",
+      "subsystem": "backend",
+      "version": "1.0.0"
     },
     {
       "name": "license-manager",

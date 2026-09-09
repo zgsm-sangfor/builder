@@ -31,10 +31,17 @@ curl -i http://$APISIX_ADDR/apisix/admin/routes -H "$AUTH" -H "$TYPE" -X PUT -d 
 
 # 私有化不设置限制
 curl -i http://$APISIX_ADDR/apisix/admin/routes -H "$AUTH" -H "$TYPE" -X PUT -d '{
-    "uris": ["/costrict/*","/costrict-static/*"],
+    "uris": ["/", "/index", "/index.html", "/costrict/*","/costrict-static/*","/costrict-cli/*"],
     "id": "costrict-apps",
     "name": "costrict-apps",
     "upstream_id": "costrict-apps",
     "plugins": {
+      "proxy-rewrite": {
+        "regex_uri": [
+        "^/$", "/index.html", 
+        "^/index$", "/index.html", 
+        "^/index.html$", "/index.html"
+        ]
+      }
     }
   }'
