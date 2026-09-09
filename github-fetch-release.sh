@@ -46,6 +46,92 @@ usage() {
     exit 1
 }
 
+#
+# 通过 GitHub API 查询 Release 中匹配 OS/ARCH 的资产 API URL
+# 说明：返回 API URL（如 https://api.github.com/repos/.../releases/assets/123）
+#       而非 browser_download_url，因为私有仓库的 browser_download_url
+#       会重定向到 objects.githubusercontent.com，跨主机重定向时 curl
+#       会剥离 Authorization 头导致 404。
+#       使用 API URL 下载（同主机重定向）可保留认证头。
+# 参数: repo, version, os, arch, package
+# 返回: 匹配的资产 API URL（url 字段），若未找到则返回空字符串
+#
+fetch_release_asset_api_url() {
+    local repo="$1"
+    local version="$2"
+    local target_os="$3"
+    local target_arch="$4"
+    local target_package="$5"
+
+    local api_url="https://api.github.com/repos/${repo}/releases/tags/v${version}"
+    local auth_header=""
+    if [ -n "${GH_TOKEN}" ]; then
+        auth_header="Authorization: Bearer ${GH_TOKEN}"
+    elif [ -n "${GITHUB_TOKEN}" ]; then
+        auth_header="Authorization: Bearer ${GITHUB_TOKEN}"
+    fi
+
+    # 调用 GitHub API 获取 release 信息
+    local api_response
+    if [ -n "${auth_header}" ]; then
+        api_response=$(curl -sfL -H "${auth_header}" "${api_url}" 2>/dev/null)
+    else
+        api_response=$(curl -sfL "${api_url}" 2>/dev/null)
+    fi
+
+    if [ $? -ne 0 ] || [ -z "$api_response" ]; then
+        return 1
+    fi
+
+    # 从 assets 数组中查找匹配的资产，返回 API url 字段（非 browser_download_url）
+    # 匹配规则：资产文件名中同时包含 package 名称、os 和 arch（不区分大小写）
+    local asset_url
+    asset_url=$(echo "$api_response" | jq -r --arg pkg "$target_package" --arg os "$target_os" --arg arch "$target_arch" \
+        '.assets[] | select(.name | ascii_downcase | (contains($pkg) and contains($os) and contains($arch))) | .url' 2>/dev/null | head -1)
+
+    if [ -z "$asset_url" ] || [ "$asset_url" = "null" ]; then
+        return 1
+    fi
+
+    echo "$asset_url"
+    return 0
+}
+
+# 下载release文件
+# 说明：
+#   - 公共仓库：直接用 browser_download_url 下载（无需认证）
+#   - 私有仓库：必须通过 GitHub API 资产端点下载，因为 browser_download_url
+#     会重定向到 objects.githubusercontent.com，跨主机重定向时 curl 会剥离
+#     Authorization 头，导致 404。API 端点（api.github.com）同主机重定向保留认证头。
+do_download_direct() {
+    local url="$1"
+    local output="$2"
+
+    if [ -n "${GH_TOKEN}" ]; then
+        curl -fSL -H "Authorization: Bearer ${GH_TOKEN}" -o "${output}" "${url}"
+    elif [ -n "${GITHUB_TOKEN}" ]; then
+        curl -fSL -H "Authorization: Bearer ${GITHUB_TOKEN}" -o "${output}" "${url}"
+    else
+        curl -fSL -o "${output}" "${url}"
+    fi
+}
+
+# 通过 GitHub API 资产端点下载（适用于私有仓库）
+# API URL 格式: https://api.github.com/repos/{owner}/{repo}/releases/assets/{asset_id}
+# 需要设置 Accept: application/octet-stream 以获取二进制内容
+do_download_api() {
+    local api_url="$1"
+    local output="$2"
+
+    if [ -n "${GH_TOKEN}" ]; then
+        curl -fSL -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/octet-stream" -o "${output}" "${api_url}"
+    elif [ -n "${GITHUB_TOKEN}" ]; then
+        curl -fSL -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/octet-stream" -o "${output}" "${api_url}"
+    else
+        curl -fSL -H "Accept: application/octet-stream" -o "${output}" "${api_url}"
+    fi
+}
+
 # 默认参数值
 PACKAGE_OS=""
 PACKAGE_ARCH=""
@@ -150,57 +236,6 @@ if [ -z "$PACKAGE_URL" ]; then
     fi
 fi
 
-#
-# 通过 GitHub API 查询 Release 中匹配 OS/ARCH 的资产 API URL
-# 说明：返回 API URL（如 https://api.github.com/repos/.../releases/assets/123）
-#       而非 browser_download_url，因为私有仓库的 browser_download_url
-#       会重定向到 objects.githubusercontent.com，跨主机重定向时 curl
-#       会剥离 Authorization 头导致 404。
-#       使用 API URL 下载（同主机重定向）可保留认证头。
-# 参数: repo, version, os, arch, package
-# 返回: 匹配的资产 API URL（url 字段），若未找到则返回空字符串
-#
-fetch_release_asset_api_url() {
-    local repo="$1"
-    local version="$2"
-    local target_os="$3"
-    local target_arch="$4"
-    local target_package="$5"
-
-    local api_url="https://api.github.com/repos/${repo}/releases/tags/v${version}"
-    local auth_header=""
-    if [ -n "${GH_TOKEN}" ]; then
-        auth_header="Authorization: Bearer ${GH_TOKEN}"
-    elif [ -n "${GITHUB_TOKEN}" ]; then
-        auth_header="Authorization: Bearer ${GITHUB_TOKEN}"
-    fi
-
-    # 调用 GitHub API 获取 release 信息
-    local api_response
-    if [ -n "${auth_header}" ]; then
-        api_response=$(curl -sfL -H "${auth_header}" "${api_url}" 2>/dev/null)
-    else
-        api_response=$(curl -sfL "${api_url}" 2>/dev/null)
-    fi
-
-    if [ $? -ne 0 ] || [ -z "$api_response" ]; then
-        return 1
-    fi
-
-    # 从 assets 数组中查找匹配的资产，返回 API url 字段（非 browser_download_url）
-    # 匹配规则：资产文件名中同时包含 package 名称、os 和 arch（不区分大小写）
-    local asset_url
-    asset_url=$(echo "$api_response" | jq -r --arg pkg "$target_package" --arg os "$target_os" --arg arch "$target_arch" \
-        '.assets[] | select(.name | ascii_downcase | (contains($pkg) and contains($os) and contains($arch))) | .url' 2>/dev/null | head -1)
-
-    if [ -z "$asset_url" ] || [ "$asset_url" = "null" ]; then
-        return 1
-    fi
-
-    echo "$asset_url"
-    return 0
-}
-
 # 构建目标路径（Windows平台追加 .exe 后缀）
 if [ -z "$OUTPUT_FILE" ]; then
     TARGET_DIR="${OUTPUT_DIR}/${PACKAGE_NAME}/${PACKAGE_OS}/${PACKAGE_ARCH}/${PACKAGE_VERSION}"
@@ -231,41 +266,6 @@ if [ $? -ne 0 ]; then
     echo "Error: Failed to create directory: ${TARGET_DIR}"
     exit 1
 fi
-
-# 下载release文件
-# 说明：
-#   - 公共仓库：直接用 browser_download_url 下载（无需认证）
-#   - 私有仓库：必须通过 GitHub API 资产端点下载，因为 browser_download_url
-#     会重定向到 objects.githubusercontent.com，跨主机重定向时 curl 会剥离
-#     Authorization 头，导致 404。API 端点（api.github.com）同主机重定向保留认证头。
-do_download_direct() {
-    local url="$1"
-    local output="$2"
-
-    if [ -n "${GH_TOKEN}" ]; then
-        curl -fSL -H "Authorization: Bearer ${GH_TOKEN}" -o "${output}" "${url}"
-    elif [ -n "${GITHUB_TOKEN}" ]; then
-        curl -fSL -H "Authorization: Bearer ${GITHUB_TOKEN}" -o "${output}" "${url}"
-    else
-        curl -fSL -o "${output}" "${url}"
-    fi
-}
-
-# 通过 GitHub API 资产端点下载（适用于私有仓库）
-# API URL 格式: https://api.github.com/repos/{owner}/{repo}/releases/assets/{asset_id}
-# 需要设置 Accept: application/octet-stream 以获取二进制内容
-do_download_api() {
-    local api_url="$1"
-    local output="$2"
-
-    if [ -n "${GH_TOKEN}" ]; then
-        curl -fSL -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/octet-stream" -o "${output}" "${api_url}"
-    elif [ -n "${GITHUB_TOKEN}" ]; then
-        curl -fSL -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/octet-stream" -o "${output}" "${api_url}"
-    else
-        curl -fSL -H "Accept: application/octet-stream" -o "${output}" "${api_url}"
-    fi
-}
 
 #
 # 下载策略：

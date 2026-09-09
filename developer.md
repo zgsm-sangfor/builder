@@ -483,14 +483,11 @@ Docker镜像包定义在`depends/`目录下。
 #### 步骤 4: 构建应用组件
 
 ```bash
-# 执行默认构建流程（构建、打包、索引）
-./build-components.sh --def -p {package}
+# 执行完整构建流程（--pack = build + pack + index）
+./build-components.sh --pack -p {package}
 
-# 或分步执行
-./build-components.sh --update -p {package}   # 更新版本
-./build-components.sh --build -p {package}    # 构建
-./build-components.sh --pack -p {package}     # 打包
-./build-components.sh --index -p {package}    # 创建索引
+# 如需先清理旧版本
+./build-components.sh --clean --pack -p {package}
 ```
 
 #### 步骤 5: 更新系统清单
@@ -860,12 +857,8 @@ configures/
 
 **动作**:
 
-- `--update`: 自动更新组件版本
 - `--clean`: 清理旧版本
-- `--build`: 编译或构建模块
-- `--pack`: 打包并签名模块
-- `--index`: 为构建的包创建索引
-- `--def`: 执行默认构建步骤（build, pack, index；不含 update）
+- `--pack`: 执行完整流程：build（编译/组装）+ pack（签名打包）+ index（生成索引）
 - `--upload <ENV>`: 上传包到指定环境
 - `--upload-packages <ENV>`: 上传 packages.json
 
@@ -883,21 +876,18 @@ declare -a ENV_PATHS=("/packages/test" "/packages/prod" "/packages/qianliu")
 **示例**:
 
 ```bash
-# 构建单个包（默认流程）
-./build-components.sh --def -p completion-agent
+# 构建单个包（--pack = build + pack + index 完整流程）
+./build-components.sh --pack -p completion-agent
 
-# 分步执行
-./build-components.sh --update -p completion-agent   # 更新版本
-./build-components.sh --build -p completion-agent    # 构建
-./build-components.sh --pack -p completion-agent     # 打包
-./build-components.sh --index -p completion-agent    # 创建索引
+# 先清理旧版本再执行完整流程
+./build-components.sh --clean --pack -p completion-agent
 
 # 构建多个包
-./build-components.sh --def -p completion-agent,backend,cotun
+./build-components.sh --pack -p completion-agent,backend,cotun
 
 # 按类型构建
-./build-components.sh --def --type exec
-
+./build-components.sh --pack --type exec
+```
 # 上传到测试环境
 ./build-components.sh --upload test -p completion-agent
 

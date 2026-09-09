@@ -148,9 +148,9 @@ brew install jq zip rsync
 # 步骤6: 更新发布清单
 ./gen-manifest.sh
 
-# 步骤7: 构建部署包（可选上传）
-./build-components.sh --packages "backend,frontend,costrict-system" --def
-./build-components.sh --packages "backend,frontend,costrict-system" --def --upload def
+# 步骤7: 构建部署包（--pack = build/pack/index 完整流程，可选上传）
+./build-components.sh --packages "backend,frontend,costrict-system" --pack
+./build-components.sh --packages "backend,frontend,costrict-system" --pack --upload def
 ```
 
 ---
@@ -291,10 +291,7 @@ builder/
 | 动作 | 说明 |
 |------|------|
 | `--clean` | 清理早期版本 |
-| `--build` | 构建包 |
-| `--pack` | 打包并签名 |
-| `--index` | 构建索引 |
-| `--def` | 执行默认步骤 (build + pack + index) |
+| `--pack` | 执行完整流程：build（编译/组装）+ pack（签名打包）+ index（生成索引） |
 | `--upload <env>` | 上传包到指定环境 |
 | `--upload-packages <env>` | 仅上传 packages.json 到指定环境 |
 
@@ -306,23 +303,26 @@ builder/
 
 **示例**：
 ```bash
-# 构建单个包（执行完整流程）
-./build-components.sh --packages backend --def
+# 构建单个包（--pack = build + pack + index 完整流程）
+./build-components.sh --packages backend --pack
+
+# 先清理旧版本再执行完整流程
+./build-components.sh --packages backend --clean --pack
 
 # 构建并上传到默认环境
-./build-components.sh --packages backend --def --upload def
+./build-components.sh --packages backend --pack --upload def
 
 # 构建多个包并上传到多个环境
-./build-components.sh --packages "backend,frontend" --def --upload test,prod
+./build-components.sh --packages "backend,frontend" --pack --upload test,prod
 
 # 仅上传 packages.json
 ./build-components.sh --upload-packages def
 
 # 仅构建指定类型的包
-./build-components.sh --type zip --def
+./build-components.sh --type zip --pack
 
 # 使用自定义私钥签名
-./build-components.sh --packages backend --def --key /path/to/private.pem
+./build-components.sh --packages backend --pack --key /path/to/private.pem
 ```
 
 **配置文件**：[`components/*.json`](components/)
@@ -667,8 +667,8 @@ vim configures/common/casdoor/casdoor.yml
 # 2. 检查更新并自动递增版本
 ./check-update.sh --update --packages casdoor
 
-# 3. 重新构建并上传
-./build-components.sh --packages casdoor --def --upload prod
+# 3. 重新构建并上传（--pack = build/pack/index 完整流程）
+./build-components.sh --packages casdoor --pack --upload prod
 
 # 4. 更新 manifest
 ./gen-manifest.sh
@@ -733,7 +733,7 @@ vim configures/common/casdoor/casdoor.yml
 1. 使用 [`gen-component.sh`](gen-component.sh:1) 快速生成：`./gen-component.sh --name {name}`
 2. 或手动在 [`components/`](components/) 目录创建 `{name}.json` 配置文件
 3. 在 [`configures/common/`](configures/common/) 目录创建对应配置文件
-4. 运行 `./build-components.sh --packages {name} --def --upload def`
+4. 运行 `./build-components.sh --packages {name} --pack --upload def`
 
 ### Q3: 包上传到哪里？
 

@@ -14,7 +14,8 @@ set -e
 # Step 5: 调用gen-manifest.sh生成costrict-system/manifest.json；
 #         gen-manifest.sh可能修改了costrict-system的内容，因此再次检查并递增其版本；
 # Step 6: 调用check-build.sh检查哪些component包当前版本尚未打包；
-#         若有，调用build-components.sh执行clean/build/pack/index流程（若指定--upload则上传至云环境），否则跳过。
+#         若有，调用build-components.sh执行--clean --pack（--pack = build/pack/index 完整流程，
+#         若指定--upload则上传至云环境），否则跳过。
 #
 # 说明：check-update.sh 只负责自动递增包的版本号，不再用于获取待构建的包列表；
 #       待构建的包列表统一由 check-build.sh 获取。
@@ -37,10 +38,15 @@ set -e
 #                          示例：--push docker, --push hub, --push nfs, --push test,prod,
 #                                --push all, --push test,hub
 #   --pack <target>        指定要打包的组件包列表（Step 6），传给 build-components.sh 的 --packages 选项
+#                          （内部以 build-components.sh --clean --pack 执行 build/pack/index 完整流程）
 #                          target 为逗号分隔的包名列表（如 "firmware,costrict-system"），或下列值之一：
 #                            all  - 构建所有组件包
 #                            auto - 自动检测需要构建的组件包（默认行为，通过 check-build.sh 检测）
 #   --upload <env>         作为 --pack 的子动作，指定包上传的环境，会传给 build-components.sh
+#   --version <version>    指定本次发布的 costrict-system 版本号（Step 5 中使用）
+#                          指定时，在调用 gen-manifest.sh 之后，将该版本号写入
+#                          components/costrict-system.json 的 version 字段，不再自动递增；
+#                          未指定时，调用 check-update.sh 检测 costrict-system 变更并自动递增版本号
 
 source ./.env
 
@@ -79,6 +85,10 @@ show_help() {
     echo "                          auto - 自动检测需要构建的组件包"
     echo "                        无此选项，则无需构建组件包"
     echo "    --upload <env>      作为 --pack 的子动作，指定包上传的环境 (会传递给 build-components.sh)"
+    echo "  --version <version>   指定 costrict-system 发布版本号（Step 5）"
+    echo "                        指定时，在 gen-manifest.sh 之后将该版本号写入"
+    echo "                        components/costrict-system.json 的 version 字段（跳过自动递增）；"
+    echo "                        未指定时，自动检测 costrict-system 变更并递增版本号"
     echo "  --help, -h            显示此帮助信息"
     echo ""
     echo "执行步骤:"
@@ -87,7 +97,8 @@ show_help() {
     echo "     (若指定 --build <target>，则按指定目标构建：all=全部, auto=自动检测, 或指定包名列表)"
     echo "  3. 调用 gen-backend-spec.sh 生成 backend/system-spec.json"
     echo "  4. 检测 component 包变更并自动递增版本号"
-    echo "  5. 调用 gen-manifest.sh 生成系统清单，并重新检查 costrict-system 版本"
+    echo "  5. 调用 gen-manifest.sh 生成系统清单，并更新 costrict-system 版本"
+    echo "     (指定 --version 时写入指定版本号，否则自动递增版本号)"
     echo "  6. 检查尚未打包的 component 包，若有则调用 build-components.sh 构建、打包并索引"
     echo "     (若指定 --pack <target>，则按指定目标打包：all=全部, auto=自动检测, 或指定包名列表)"
     echo ""
@@ -104,6 +115,7 @@ show_help() {
     echo "  $0 --pack all                         # 跳过检查，重新打包所有组件"
     echo "  $0 --pack firmware,costrict-system    # 打包指定的组件"
     echo "  $0 --pack auto --upload prod          # 构建包并上传到 prod 环境"
+    echo "  $0 --version 1.0.300                  # 以指定版本号发布 costrict-system"
     echo ""
 }
 
@@ -114,6 +126,7 @@ NEED_UPDATE=false
 NEED_LOCAL=false
 BUILD_TARGET=""
 PACK_TARGET=""
+SYSTEM_VERSION=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -135,6 +148,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --pack)
             PACK_TARGET="$2"
+            shift 2
+            ;;
+        --version)
+            SYSTEM_VERSION="$2"
             shift 2
             ;;
         --local)
@@ -163,7 +180,7 @@ fi
 
 UPLOAD_OPT=""
 if [ -n "$UPLOAD_ENV" ]; then
-    PUSH_OPT="--upload $UPLOAD_ENV"
+    UPLOAD_OPT="--upload $UPLOAD_ENV"
 fi
 
 # Step 1: 仅当 --update 为 true 时，调用check-update.sh自动递增dependency包的版本号
@@ -234,8 +251,16 @@ echo "----------------------------------------------------------------"
 echo "Step 5: Generating system manifest and re-checking costrict-system version..."
 echo "----------------------------------------------------------------"
 ./gen-manifest.sh
-# gen-manifest.sh 可能修改了costrict-system的内容，重新检查并递增其版本
-./check-update.sh --update --build-type component -p costrict-system
+# gen-manifest.sh 可能修改了costrict-system的内容：
+# 若指定了 --version，则将指定版本号写入 components/costrict-system.json（构建固定发布版本）；
+# 否则调用 check-update.sh 重新检查并自动递增其版本号
+if [ -n "$SYSTEM_VERSION" ]; then
+    echo "Setting costrict-system version to $SYSTEM_VERSION ..."
+    jq --arg version "$SYSTEM_VERSION" '.version = $version' components/costrict-system.json > components/costrict-system.json.tmp
+    mv components/costrict-system.json.tmp components/costrict-system.json
+else
+    ./check-update.sh --update --build-type component -p costrict-system
+fi
 
 # Step 6: 打包组件包
 # 若 --pack 未指定（PACK_TARGET 为空），跳过组件包打包
@@ -248,12 +273,12 @@ if [ -z "$PACK_TARGET" ]; then
     echo "----------------------------------------------------------------"
 elif [ "$PACK_TARGET" = "all" ]; then
     echo "----------------------------------------------------------------"
-    echo "Step 6: Building all component packages (clean/build/pack/index)..."
+    echo "Step 6: Building all component packages (clean + build/pack/index full pipeline)..."
     echo "----------------------------------------------------------------"
-    ./build-components.sh --clean --build --pack --index $UPLOAD_OPT
+    ./build-components.sh --clean --pack $UPLOAD_OPT
 elif [ "$PACK_TARGET" = "auto" ]; then
     echo "----------------------------------------------------------------"
-    echo "Step 6: Checking and building component packages (clean/build/pack/index)..."
+    echo "Step 6: Checking and building component packages (clean + build/pack/index full pipeline)..."
     echo "----------------------------------------------------------------"
     # check-build.sh 以未打包包的数量作为退出码，当存在未打包包时返回非0，
     # 此处使用 '|| true' 防止 set -e 中断脚本执行
@@ -264,7 +289,7 @@ elif [ "$PACK_TARGET" = "auto" ]; then
         echo "----------------------------------------------------------------"
         echo "Building packages..."
         echo "----------------------------------------------------------------"
-        ./build-components.sh --packages "$need_pack_packages" --clean --build --pack --index $UPLOAD_OPT
+        ./build-components.sh --packages "$need_pack_packages" --clean --pack $UPLOAD_OPT
     else
         echo "No 'component' packages need building, skipping..."
     fi
@@ -272,7 +297,7 @@ else
     echo "----------------------------------------------------------------"
     echo "Step 6: Building specified component packages: $PACK_TARGET ..."
     echo "----------------------------------------------------------------"
-    ./build-components.sh --packages "$PACK_TARGET" --clean --build --pack --index $UPLOAD_OPT
+    ./build-components.sh --packages "$PACK_TARGET" --clean --pack $UPLOAD_OPT
 fi
 
 echo "Build costrict completed!"

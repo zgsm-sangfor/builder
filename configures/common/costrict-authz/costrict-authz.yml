@@ -1,0 +1,10 @@
+services:
+  costrict-authz:
+    image: ${IMAGE_COSTRICT_AUTHZ}
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ${COSTRICT_DATA_DIR}/backend/costrict-authz/logs:/app/logs
+    networks:
+      - shenma

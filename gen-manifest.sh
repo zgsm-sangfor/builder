@@ -1,6 +1,8 @@
 #!/bin/bash
-# gen-manifest.sh
+#
+# 生成系统组件清单，costrict-admin可根据清单更新整个系统
 # 该脚本以 costrict-manifest.json 为模板，补全组件版本信息，输出到 configures/costrict-system/manifest.json
+#
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_FILE="$SCRIPT_DIR/costrict-manifest.json"

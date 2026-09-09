@@ -1,5 +1,5 @@
 #!/bin/bash
-# gen-backend-spec.sh
+# gen-backend-spec.sh 生成后端子系统的组件和服务定义
 # 1. 扫描 components 目录下所有模块定义 JSON，筛选出 enabled 且 subsystem=backend 的模块，
 #    提取 name→component_name, display_name, description, dependences，
 #    覆盖 costrict-backend-spec.json 中的 components 字段。

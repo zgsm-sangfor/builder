@@ -1,0 +1,12 @@
+{
+  "component_name": "costrict-authz",
+  "services": [
+    {
+      "service_name": "costrict-authz",
+      "display_name": "授权访问",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_APISIX_ENTRY }}",
+      "health_url": "http://localhost:8080/healthz",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/costrict-authz/logs/costrict-authz.log"
+    }
+  ]
+}

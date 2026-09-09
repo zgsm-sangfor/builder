@@ -103,21 +103,21 @@ usage() {
     echo "Usage: build-depends.sh [OPTIONS] [ACTIONS]"
     echo "Options:"
     echo "  -p, --packages <PACKAGES>    Package list (comma-separated, e.g., \"pkg1\", \"pkg1,pkg2,pkg3\")"
-    echo "  --local                      Use local build mode (read build commands from .build instead of .pull)"
-    echo "  -h, --help                   Help information"
+    echo "  --local       Use local build mode (read build commands from .build instead of .pull)"
+    echo "  -h, --help    Help information"
     echo "Actions:"
-    echo "  --build                      Need build depends"
-    echo "  --update                     Update component information using the built dependencies"
-    echo "  --push <ENV>                 Push depends. ENV must be specified; comma-separated env list or keywords:"
-    echo "                               docker    - push to docker hub"
-    echo "                               hub       - push to docker hub + DH_ENV_NAMES(${DH_ENV_NAMES[*]})"
-    echo "                               nfs       - push to NFS_ENV_NAMES(${NFS_ENV_NAMES[*]})"
-    echo "                               all       - push to docker hub + DH_ENV_NAMES(${DH_ENV_NAMES[*]})"
-    echo "                                                          + NFS_ENV_NAMES(${NFS_ENV_NAMES[*]})"
-    echo "                               <custom>  - specific environment name, selectable from DH_ENV_NAMES(${DH_ENV_NAMES[*]})"
-    echo "                                                          or NFS_ENV_NAMES(${NFS_ENV_NAMES[*]})"
-    echo "                               Examples: \"--push docker\", \"--push hub\", \"--push nfs\","
-    echo "                                         \"--push test,prod\", \"--push all\", \"--push test,hub\""
+    echo "  --build       Need build depends"
+    echo "  --update      Update component information using the built dependencies"
+    echo "  --push <ENV>  Push depends. ENV must be specified; comma-separated env list or keywords:"
+    echo "      docker    - push to docker hub"
+    echo "      hub       - push to docker hub + DH_ENV_NAMES(${DH_ENV_NAMES[*]})"
+    echo "      nfs       - push to NFS_ENV_NAMES(${NFS_ENV_NAMES[*]})"
+    echo "      all       - push to docker hub + DH_ENV_NAMES(${DH_ENV_NAMES[*]})"
+    echo "                                 + NFS_ENV_NAMES(${NFS_ENV_NAMES[*]})"
+    echo "      <custom>  - specific environment name, selectable from DH_ENV_NAMES(${DH_ENV_NAMES[*]})"
+    echo "                                 or NFS_ENV_NAMES(${NFS_ENV_NAMES[*]})"
+    echo "      Examples: \"--push docker\", \"--push hub\", \"--push nfs\","
+    echo "                \"--push test,prod\", \"--push all\", \"--push test,hub\""
     exit 1
 }
 
@@ -126,7 +126,7 @@ usage() {
 #   $1: type - "dependency" 或 "component"
 #   $2: package_name - 包名
 #   $3: version - 版本号
-#   $4: field - 时间戳字段 ("build", "update", "push")
+#   $4: field - 时间戳字段 ("build", "update", "push", "pack", "upload")
 write_build_json() {
     local type="$1"
     local package_name="$2"
@@ -523,12 +523,8 @@ save_docker_image() {
     local image_full_name=$(render_template_ex "${depend_repo}/${depend_name}:${depend_tag}" "$package_file")
     local tar_file=$(render_template_ex "${depend_name}-${depend_tag}.tar" "$package_file")
     
-    echo "=============================================="
-    echo "Exporting image: $image_full_name"
-    echo "=============================================="
-    
     # 导出镜像为tar文件
-    echo "Saving image to ${image_dir}/${tar_file}..."
+    echo "Exporting image ${image_full_name} to ${image_dir}/${tar_file}..."
     docker save -o "${image_dir}/${tar_file}" "$image_full_name"
     if [ $? -ne 0 ]; then
         echo "Error: Failed to export image $image_full_name"

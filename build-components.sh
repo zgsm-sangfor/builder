@@ -34,10 +34,7 @@ usage() {
     echo "  -h, --help           Help information"
     echo "Actions:"
     echo "  --clean              Clean the earlier versions"
-    echo "  --build              Compile or build the module to be packaged"
-    echo "  --pack               Package and sign the module"
-    echo "  --index              Create an index for the constructed package"
-    echo "  --def                Execute default steps (build, pack, index)"
+    echo "  --pack               Run the full pipeline: build -> pack -> index"
     echo "  --upload <env>       Upload package to <env> (comma-separated env list)"
     echo "                       Supported envs: names from .env ENV_NAMES array (${ENV_NAMES[*]})"
     echo "                       Keywords: def (${ENV_NAMES[0]}), all (${ENV_NAMES[*]})"
@@ -81,7 +78,7 @@ enable_upload() {
 #   $1: type - "dependency" 或 "component"
 #   $2: package_name - 包名
 #   $3: version - 版本号
-#   $4: field - 时间戳字段 ("build", "update", "push", "upload")
+#   $4: field - 时间戳字段 ("build", "update", "push", "pack", "upload")
 write_build_json() {
     local type="$1"
     local package_name="$2"
@@ -106,9 +103,7 @@ write_build_json() {
                 package: $pkg,
                 version: $ver,
                 timestamp: {
-                    build: (if $field == "build" then $time else "" end),
-                    update: (if $field == "update" then $time else "" end),
-                    push: (if $field == "push" then $time else "" end),
+                    pack: (if $field == "pack" then $time else "" end),
                     upload: (if $field == "upload" then $time else "" end)
                 }
             }' > "$build_file"
@@ -121,11 +116,9 @@ write_build_json() {
 KEY_FILE="costrict-private.pem"
 
 # 默认参数值
-# NEED_UPDATE=false
 NEED_CLEAN=false
-NEED_BUILD=false
+# NEED_PACK=true 时执行完整打包流程（build + pack + index）
 NEED_PACK=false
-NEED_INDEX=false
 NEED_UPLOAD=false
 NEED_UPLOAD_PACKAGES=false
 UPLOAD_TARGETS=()
@@ -133,7 +126,7 @@ PACKAGE_TYPE=""
 PACKAGES=""
 
 # Parse command line options
-args=$(getopt -o hp:K: --long help,packages:,kind:,type:,key:,clean,build,pack,index,def,upload:,upload-packages: -n 'build-components.sh' -- "$@")
+args=$(getopt -o hp:K: --long help,packages:,kind:,type:,key:,clean,pack,upload:,upload-packages: -n 'build-components.sh' -- "$@")
 [ $? -ne 0 ] && usage
 
 eval set -- "$args"
@@ -143,12 +136,8 @@ while true; do
         -p|--packages) PACKAGES="$2"; shift 2;;
         --type) PACKAGE_TYPE="$2"; shift 2;;
         --key) KEY_FILE="$2"; shift 2;;
-        # --update) NEED_UPDATE=true; shift;;
         --clean) NEED_CLEAN=true; shift;;
-        --build) NEED_BUILD=true; shift;;
         --pack) NEED_PACK=true; shift;;
-        --index) NEED_INDEX=true; shift;;
-        --def) NEED_BUILD=true; NEED_PACK=true; NEED_INDEX=true; shift;;
         --upload) enable_upload "$2"; shift 2;;
         --upload-packages) enable_upload "$2"; NEED_UPLOAD_PACKAGES=true; shift 2;;
         -h|--help) usage; exit 0;;
@@ -688,20 +677,18 @@ process_package() {
         echo "Skipping clean step for ${package_name}..."
     fi
 
-    if [ "$NEED_BUILD" = true ]; then
+    if [ "$NEED_PACK" = true ]; then
+        echo "Running full package pipeline for ${package_name} (build -> pack -> index)..."
+
+        # --- build 步骤: 编译/组装待打包内容 ---
         echo "Building target for ${package_name}..."
         build_package "${package_name}"
         if [ $? -ne 0 ]; then
             echo "Error: Build failed for ${package_name}"
             exit 1
         fi
-        # 写入 build.json 记录构建完成时间戳
-        write_build_json "component" "${pkg_name}" "${pkg_version}" "build"
-    else
-        echo "Skipping build step for ${package_name}..."
-    fi
 
-    if [ "$NEED_PACK" = true ]; then
+        # --- pack 步骤: 签名打包 ---
         echo "Building package.json for ${package_name}..."
         # 检查私钥文件是否存在
         if [ ! -f "${KEY_FILE}" ]; then
@@ -712,15 +699,15 @@ process_package() {
             [ -d "${package_dir}" ] || continue
             pack_dir_packages "${package_dir}"
         done
-    else
-        echo "Skipping package step for ${package_name}..."
-    fi
 
-    if [ "$NEED_INDEX" = true ]; then
+        # --- index 步骤: 生成索引 ---
         echo "Building index for ${package_name}..."
         index_packages "packages/${package_name}"
+
+        # 写入 build.json 记录构建完成时间戳
+        write_build_json "component" "${pkg_name}" "${pkg_version}" "pack"
     else
-        echo "Skipping index step for ${package_name}..."
+        echo "Skipping full package pipeline (build/pack/index) for ${package_name}..."
     fi
 
     if [ "$NEED_UPLOAD" = true ]; then

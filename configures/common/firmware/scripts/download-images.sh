@@ -135,7 +135,7 @@ for image in $IMAGES; do
     output_parent=$(dirname "$output_path")
     mkdir -p "$output_parent"
 
-    log "INFO" "正在下载: $image  ->  $file_url"
+    log "INFO" "正在下载 $file_url >>> $image"
 
     has_error=false
     if [ "$download_cmd" = "wget" ]; then

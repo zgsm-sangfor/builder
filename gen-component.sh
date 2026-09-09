@@ -230,7 +230,7 @@ RESULT=$(jq -n \
         subsystem: ($subsystem | if . != "" then . else null end),
         enabled: (if $enabled == "false" then false else null end),
         description: ($description | if . != "" then . else null end)
-    } | with_entries(select(.value != null))'
+    } | with_entries(select(.value != null))')
 
 # ---- 写入组件定义文件 ----
 COMPONENTS_DIR="components"
@@ -472,5 +472,5 @@ echo ""
 echo "Source directory: ${PATH_VALUE}"
 echo ""
 echo "You can now build it with:"
-echo "  ./build-components.sh -p ${NAME} --def"
-echo "(--def = --build + --pack + --index)"
+echo "  ./build-components.sh -p ${NAME} --pack"
+echo "(--pack = build + pack + index 完整流程；如需清理旧版本可加 --clean)"

@@ -11,12 +11,17 @@
     {
       "os": "linux",
       "arch": "amd64"
+    },
+    {
+      "os": "linux",
+      "arch": "arm64"
     }
   ],
   "build": {
     "workdir": "../costrict-admin/daemon"
   },
   "pull": {
+    "workdir": ".",
     "command": "github-fetch-release.sh --repo zgsm-sangfor/costrict-admin --package costrict-daemon --os {{os}} --arch {{arch}} --version {{.version}}"
   },
   "version": "1.0.138",
