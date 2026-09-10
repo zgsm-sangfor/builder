@@ -1,6 +1,6 @@
 {
   "name": "costrict-admin",
-  "type": "docker",
+  "type": "exec",
   "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
   "path": "../costrict-admin",
   "sources": [

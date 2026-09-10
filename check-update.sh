@@ -30,7 +30,10 @@ print_usage() {
     echo "  -t, --build-type      Build type: dependency or component (default: component)"
     echo "  -p, --packages        Only check specified packages (comma-separated list)"
     echo "  -u, --update          Update package version when checksum changes"
-    echo "  --local               Use local mode: check by local directory checksum (default: check by GitHub tag for docker type)"
+    echo "  --local               Use local mode. Packages listed in local.json (field 'packages') are"
+    echo "                        checked by local directory checksum; other packages fetch their"
+    echo "                        version from GitHub tag (when --local is not set, all packages"
+    echo "                        fetch their version from GitHub tag)"
     echo "  -v, --verbose         Show checksum calculation details for each file"
     echo "  -h, --help            Show this help message"
 }
@@ -57,6 +60,39 @@ is_module_enabled() {
     fi
     
     return 0
+}
+
+# local.json 文件路径：定义需要本地构建（本地模式）的模块列表
+# 结构示例：{ "packages": ["pkg1", "pkg2"] }
+# 可通过环境变量 LOCAL_JSON 覆盖默认路径
+LOCAL_JSON="${LOCAL_JSON:-local.json}"
+
+# 判断模块是否在 local.json 的 packages 列表中
+# 参数: $1 - 模块名
+# 返回: 0=在列表中, 1=不在列表中
+is_in_local_list() {
+    local pkg="$1"
+    if [ ! -f "$LOCAL_JSON" ]; then
+        return 1
+    fi
+    local found
+    found=$(jq -r --arg pkg "$pkg" '(.packages // []) | any(. == $pkg)' "$LOCAL_JSON" 2>/dev/null)
+    if [ "$found" = "true" ]; then
+        return 0
+    fi
+    return 1
+}
+
+# 判断模块是否使用本地模式
+# 本地模式条件：启用了 --local 选项，且模块在 local.json 的列表中
+# 参数: $1 - 模块名
+# 返回: 0=使用本地模式, 1=使用远程(github)模式
+is_local_package() {
+    local pkg="$1"
+    if [ "$USE_LOCAL_MODE" = true ] && is_in_local_list "$pkg"; then
+        return 0
+    fi
+    return 1
 }
 
 prompt_verbose() {
@@ -527,15 +563,10 @@ check_package_dirty() {
     if [ "$BUILD_TYPE" = "dependency" ]; then
         # dependency: 类型为 exec / docker / frontend
         case "$package_type" in
-            exec|frontend)
-                # exec/frontend类型：扫描主目录及sources目录
-                local result=$(calculate_multi_directory "$package_type" "$package_path" "$package_file")
-                new_checksum=$(echo "$result" | head -n1)
-                new_file_count=$(echo "$result" | tail -n1)
-                ;;
-            docker)
-                # docker类型：根据USE_LOCAL_MODE选择检查方式
-                if [ "$USE_LOCAL_MODE" = true ]; then
+            exec|frontend|docker)
+                # 使用本地模式的条件：启用了 --local 且模块在 local.json 列表中；
+                # 否则（未启用 --local，或模块不在列表中）一律从 GitHub 获取最新版本（tag）
+                if is_local_package "$package_name"; then
                     # 本地模式：通过本地目录checksum检测版本变化
                     local result=$(calculate_multi_directory "$package_type" "$package_path" "$package_file")
                     new_checksum=$(echo "$result" | head -n1)
@@ -682,7 +713,7 @@ main() {
                 fi
             done
         else
-            # 检查模块是否启用，如果禁用则跳过
+            # 检查模块是否启用，如果禁用则跳过（禁用模块不做任何处理）
             if ! is_module_enabled "$package_file"; then
                 # log "INFO" "Module '$package_name' is disabled, skipping..."
                 skip_packages+=("$package_name")

@@ -76,9 +76,11 @@ show_help() {
     echo "                                                          或 NFS_ENV_NAMES(${NFS_ENV_NAMES[*]})"
     echo "                        Examples: \"--push docker\", \"--push hub\", \"--push nfs\","
     echo "                                  \"--push test,prod\", \"--push all\", \"--push test,hub\""
-    echo "    --local             作为 --build 的子选项，将 --local 传递给"
-    echo "                        check-update.sh（Step 1）和 build-depends.sh（Step 2），"
-    echo "                        使它们仅使用本地已存在的项目信息，不尝试从远程拉取"
+    echo "    --local             启用本地构建模式，并将 --local 传递给"
+    echo "                        check-update.sh（Step 1）和 build-depends.sh（Step 2）；"
+    echo "                        此时从 local.json 的 packages 字段读取需要本地构建的模块列表："
+    echo "                        列表中的模块使用本地源码构建/检测，列表外的模块从 GitHub 获取"
+    echo "                        版本列表与编译结果（未启用 --local 时，所有模块均从 GitHub 获取）"
     echo "  --pack <target>       指定要打包的组件包（Step 6）"
     echo "                        target 为逗号分隔的包名列表（如 \"firmware,costrict-system\"），或："
     echo "                          all  - 构建所有组件包"
@@ -176,6 +178,20 @@ fi
 LOCAL_OPT=""
 if [ "$NEED_LOCAL" = true ]; then
     LOCAL_OPT="--local"
+fi
+
+# 当启用 --local 时，从 local.json 读取需要本地构建的模块列表（packages 字段）
+# 列表中的模块由下层脚本（check-update.sh / build-depends.sh）使用本地源码构建/检测；
+# 列表外的模块从 GitHub 获取版本列表与编译结果
+LOCAL_JSON="${LOCAL_JSON:-local.json}"
+if [ "$NEED_LOCAL" = true ]; then
+    if [ -f "$LOCAL_JSON" ]; then
+        LOCAL_PACKAGES=$(jq -r '(.packages // []) | join(",")' "$LOCAL_JSON" 2>/dev/null || true)
+        echo "--local enabled: local build packages from $LOCAL_JSON = ${LOCAL_PACKAGES:-<empty>}"
+    else
+        echo "Warning: --local enabled but '$LOCAL_JSON' not found;"
+        echo "         no package will be built locally, all packages use remote(github) mode."
+    fi
 fi
 
 UPLOAD_OPT=""

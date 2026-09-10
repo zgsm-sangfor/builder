@@ -92,6 +92,10 @@
 #                       上传方式是，使用docker login登录（使用环境相关参数），然后docker push推送
 #                       注意：仅对docker类型生效，exec/frontend类型跳过此步骤
 #
+#   --local             本地构建模式。从local.json的packages字段读取需要本地构建的模块列表：
+#                       列表内的模块使用本地源码构建（.build），列表外的模块从GitHub获取编译
+#                       结果（.pull）。未指定该选项时，所有模块均从GitHub获取（.pull）。
+#
 
 source ./.env
 
@@ -103,7 +107,9 @@ usage() {
     echo "Usage: build-depends.sh [OPTIONS] [ACTIONS]"
     echo "Options:"
     echo "  -p, --packages <PACKAGES>    Package list (comma-separated, e.g., \"pkg1\", \"pkg1,pkg2,pkg3\")"
-    echo "  --local       Use local build mode (read build commands from .build instead of .pull)"
+    echo "  --local       Use local build mode. Only packages listed in local.json"
+    echo "                (field 'packages') are built locally from source (.build);"
+    echo "                other packages are fetched remotely from GitHub (.pull)"
     echo "  -h, --help    Help information"
     echo "Actions:"
     echo "  --build       Need build depends"
@@ -248,6 +254,39 @@ while true; do
     esac
 done
 
+# local.json 文件路径：定义需要本地构建（本地模式）的模块列表
+# 结构示例：{ "packages": ["pkg1", "pkg2"] }
+# 可通过环境变量 LOCAL_JSON 覆盖默认路径
+LOCAL_JSON="${LOCAL_JSON:-local.json}"
+
+# 判断模块是否在 local.json 的 packages 列表中
+# 参数: $1 - 模块名
+# 返回: 0=在列表中, 1=不在列表中
+is_in_local_list() {
+    local pkg="$1"
+    if [ ! -f "$LOCAL_JSON" ]; then
+        return 1
+    fi
+    local found
+    found=$(jq -r --arg pkg "$pkg" '(.packages // []) | any(. == $pkg)' "$LOCAL_JSON" 2>/dev/null)
+    if [ "$found" = "true" ]; then
+        return 0
+    fi
+    return 1
+}
+
+# 判断模块是否使用本地模式
+# 本地模式条件：启用了 --local 选项，且模块在 local.json 的列表中
+# 参数: $1 - 模块名
+# 返回: 0=使用本地模式, 1=使用远程(github)模式
+is_local_package() {
+    local pkg="$1"
+    if [ "$USE_LOCAL_MODE" = true ] && is_in_local_list "$pkg"; then
+        return 0
+    fi
+    return 1
+}
+
 # Function to get value from JSON using jq expression
 # 参数: $1 - json file path, $2 - jq expression (text extracted from {{}})
 # 使用jq从json_file获取数据，只负责获取值，不做模板替换（模板替换由render_template_ex的循环负责）
@@ -341,7 +380,7 @@ build_single_platform() {
 # - docker: 构建/拉取 docker 镜像，构建后导出为 tar
 # - frontend: 构建前端静态资源（不涉及 docker 镜像导出）
 # 参数: $1 - package, $2 - config_file, $3 - name, $4 - path, $5 - version, $6 - type
-build_other_dependency() {
+build_overall_dependency() {
     local package="$1"
     local package_file="$2"
     local depend_name="$3"
@@ -354,12 +393,12 @@ build_other_dependency() {
     local depend_command=""
     local depend_workdir=""
     
-    if [ "$USE_LOCAL_MODE" = true ]; then
-        # 本地构建模式：从.build读取本地构建命令（如 docker build）
+    if is_local_package "$package"; then
+        # 本地模式：从.build读取本地构建命令（如 docker build / build.py）
         depend_command=$(jq -r ".build.command // empty" "$package_file")
         depend_workdir=$(jq -r ".build.workdir // empty" "$package_file")
     else
-        # 默认模式：从.pull读取远程拉取命令（如 docker pull）
+        # 远程模式：从.pull读取远程拉取命令（如 docker pull / github-fetch-release.sh）
         depend_command=$(jq -r ".pull.command // empty" "$package_file")
         depend_workdir=$(jq -r ".pull.workdir // empty" "$package_file")
     fi
@@ -483,8 +522,8 @@ build_dependency() {
         echo "Error: 'path' not found for package '${package}' in ${package_file}!"
         return 1
     fi
-    # 统一委托给 build_other_dependency（支持 exec / docker / frontend 所有类型）
-    build_other_dependency "$package" "$package_file" "$depend_name" "$depend_path" "$depend_version" "$depend_type"
+    # 统一委托给 build_overall_dependency（支持 exec / docker / frontend 所有类型）
+    build_overall_dependency "$package" "$package_file" "$depend_name" "$depend_path" "$depend_version" "$depend_type"
     return $?
 }
 
@@ -878,7 +917,7 @@ process_packages() {
         if [ -d "depends" ]; then
             for json_file in depends/*.json; do
                 if [ -f "$json_file" ]; then
-                    # 检查模块是否启用，如果禁用则跳过
+                    # 检查模块是否启用，如果禁用则跳过（禁用模块不做任何处理）
                     if is_module_enabled "$json_file"; then
                         local package_name=$(basename "$json_file" .json)
                         package_list+=("$package_name")
