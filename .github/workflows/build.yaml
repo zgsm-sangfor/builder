@@ -53,14 +53,17 @@ jobs:
       - name: Run build-costrict.sh
         env:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+          GITHUB_FIRST: 1
         run: |
           chmod +x *.sh
           ./build-costrict.sh --update --build all --pack all --version "${{ env.VERSION }}"
 
       - name: Run build-mirror.sh
+        env:
+          GITHUB_FIRST: 1
         run: |
           chmod +x *.sh
-          ./build-mirror.sh --ignore-images
+          ./build-mirror.sh --ignore-images --github-first
 
       - name: Prepare package repository artifact
         run: |

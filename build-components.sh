@@ -821,26 +821,70 @@ if ! command -v smc >/dev/null 2>&1; then
     echo "Warning: smc command not found, attempting to download..."
     SMC_DIR="$HOME/.costrict/bin"
     SMC_BIN="$SMC_DIR/smc"
-    SMC_URL="https://zgsm.sangfor.com/costrict/smc/linux/amd64/1.1.18/smc"
+
+    # 根据当前操作系统确定 SMC_OS
+    SMC_UNAME_OS=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]')
+    case "$SMC_UNAME_OS" in
+        linux*)  SMC_OS="linux" ;;
+        darwin*) SMC_OS="darwin" ;;
+        *)       SMC_OS="$SMC_UNAME_OS" ;;
+    esac
+
+    # 根据当前芯片架构确定 SMC_ARCH
+    SMC_UNAME_ARCH=$(uname -m 2>/dev/null | tr '[:upper:]' '[:lower:]')
+    case "$SMC_UNAME_ARCH" in
+        x86_64|amd64)  SMC_ARCH="amd64" ;;
+        aarch64|arm64) SMC_ARCH="arm64" ;;
+        i386|i686)     SMC_ARCH="386" ;;
+        *)             SMC_ARCH="$SMC_UNAME_ARCH" ;;
+    esac
+
+    SMC_VERSION="1.1.18"
+    # zgsm 源：使用 <os>/<arch> 路径风格
+    SMC_ZGSM_URL="https://zgsm.sangfor.com/costrict/smc/${SMC_OS}/${SMC_ARCH}/${SMC_VERSION}/smc"
+    # github 源：使用 <os>-<arch> 连字符风格
+    SMC_GITHUB_URL="https://github.com/zgsm-sangfor/smc/releases/download/v${SMC_VERSION}/smc-${SMC_OS}-${SMC_ARCH}-v${SMC_VERSION}"
+
+    # 根据 GITHUB_FIRST 决定优先下载来源（true/1/yes 表示优先 github，否则优先 zgsm）
+    case "$(echo "${GITHUB_FIRST}" | tr '[:upper:]' '[:lower:]')" in
+        true|1|yes)
+            SMC_PRIMARY_URL="${SMC_GITHUB_URL}"
+            SMC_FALLBACK_URL="${SMC_ZGSM_URL}"
+            ;;
+        *)
+            SMC_PRIMARY_URL="${SMC_ZGSM_URL}"
+            SMC_FALLBACK_URL="${SMC_GITHUB_URL}"
+            ;;
+    esac
 
     if [ -f "$SMC_BIN" ]; then
         # 如果文件已存在但不在PATH中，添加到PATH
         export PATH="$PATH:$SMC_DIR"
         echo "smc found at $SMC_BIN, added to PATH"
     else
-        # 创建目录并使用curl下载，如果curl不可用则使用wget
+        # 创建目录并依次尝试主、备下载地址；优先使用 curl，其次使用 wget
         mkdir -p "$SMC_DIR"
-        echo "Downloading smc from $SMC_URL ..."
-        if curl -fsSL -o "$SMC_BIN" "$SMC_URL" 2>/dev/null; then
-            chmod +x "$SMC_BIN"
-            export PATH="$PATH:$SMC_DIR"
-            echo "smc downloaded and installed to $SMC_BIN"
-        elif wget -q -O "$SMC_BIN" "$SMC_URL" 2>/dev/null; then
-            chmod +x "$SMC_BIN"
-            export PATH="$PATH:$SMC_DIR"
-            echo "smc downloaded and installed to $SMC_BIN"
-        else
-            echo "Error: Failed to download smc from $SMC_URL"
+        SMC_DOWNLOADED=false
+        for SMC_URL in "$SMC_PRIMARY_URL" "$SMC_FALLBACK_URL"; do
+            echo "Downloading smc from $SMC_URL ..."
+            if curl -fsSL -o "$SMC_BIN" "$SMC_URL" 2>/dev/null; then
+                chmod +x "$SMC_BIN"
+                export PATH="$PATH:$SMC_DIR"
+                echo "smc downloaded and installed to $SMC_BIN"
+                SMC_DOWNLOADED=true
+                break
+            elif wget -q -O "$SMC_BIN" "$SMC_URL" 2>/dev/null; then
+                chmod +x "$SMC_BIN"
+                export PATH="$PATH:$SMC_DIR"
+                echo "smc downloaded and installed to $SMC_BIN"
+                SMC_DOWNLOADED=true
+                break
+            fi
+        done
+        if [ "$SMC_DOWNLOADED" != "true" ]; then
+            echo "Error: Failed to download smc from both sources:"
+            echo "  - $SMC_PRIMARY_URL"
+            echo "  - $SMC_FALLBACK_URL"
             echo "Please download it manually to $SMC_BIN"
             exit 1
         fi
