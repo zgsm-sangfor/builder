@@ -91,7 +91,10 @@ jobs:
           if [[ -n $(git status --porcelain) ]]; then
             git add .
             git commit -m "chore: auto build and update packages [skip ci]"
-            git push origin main
+            # 该 workflow 由 tag 触发，checkout 后处于 detached HEAD 状态，
+            # 本地不存在 main 分支，直接 push origin main 会报
+            # "src refspec main does not match any"，因此改用 HEAD:main
+            git push origin HEAD:main
             echo "Changes committed and pushed"
           else
             echo "No changes to commit"

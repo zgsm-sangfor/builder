@@ -126,21 +126,24 @@ download_file() {
 #     - 未指定：优先从 zgsm.sangfor.com 下载，失败时回退到 GitHub
 #   未指定 --force 且本地文件已存在时跳过下载。
 # 参数:
-#   $1 path     站点内的相对文件路径，同时作为本地保存路径
+#   $1 path       站点内的相对文件路径
+#   $2 output_dir 本地输出目录（可选），指定时保存到 <output_dir>/<path>，缺省时保存到当前目录
 # 返回:
 #   0  下载成功或本地已存在（跳过）
 #   1  参数非法或所有站点均下载失败
 #
 fetch_file() {
     local path="$1"
+    local output_dir="$2"
 
     # 去除首尾空白
     path=$(echo "${path}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+    output_dir=$(echo "${output_dir}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
 
     # 去掉 ./ 前缀（防御性处理）
     path="${path#./}"
 
-    # 安全检查：本地保存路径不能为空
+    # 安全检查：路径不能为空
     if [[ -z "${path}" ]]; then
         echo "  [错误] 本地保存路径为空"
         return 1
@@ -152,9 +155,15 @@ fetch_file() {
         return 1
     fi
 
+    # 计算本地保存路径：指定 output_dir 时保存到其目录下
+    local local_path="${path}"
+    if [[ -n "${output_dir}" ]]; then
+        local_path="${output_dir}/${path}"
+    fi
+
     # 未指定 --force 且文件已存在时跳过
-    if [ "$FORCE" != true ] && [ -f "${path}" ]; then
-        echo "  [跳过] ${path} (本地已存在)"
+    if [ "$FORCE" != true ] && [ -f "${local_path}" ]; then
+        echo "  [跳过] ${local_path} (本地已存在)"
         return 0
     fi
 
@@ -173,14 +182,13 @@ fetch_file() {
             continue
         fi
         remote_url="${site}/${path}"
-        if download_file "${remote_url}" "${path}"; then
+        if download_file "${remote_url}" "${local_path}"; then
             return 0
         fi
         # 下载失败时清理可能残留的残缺文件，避免影响后续站点回退
-        rm -f "${path}"
+        rm -f "${local_path}"
         echo "  从 ${site} 下载失败，尝试下一站点..."
     done
-
     echo "  [错误] 所有站点均无法下载: ${path}"
     return 1
 }
@@ -209,11 +217,11 @@ fetch_static_file() {
         return 1
     fi
 
-    # 站点相对路径与本地保存路径一致，均为 ${STATIC_DIR}/<file_path>
+    # 站点相对路径为 <file_path>，本地保存到 ${STATIC_DIR}/<file_path>
     # 但zgsm.sangfor.com的base_url已经包含了costrict-static
     # 由 fetch_file 根据选项优先级选择 GitHub 或 zgsm.sangfor.com 下载
-    fetch_file "${file_path}"
-    mv "${file_path}" "${STATIC_DIR}/${file_path}"
+    # 指定输出目录为 ${STATIC_DIR}，直接保存到 costrict-static 下
+    fetch_file "${file_path}" "${STATIC_DIR}"
 }
 
 # 解析参数

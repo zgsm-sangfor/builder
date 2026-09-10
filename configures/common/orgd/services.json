@@ -1,0 +1,12 @@
+{
+  "component_name": "orgd",
+  "services": [
+    {
+      "service_name": "orgd",
+      "display_name": "组织管理",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_APISIX_ENTRY }}",
+      "health_url": "http://localhost:8080/healthz",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/orgd/logs/orgd.log"
+    }
+  ]
+}
