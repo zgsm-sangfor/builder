@@ -546,7 +546,6 @@ save_docker_image() {
 
     # 以下仅处理 docker 类型
     local depend_name=$(jq -r ".name // empty" "$package_file")
-    local depend_version=$(jq -r ".version // empty" "$package_file")
     local depend_repo=$(jq -r ".repo // empty" "$package_file")
     local depend_tag=$(jq -r ".tag // empty" "$package_file")
     
@@ -644,7 +643,6 @@ push_image() {
     
     # 从depends目录的对应JSON文件中获取配置
     local depend_name=$(jq -r ".name // empty" "$package_file")
-    local depend_version=$(jq -r ".version // empty" "$package_file")
     local depend_repo=$(jq -r ".repo // empty" "$package_file")
     local depend_tag=$(jq -r ".tag // empty" "$package_file")
     

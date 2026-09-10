@@ -1,0 +1,10 @@
+services:
+  authz:
+    image: ${IMAGE_AUTHZ}
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ${COSTRICT_DATA_DIR}/backend/authz/logs:/app/logs
+    networks:
+      - shenma

@@ -1,0 +1,24 @@
+{
+  "name": "authz",
+  "type": "docker",
+  "version": "0.4.7",
+  "remote": "git@github.com:zgsm-sangfor/authd.git",
+  "repo": "zgsm-sangfor",
+  "path": "../authd",
+  "sources": [
+    "../authd/authz"
+  ],
+  "tag": "v{{.version}}",
+  "build": {
+    "workdir": "../authd/authz",
+    "command": "export DOCKER_BUILDKIT=1 && docker build -f ./Dockerfile --build-arg VERSION={{.version}} .. -t {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "pull": {
+    "command": "docker-pull-via.sh --proxy-id ghcr.io/zgsm-sangfor/{{.name}}:{{.tag}} --image-id  {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "update": {
+    "workdir": "./configures/common/authz",
+    "command": "echo IMAGE_AUTHZ={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
+  },
+  "description": "The authz of costrict"
+}

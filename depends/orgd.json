@@ -1,0 +1,24 @@
+{
+  "name": "orgd",
+  "type": "docker",
+  "version": "0.4.7",
+  "remote": "git@github.com:zgsm-sangfor/authd.git",
+  "repo": "zgsm-sangfor",
+  "path": "../authd",
+  "sources": [
+    "../authd/orgd"
+  ],
+  "tag": "v{{.version}}",
+  "build": {
+    "workdir": "../authd/orgd",
+    "command": "export DOCKER_BUILDKIT=1 && docker build -f ./Dockerfile --build-arg VERSION={{.version}} .. -t {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "pull": {
+    "command": "docker-pull-via.sh --proxy-id ghcr.io/zgsm-sangfor/{{.name}}:{{.tag}} --image-id  {{.repo}}/{{.name}}:v{{.version}}"
+  },
+  "update": {
+    "workdir": "./configures/common/orgd",
+    "command": "echo IMAGE_ORGD={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
+  },
+  "description": "The orgd of costrict"
+}

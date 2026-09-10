@@ -1,0 +1,10 @@
+services:
+  orgd:
+    image: ${IMAGE_ORGD}
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ${COSTRICT_DATA_DIR}/backend/orgd/logs:/app/logs
+    networks:
+      - shenma

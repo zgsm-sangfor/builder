@@ -78,12 +78,12 @@
       "version": "1.0.138"
     },
     {
-      "name": "costrict-authz-frontend",
+      "name": "costrict-auth-frontend",
       "subsystem": "backend",
       "version": "1.0.0"
     },
     {
-      "name": "costrict-authz",
+      "name": "authz",
       "subsystem": "backend",
       "version": "1.0.0"
     },
@@ -103,7 +103,7 @@
       "version": "1.0.12"
     },
     {
-      "name": "costrict-orgd",
+      "name": "orgd",
       "subsystem": "backend",
       "version": "1.0.0"
     },

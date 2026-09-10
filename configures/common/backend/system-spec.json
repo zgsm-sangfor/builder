@@ -60,9 +60,9 @@
       ]
     },
     {
-      "component_name": "costrict-authz-frontend",
-      "display_name": "costrict-authz前端页面",
-      "description": "costrict-authz-frontend package component",
+      "component_name": "authz-frontend",
+      "display_name": "authz前端页面",
+      "description": "authz-frontend package component",
       "dependences": [
         {
           "depend_component": "portal",
@@ -71,9 +71,9 @@
       ]
     },
     {
-      "component_name": "costrict-authz",
+      "component_name": "authz",
       "display_name": "",
-      "description": "costrict-authz package component"
+      "description": "authz package component"
     },
     {
       "component_name": "costrict-dept-sync",
@@ -86,9 +86,9 @@
       "description": "简化的大模型网关，聚合多来源多类型大语言模型API"
     },
     {
-      "component_name": "costrict-orgd",
+      "component_name": "orgd",
       "display_name": "",
-      "description": "costrict-orgd package component"
+      "description": "orgd package component"
     },
     {
       "component_name": "costrict-web",
