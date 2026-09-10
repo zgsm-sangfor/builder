@@ -324,6 +324,11 @@
       "version": "1.0.18",
       "checksum": "7c53e74cb8f88aa0912e01227a2ba8c24c9d50f9eed8c863515d7b2f855810d1",
       "file_count": 6
+    },
+    "costrict-auth-frontend": {
+      "version": "1.0.0",
+      "checksum": "b9f818111dcd1a6b9e733a62a71274955c92c3f4812a33ce6a55a67d3f131605",
+      "file_count": 4
     }
   },
   "dependency": {
@@ -448,6 +453,11 @@
       "file_count": 0
     },
     "costrict-orgd": {
+      "version": "0.4.7",
+      "checksum": "v0.4.7",
+      "file_count": 0
+    },
+    "costrict-auth-frontend": {
       "version": "0.4.7",
       "checksum": "v0.4.7",
       "file_count": 0

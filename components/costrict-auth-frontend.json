@@ -1,5 +1,5 @@
 {
-  "name": "costrict-authd-frontend",
+  "name": "costrict-auth-frontend",
   "type": "zip",
   "path": "./configures",
   "version": "1.0.0",
@@ -10,6 +10,6 @@
       "depend_versions": ">=1.0.0"
     }
   ],
-  "display_name": "costrict-authd前端页面",
-  "description": "costrict-authd-frontend package component"
+  "display_name": "costrict-auth前端页面",
+  "description": "costrict-auth-frontend package component"
 }
