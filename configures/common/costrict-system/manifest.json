@@ -33,14 +33,19 @@
       "version": "1.0.6"
     },
     {
+      "name": "authz",
+      "subsystem": "backend",
+      "version": "1.0.1"
+    },
+    {
       "name": "backend",
       "subsystem": "root",
-      "version": "1.0.71"
+      "version": "1.0.72"
     },
     {
       "name": "casdoor",
       "subsystem": "backend",
-      "version": "1.0.32"
+      "version": "1.0.33"
     },
     {
       "name": "chat-indicator-statistics",
@@ -50,7 +55,7 @@
     {
       "name": "chat-rag",
       "subsystem": "backend",
-      "version": "1.0.14"
+      "version": "1.0.15"
     },
     {
       "name": "client-manager",
@@ -80,12 +85,7 @@
     {
       "name": "costrict-auth-frontend",
       "subsystem": "backend",
-      "version": "1.0.0"
-    },
-    {
-      "name": "authz",
-      "subsystem": "backend",
-      "version": "1.0.0"
+      "version": "1.0.1"
     },
     {
       "name": "costrict-daemon",
@@ -100,12 +100,7 @@
     {
       "name": "costrict-model-proxy",
       "subsystem": "backend",
-      "version": "1.0.12"
-    },
-    {
-      "name": "orgd",
-      "subsystem": "backend",
-      "version": "1.0.0"
+      "version": "1.0.13"
     },
     {
       "name": "costrict-web",
@@ -125,7 +120,7 @@
     {
       "name": "es",
       "subsystem": "backend",
-      "version": "1.0.3"
+      "version": "1.0.4"
     },
     {
       "name": "etcd",
@@ -135,17 +130,12 @@
     {
       "name": "firmware",
       "subsystem": "root",
-      "version": "1.0.139"
+      "version": "1.0.140"
     },
     {
       "name": "frontend",
       "subsystem": "root",
       "version": "1.0.6"
-    },
-    {
-      "name": "gitea",
-      "subsystem": "backend",
-      "version": "1.0.0"
     },
     {
       "name": "license-manager",
@@ -160,22 +150,27 @@
     {
       "name": "oidc-auth",
       "subsystem": "backend",
-      "version": "1.0.11"
+      "version": "1.0.12"
+    },
+    {
+      "name": "orgd",
+      "subsystem": "backend",
+      "version": "1.0.1"
     },
     {
       "name": "portal",
       "subsystem": "backend",
-      "version": "1.0.10"
+      "version": "1.0.11"
     },
     {
       "name": "postgres",
       "subsystem": "backend",
-      "version": "1.0.15"
+      "version": "1.0.16"
     },
     {
       "name": "prometheus",
       "subsystem": "backend",
-      "version": "1.0.2"
+      "version": "1.0.3"
     },
     {
       "name": "redis",
@@ -185,7 +180,7 @@
     {
       "name": "user-indicator",
       "subsystem": "backend",
-      "version": "1.0.11"
+      "version": "1.0.12"
     }
   ]
 }

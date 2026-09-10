@@ -13,6 +13,11 @@
       ]
     },
     {
+      "component_name": "authz",
+      "display_name": "",
+      "description": "authz package component"
+    },
+    {
       "component_name": "casdoor",
       "display_name": "Casdoor",
       "description": "身份认证和授权平台",
@@ -60,20 +65,15 @@
       ]
     },
     {
-      "component_name": "authz-frontend",
-      "display_name": "authz前端页面",
-      "description": "authz-frontend package component",
+      "component_name": "costrict-auth-frontend",
+      "display_name": "costrict-auth前端页面",
+      "description": "costrict-auth-frontend package component",
       "dependences": [
         {
           "depend_component": "portal",
           "depend_versions": ">=1.0.0"
         }
       ]
-    },
-    {
-      "component_name": "authz",
-      "display_name": "",
-      "description": "authz package component"
     },
     {
       "component_name": "costrict-dept-sync",
@@ -84,11 +84,6 @@
       "component_name": "costrict-model-proxy",
       "display_name": "大模型代理服务",
       "description": "简化的大模型网关，聚合多来源多类型大语言模型API"
-    },
-    {
-      "component_name": "orgd",
-      "display_name": "",
-      "description": "orgd package component"
     },
     {
       "component_name": "costrict-web",
@@ -116,11 +111,6 @@
       "description": "分布式键值存储，用于配置管理和服务发现"
     },
     {
-      "component_name": "gitea",
-      "display_name": "Gitea",
-      "description": "轻量级 Git 服务，用于 capability/插件仓库托管"
-    },
-    {
       "component_name": "license-manager",
       "display_name": "CoStrict授权服务",
       "description": "CoStrict授权服务"
@@ -140,6 +130,11 @@
           "depend_versions": ">=1.0.0"
         }
       ]
+    },
+    {
+      "component_name": "orgd",
+      "display_name": "",
+      "description": "orgd package component"
     },
     {
       "component_name": "portal",
@@ -173,6 +168,14 @@
       "service_name": "apisix",
       "health_url": "http://localhost:39180/healthz",
       "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/apisix/logs/apisix.log"
+    },
+    {
+      "component_name": "authz",
+      "service_name": "authz",
+      "display_name": "授权访问",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_APISIX_ENTRY }}",
+      "health_url": "http://localhost:8080/healthz",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/authz/logs/authz.log"
     },
     {
       "component_name": "casdoor",
@@ -215,6 +218,14 @@
       "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_APISIX_ENTRY }}",
       "health_url": "http://localhost:8080/healthz",
       "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/costrict-admin/logs/costrict-admin.log"
+    },
+    {
+      "component_name": "costrict-auth-frontend",
+      "service_name": "costrict-auth-frontend",
+      "display_name": "组织结构与授权访问前端",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_APISIX_ENTRY }}",
+      "health_url": "http://localhost:8080/healthz",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/costrict-auth-frontend/logs/costrict-auth-frontend.log"
     },
     {
       "component_name": "costrict-dept-sync",
@@ -286,13 +297,6 @@
       "health_url": "http://localhost:32382/health"
     },
     {
-      "component_name": "gitea",
-      "service_name": "gitea",
-      "display_name": "Gitea Git服务",
-      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_GITEA }}",
-      "health_url": "http://localhost:{{ .PORT_GITEA }}/api/v1/version"
-    },
-    {
       "component_name": "license-manager",
       "service_name": "license-manager",
       "visible": false
@@ -315,6 +319,14 @@
       "service_name": "oidc-auth",
       "health_url": "http://localhost:8085/healthz",
       "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/oidc-auth/logs/oidc-auth.log"
+    },
+    {
+      "component_name": "orgd",
+      "service_name": "orgd",
+      "display_name": "组织管理",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_APISIX_ENTRY }}",
+      "health_url": "http://localhost:8080/healthz",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/orgd/logs/orgd.log"
     },
     {
       "component_name": "portal",
