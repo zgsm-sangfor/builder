@@ -210,8 +210,10 @@ fetch_static_file() {
     fi
 
     # 站点相对路径与本地保存路径一致，均为 ${STATIC_DIR}/<file_path>
+    # 但zgsm.sangfor.com的base_url已经包含了costrict-static
     # 由 fetch_file 根据选项优先级选择 GitHub 或 zgsm.sangfor.com 下载
-    fetch_file "${STATIC_DIR}/${file_path}"
+    fetch_file "${file_path}"
+    mv "${file_path}" "${STATIC_DIR}/${file_path}"
 }
 
 # 解析参数
