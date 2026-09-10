@@ -23,6 +23,9 @@ MANIFEST_FILE="${STATIC_DIR}/MANIFEST"
 SITE_DIR="site"
 SITE_TAR="mirror-site.tar"
 OUTPUT_FILE="costrict-mirror.tar.gz"
+NGINX_IMAGE="nginx:1.31.1"
+NGINX_IMAGE_TAR="${STATIC_DIR}/nginx-1.31.1.tar"
+STATIC_TAR_FILE="costrict-static.tar"
 
 # 显示帮助信息
 show_help() {
@@ -265,12 +268,7 @@ echo "----------------------------------------------------------------"
 # 创建 costrict-static 目录（如果不存在）
 mkdir -p "${STATIC_DIR}"
 
-# 先尝试从 GitHub Releases 下载 costrict-static.tar，将其中的 linux 目录解压到 costrict-static 下
-STATIC_TAR_URL="https://github.com/zgsm-sangfor/costrict-static/releases/download/v1.2.0/costrict-static.tar"
-STATIC_TAR_FILE="costrict-static.tar"
-
 echo "正在尝试下载 ${STATIC_TAR_FILE}..."
-
 if fetch_file "${STATIC_TAR_FILE}"; then
     echo "下载成功，正在解压 ${STATIC_TAR_FILE} 到 ${STATIC_DIR}/..."
     tar -xf "${STATIC_TAR_FILE}" -C "${STATIC_DIR}"
@@ -348,7 +346,13 @@ fi
 if [ "$IGNORE_IMAGES" = true ]; then
     echo "已指定 --ignore-images，跳过 images 目录。"
     echo "正在下载 nginx-1.31.1.tar 镜像..."
-    fetch_static_file "./nginx-1.31.1.tar"
+    echo "  [拉取] ${NGINX_IMAGE}"
+    if ! docker pull "${NGINX_IMAGE}"; then
+        fetch_static_file "./nginx-1.31.1.tar"
+    else
+        echo "  [保存] ${NGINX_IMAGE} -> ${NGINX_IMAGE_TAR}"
+        docker save -o "${NGINX_IMAGE_TAR}" "${NGINX_IMAGE}"
+    fi
 else
     if [ -d "images" ]; then
         TAR_ARGS+=("images")

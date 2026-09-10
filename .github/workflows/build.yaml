@@ -73,7 +73,6 @@ jobs:
           cp packages.json packages/
           tar -czf artifact/packages.tar.gz packages
           cp ./costrict-mirror.tar.gz artifact/
-          cp ./costrict-mirror.tar.gz "artifact/costrict-mirror-${VERSION}.tar.gz"
 
       - name: Upload package repository artifact
         uses: actions/upload-artifact@v4
