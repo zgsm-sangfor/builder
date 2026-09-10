@@ -7,7 +7,8 @@ set -e
 #
 # 选项:
 #   --ignore-images   打包时忽略 images 目录
-#   --update-static   强制更新 costrict-static 内容（即使本地已存在）
+#   --force   强制更新 costrict-static 内容（即使本地已存在）
+#   --github-first    下载文件时优先从 GitHub 下载（默认优先从 zgsm.sangfor.com 下载）
 #
 # 流程:
 #   Step 1: 获取/更新 costrict-static 的内容
@@ -15,7 +16,8 @@ set -e
 #   Step 3: 将 costrict-static、packages、images 打包为 costrict-mirror.tar.gz
 #
 
-BASE_URL="https://zgsm.sangfor.com"
+ZGSM_BASE_URL="https://zgsm.sangfor.com/costrict-static"
+GITHUB_BASE_URL="https://github.com/zgsm-sangfor/costrict-static/releases/download/v1.2.0"
 STATIC_DIR="costrict-static"
 MANIFEST_FILE="${STATIC_DIR}/MANIFEST"
 SITE_DIR="site"
@@ -30,24 +32,192 @@ show_help() {
     echo ""
     echo "选项:"
     echo "  --ignore-images   打包时忽略 images 目录"
-    echo "  --update-static   强制更新 costrict-static 内容（即使本地已存在）"
+    echo "  --github-first    下载文件时优先从 GitHub 下载（默认优先从 ${ZGSM_BASE_URL} 下载）"
+    echo "  --force           强制更新本地文件（即使本地已存在）"
     echo "  --help, -h        显示此帮助信息"
     echo ""
     echo "执行步骤:"
-    echo "  1. 获取/更新 costrict-static 的内容（从 ${BASE_URL} 下载 MANIFEST 及其列出的文件）"
+    echo "  1. 获取/更新 costrict-static 的内容（从 ${ZGSM_BASE_URL} 或 GitHub 下载 MANIFEST 及其列出的文件）"
     echo "  2. 打包 site 目录为 ${SITE_TAR} 并拷贝到 ${STATIC_DIR} 下"
     echo "  3. 将 ${STATIC_DIR}、packages、images 打包为 ${OUTPUT_FILE}"
     echo ""
     echo "示例:"
-    echo "  $0                              # 仅打包（不忽略 images，已有静态文件不更新）"
-    echo "  $0 --ignore-images              # 打包但不包含 images"
-    echo "  $0 --update-static              # 强制更新静态文件后打包"
+    echo "  $0                  # 仅打包（不忽略 images，已有静态文件不更新）"
+    echo "  $0 --ignore-images  # 打包但不包含 images"
+    echo "  $0 --force          # 强制更新静态文件后打包"
+    echo "  $0 --github-first   # 优先从 GitHub 下载静态文件后打包"
     echo ""
+}
+
+#
+# 从指定的URL地址同步文件到本地
+#   去空白、去 ./ 前缀、防路径遍历、已存在则跳过、curl/wget 回退下载
+# 参数:
+#   $1 remote_url  web站点下载地址
+#      例如: https://github.com/zgsm-sangfor/costrict-static/releases/download/v1.2.0/costrict-static.tar
+#            https://zgsm.sangfor.com/costrict-static/MANIFEST
+#   $2 local_path  本地保存路径（可选），缺省时取 URL 中最后一个路径段作为文件名，保存到当前目录
+# 返回:
+#   0  下载成功或本地已存在（跳过）
+#   1  参数非法或下载失败
+#
+download_file() {
+    local remote_url="$1"
+    local local_path="$2"
+
+    # 去除首尾空白
+    remote_url=$(echo "${remote_url}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+    local_path=$(echo "${local_path}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+
+    # 安全检查：远程地址不能为空
+    if [[ -z "${remote_url}" ]]; then
+        echo "  [错误] GitHub Release 地址为空"
+        return 1
+    fi
+
+    # 未指定本地路径时，使用 URL 中最后一个路径段作为文件名
+    if [[ -z "${local_path}" ]]; then
+        local_path="${remote_url##*/}"
+    fi
+
+    # 去掉 ./ 前缀（防御性处理）
+    local_path="${local_path#./}"
+
+    # 安全检查：本地路径不能为空
+    if [[ -z "${local_path}" ]]; then
+        echo "  [错误] 本地保存路径为空"
+        return 1
+    fi
+
+    # 安全检查：禁止路径遍历攻击
+    if [[ "${local_path}" == *".."* ]]; then
+        echo "  [错误] 非法本地路径（包含 ..）: ${local_path}"
+        return 1
+    fi
+
+    # 检查是否需要下载（已存在且未强制更新则跳过）
+    if [ "$FORCE" != true ] && [ -f "${local_path}" ]; then
+        echo "  [跳过] ${local_path} (本地已存在)"
+        return 0
+    fi
+
+    # 创建目标目录
+    local file_dir
+    file_dir=$(dirname "${local_path}")
+    mkdir -p "${file_dir}"
+
+    echo "  [下载] ${local_path} <- ${remote_url}"
+    if command -v curl &> /dev/null; then
+        curl -fSL -o "${local_path}" "${remote_url}" || return 1
+    elif command -v wget &> /dev/null; then
+        wget -q -O "${local_path}" "${remote_url}" || return 1
+    else
+        echo "  [错误] 未找到 curl 或 wget，无法下载文件。"
+        return 1
+    fi
+
+    return 0
+}
+
+#
+# 从站点下载单个文件到本地指定路径
+#   根据 --github-first 选项决定站点优先级：
+#     - 指定 --github-first：优先从 GitHub 下载，失败时回退到 zgsm.sangfor.com
+#     - 未指定：优先从 zgsm.sangfor.com 下载，失败时回退到 GitHub
+#   未指定 --force 且本地文件已存在时跳过下载。
+# 参数:
+#   $1 path     站点内的相对文件路径，同时作为本地保存路径
+# 返回:
+#   0  下载成功或本地已存在（跳过）
+#   1  参数非法或所有站点均下载失败
+#
+fetch_file() {
+    local path="$1"
+
+    # 去除首尾空白
+    path=$(echo "${path}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+
+    # 去掉 ./ 前缀（防御性处理）
+    path="${path#./}"
+
+    # 安全检查：本地保存路径不能为空
+    if [[ -z "${path}" ]]; then
+        echo "  [错误] 本地保存路径为空"
+        return 1
+    fi
+
+    # 安全检查：禁止路径遍历攻击
+    if [[ "${path}" == *".."* ]]; then
+        echo "  [错误] 非法本地路径（包含 ..）: ${path}"
+        return 1
+    fi
+
+    # 未指定 --force 且文件已存在时跳过
+    if [ "$FORCE" != true ] && [ -f "${path}" ]; then
+        echo "  [跳过] ${path} (本地已存在)"
+        return 0
+    fi
+
+    # 根据选项指定的优先级确定站点基地址顺序
+    local sites
+    if [ "$GITHUB_FIRST" = true ]; then
+        sites=("${GITHUB_BASE_URL}" "${ZGSM_BASE_URL}")
+    else
+        sites=("${ZGSM_BASE_URL}" "${GITHUB_BASE_URL}")
+    fi
+
+    # 按优先级依次尝试各站点，任一成功即返回
+    local site remote_url
+    for site in "${sites[@]}"; do
+        if [ -z "${site}" ]; then
+            continue
+        fi
+        remote_url="${site}/${path}"
+        if download_file "${remote_url}" "${path}"; then
+            return 0
+        fi
+        # 下载失败时清理可能残留的残缺文件，避免影响后续站点回退
+        rm -f "${path}"
+        echo "  从 ${site} 下载失败，尝试下一站点..."
+    done
+
+    echo "  [错误] 所有站点均无法下载: ${path}"
+    return 1
+}
+
+# 下载单个文件到costrict-static目录下
+# file_path 是 ${STATIC_DIR} 目录下的相对路径（如 MANIFEST、linux/amd64/xxx）
+#
+fetch_static_file() {
+    local file_path="$1"
+
+    # 去除首尾空白
+    file_path=$(echo "${file_path}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+
+    # 去掉 ./ 前缀（防御性处理）
+    file_path="${file_path#./}"
+
+    # 安全检查：路径不能为空
+    if [[ -z "${file_path}" ]]; then
+        echo "  [错误] 文件路径为空"
+        return 1
+    fi
+
+    # 安全检查：禁止路径遍历攻击
+    if [[ "${file_path}" == *".."* ]]; then
+        echo "  [错误] 非法文件路径（包含 ..）: ${file_path}"
+        return 1
+    fi
+
+    # 站点相对路径与本地保存路径一致，均为 ${STATIC_DIR}/<file_path>
+    # 由 fetch_file 根据选项优先级选择 GitHub 或 zgsm.sangfor.com 下载
+    fetch_file "${STATIC_DIR}/${file_path}"
 }
 
 # 解析参数
 IGNORE_IMAGES=false
-UPDATE_STATIC=false
+FORCE=false
+GITHUB_FIRST=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -55,8 +225,12 @@ while [[ $# -gt 0 ]]; do
             IGNORE_IMAGES=true
             shift
             ;;
-        --update-static)
-            UPDATE_STATIC=true
+        --force)
+            FORCE=true
+            shift
+            ;;
+        --github-first)
+            GITHUB_FIRST=true
             shift
             ;;
         --help|-h)
@@ -85,81 +259,19 @@ mkdir -p "${STATIC_DIR}"
 STATIC_TAR_URL="https://github.com/zgsm-sangfor/costrict-static/releases/download/v1.2.0/costrict-static.tar"
 STATIC_TAR_FILE="costrict-static.tar"
 
-echo "正在尝试从 GitHub Releases 下载 ${STATIC_TAR_URL}..."
-download_success=false
-if command -v curl &> /dev/null; then
-    curl -fSL -o "${STATIC_TAR_FILE}" "${STATIC_TAR_URL}" && download_success=true || true
-elif command -v wget &> /dev/null; then
-    wget -q -O "${STATIC_TAR_FILE}" "${STATIC_TAR_URL}" && download_success=true || true
-fi
+echo "正在尝试下载 ${STATIC_TAR_FILE}..."
 
-if [ "$download_success" = true ] && [ -f "${STATIC_TAR_FILE}" ]; then
+if fetch_file "${STATIC_TAR_FILE}"; then
     echo "下载成功，正在解压 ${STATIC_TAR_FILE} 到 ${STATIC_DIR}/..."
     tar -xf "${STATIC_TAR_FILE}" -C "${STATIC_DIR}"
     rm -f "${STATIC_TAR_FILE}"
     echo "${STATIC_TAR_FILE} 解压完成。"
 else
-    echo "从 GitHub Releases 下载 ${STATIC_TAR_FILE} 失败，将使用原有 MANIFEST 方式获取。"
+    echo "下载 ${STATIC_TAR_FILE} 失败，将使用原有 MANIFEST 方式获取。"
 fi
 
-# 下载单个文件
-# file_path 是./costrict-static目录下的文件或子目录（如 ./linux/amd64/xxx）
-#
-download_file() {
-    local file_path="$1"
-
-    # 去除首尾空白
-    file_path=$(echo "${file_path}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-
-    # 去掉 ./ 前缀（防御性处理）
-    file_path="${file_path#./}"
-
-    # 安全检查：禁止路径遍历攻击
-    if [[ "${file_path}" == *".."* ]]; then
-        echo "  [错误] 非法文件路径（包含 ..）: ${file_path}"
-        return 1
-    fi
-
-    # 安全检查：路径不能为空
-    if [[ -z "${file_path}" ]]; then
-        echo "  [错误] 文件路径为空"
-        return 1
-    fi
-
-    # 直接使用 file_path 作为本地存储路径和远程 URL 路径
-    local local_path="./${STATIC_DIR}/${file_path}"
-    local remote_url="${BASE_URL}/costrict-static/${file_path}"
-    local file_dir
-
-    file_dir=$(dirname "${local_path}")
-
-    # 检查是否需要下载
-    local need_download=false
-    if [ "$UPDATE_STATIC" = true ]; then
-        need_download=true
-    elif [ ! -f "${local_path}" ]; then
-        need_download=true
-    else
-        echo "  [跳过] ${file_path} (本地已存在)"
-        return 0
-    fi
-
-    # 创建目标目录
-    mkdir -p "${file_dir}"
-
-    echo "  [下载] ${file_path} <- ${remote_url}"
-    if command -v curl &> /dev/null; then
-        curl -fSL -o "${local_path}" "${remote_url}"
-    elif command -v wget &> /dev/null; then
-        wget -q -O "${local_path}" "${remote_url}"
-    else
-        echo "错误: 未找到 curl 或 wget，无法下载文件。"
-        exit 1
-    fi
-}
-
 # 执行 MANIFEST 下载
-download_file "./MANIFEST"
+fetch_static_file "./MANIFEST"
 
 # 读取 MANIFEST 并逐文件下载
 if [ -f "${MANIFEST_FILE}" ]; then
@@ -170,7 +282,7 @@ if [ -f "${MANIFEST_FILE}" ]; then
         [[ -z "${file_path}" ]] && continue
         [[ "${file_path}" =~ ^[[:space:]]*# ]] && continue
 
-        download_file "${file_path}"
+        fetch_static_file "${file_path}"
     done < "${MANIFEST_FILE}"
     echo "MANIFEST 中列出的文件处理完成。"
 else
@@ -226,7 +338,7 @@ fi
 if [ "$IGNORE_IMAGES" = true ]; then
     echo "已指定 --ignore-images，跳过 images 目录。"
     echo "正在下载 nginx-1.31.1.tar 镜像..."
-    download_file "./nginx-1.31.1.tar"
+    fetch_static_file "./nginx-1.31.1.tar"
 else
     if [ -d "images" ]; then
         TAR_ARGS+=("images")
