@@ -3,7 +3,7 @@
   "type": "docker",
   "version": "1.0.138",
   "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
-  "repo": "zgsm",
+  "repo": "zgsm-sangfor",
   "path": "../costrict-admin",
   "sources": [
     "../costrict-admin/backend",

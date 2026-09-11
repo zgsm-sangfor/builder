@@ -51,8 +51,8 @@
       "file_count": 1
     },
     "backend": {
-      "version": "1.0.72",
-      "checksum": "75b8572b8623271d9a9318e963b46d1098d16fad45abcf847546ba588f98528f",
+      "version": "1.0.73",
+      "checksum": "b4f3d6718998f0658f189201a2e777bf891e01d8cb31cd3465f736da66174698",
       "file_count": 3
     },
     "costrict-config": {
@@ -166,8 +166,8 @@
       "file_count": 4
     },
     "costrict-system": {
-      "version": "1.0.276",
-      "checksum": "bdbaa0a1b283b70c6c832851d87ef2b16832e296aa38092fbeb98dabe7c5660b",
+      "version": "1.0.285",
+      "checksum": "44cd9a77657dac1c8de3b0edf388c691a9a0419f2b6cdeedd1348549b3f7c70b",
       "file_count": 1
     },
     "costrict-license-sdk": {
@@ -306,13 +306,13 @@
       "file_count": 5
     },
     "authz": {
-      "version": "1.0.1",
-      "checksum": "c9b7a6ad75163f92fc1724a471c6411dad118359f41f4713853da349ad471a03",
+      "version": "1.0.2",
+      "checksum": "96446fadae8d54993e1ef52aecd067d15eb25a6d619888c8c57a6dd0d0c9a7d1",
       "file_count": 4
     },
     "orgd": {
-      "version": "1.0.1",
-      "checksum": "7cff83474fc4fafc53da3c075e0f36da9c913668a295ce037d4974e2b7e06235",
+      "version": "1.0.2",
+      "checksum": "8dd33b9e374997d8dfb783897fa04de5033dbf0e1868c15710e484a1c8782974",
       "file_count": 4
     },
     "costrict-dept-sync": {

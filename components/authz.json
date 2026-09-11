@@ -2,7 +2,7 @@
   "name": "authz",
   "type": "zip",
   "path": "./configures",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "subsystem": "backend",
   "description": "authz package component"
 }

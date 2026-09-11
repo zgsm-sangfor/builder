@@ -1,0 +1,10 @@
+services:
+  costrict-admin-frontend:
+    image: ${IMAGE_COSTRICT_ADMIN_FRONTEND}
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ${COSTRICT_DATA_DIR}/backend/costrict-admin-frontend/logs:/app/logs
+    networks:
+      - shenma

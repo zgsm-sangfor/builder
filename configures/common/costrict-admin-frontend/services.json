@@ -1,0 +1,12 @@
+{
+  "component_name": "costrict-admin-frontend",
+  "services": [
+    {
+      "service_name": "costrict-admin-frontend",
+      "display_name": "CoStrict后台管理页面",
+      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_APISIX_ENTRY }}",
+      "health_url": "http://localhost:8080/healthz",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/costrict-admin-frontend/logs/costrict-admin-frontend.log"
+    }
+  ]
+}
