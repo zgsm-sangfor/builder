@@ -24,6 +24,6 @@
     "workdir": ".",
     "command": "github-fetch-release.sh --package costrict-admin --os {{os}} --arch {{arch}} --version {{.version}}"
   },
-  "version": "1.0.144",
+  "version": "1.0.145",
   "description": "Utilities for backend management of Costrict"
 }

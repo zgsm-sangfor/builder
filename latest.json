@@ -21,18 +21,18 @@
       "file_count": 42
     },
     "costrict-admin": {
-      "version": "1.0.144",
+      "version": "1.0.145",
       "checksum": "",
       "file_count": 0
     },
     "costrict-admin-backend": {
-      "version": "1.0.115",
-      "checksum": "38352b9b100b9d6a6dd7280822789d1ee4b8d802944683c86d27e10a77acbb0c",
+      "version": "1.0.116",
+      "checksum": "033224c831d5420f7f28544bafdc00bac5ce1032c95b48a2f77c35ef02292d5a",
       "file_count": 4
     },
     "costrict-admin-frontend": {
-      "version": "1.0.60",
-      "checksum": "d861eb2f8e9a2c79c99fdb1ba5fb68a659a11c07d67f4eef084e5a5cba481bb7",
+      "version": "1.0.61",
+      "checksum": "6c39e1cd2e802d1a6a89d792dc3f96610d288040db3f58f1216249695b4f25f3",
       "file_count": 3
     },
     "system": {
@@ -166,8 +166,8 @@
       "file_count": 4
     },
     "costrict-system": {
-      "version": "1.0.288",
-      "checksum": "6e6ea13353a3c66162acf24f1e54ffb17bbad7b4a83627b0c28bb87193154dbe",
+      "version": "1.0.289",
+      "checksum": "c1ca55f8fd15beb56cd61263b3bee496fa22c1ec172018f42224ad02adb05d0d",
       "file_count": 1
     },
     "costrict-license-sdk": {
@@ -176,7 +176,7 @@
       "file_count": 3
     },
     "costrict-daemon": {
-      "version": "1.0.144",
+      "version": "1.0.145",
       "checksum": "",
       "file_count": 0
     },
@@ -348,8 +348,8 @@
       "file_count": 39
     },
     "costrict-admin-backend": {
-      "version": "1.0.144",
-      "checksum": "v1.0.144",
+      "version": "1.0.145",
+      "checksum": "v1.0.145",
       "file_count": 0
     },
     "cotun": {
@@ -383,8 +383,8 @@
       "file_count": 134
     },
     "costrict-admin-frontend": {
-      "version": "1.0.144",
-      "checksum": "v1.0.144",
+      "version": "1.0.145",
+      "checksum": "v1.0.145",
       "file_count": 0
     },
     "code-completion": {
@@ -428,13 +428,13 @@
       "file_count": 401
     },
     "costrict-admin": {
-      "version": "1.0.144",
-      "checksum": "v1.0.144",
+      "version": "1.0.145",
+      "checksum": "v1.0.145",
       "file_count": 0
     },
     "costrict-daemon": {
-      "version": "1.0.144",
-      "checksum": "v1.0.144",
+      "version": "1.0.145",
+      "checksum": "v1.0.145",
       "file_count": 0
     },
     "authz": {
