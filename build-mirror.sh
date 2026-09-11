@@ -292,6 +292,17 @@ if [ -f "${MANIFEST_FILE}" ]; then
         [[ -z "${file_path}" ]] && continue
         [[ "${file_path}" =~ ^[[:space:]]*# ]] && continue
 
+        # 去除首尾空白并去掉 ./ 前缀（与 fetch_static_file 保持一致）
+        file_path=$(echo "${file_path}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+        file_path="${file_path#./}"
+
+        # 跳过 ${SITE_TAR}：该文件由 Step 2 本地打包 ${SITE_DIR} 生成，无需从远端下载
+        # 注意：仅当 ${SITE_DIR} 目录存在时才会生成该 tar，否则仍需从远端下载，避免漏掉文件
+        if [ -d "${SITE_DIR}" ] && [ "$(basename "${file_path}")" = "${SITE_TAR}" ]; then
+            echo "  [跳过] ${file_path} (由 Step 2 本地生成，无需下载)"
+            continue
+        fi
+
         fetch_static_file "${file_path}"
     done < "${MANIFEST_FILE}"
     echo "MANIFEST 中列出的文件处理完成。"
