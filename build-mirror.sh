@@ -24,6 +24,8 @@ SITE_DIR="site"
 SITE_TAR="mirror-site.tar"
 OUTPUT_FILE="costrict-mirror.tar.gz"
 NGINX_IMAGE="nginx:1.31.1"
+# 目标架构列表：离线包需同时提供 amd64 与 arm64 两种架构的 nginx 镜像
+NGINX_ARCHES=("amd64" "arm64")
 NGINX_IMAGE_TAR="${STATIC_DIR}/nginx-1.31.1.tar"
 STATIC_TAR_FILE="costrict-static.tar"
 
@@ -345,14 +347,20 @@ fi
 # 根据 --ignore-images 决定是否包含 images
 if [ "$IGNORE_IMAGES" = true ]; then
     echo "已指定 --ignore-images，跳过 images 目录。"
-    echo "正在下载 nginx-1.31.1.tar 镜像..."
-    echo "  [拉取] ${NGINX_IMAGE}"
-    if ! docker pull "${NGINX_IMAGE}"; then
-        fetch_static_file "./nginx-1.31.1.tar"
-    else
-        echo "  [保存] ${NGINX_IMAGE} -> ${NGINX_IMAGE_TAR}"
-        docker save -o "${NGINX_IMAGE_TAR}" "${NGINX_IMAGE}"
-    fi
+    # 按目标架构分别拉取并保存 nginx 镜像，避免跨架构运行时出现：
+    #   exec /docker-entrypoint.sh: exec format error
+    echo "正在准备 nginx 多架构镜像: ${NGINX_IMAGE}"
+    for arch in "${NGINX_ARCHES[@]}"; do
+        arch_tar="${STATIC_DIR}/nginx-1.31.1-${arch}.tar"
+        echo "  [拉取] ${NGINX_IMAGE} (linux/${arch})"
+        if docker pull --platform "linux/${arch}" "${NGINX_IMAGE}"; then
+            echo "  [保存] ${NGINX_IMAGE} (linux/${arch}) -> ${arch_tar}"
+            docker save -o "${arch_tar}" "${NGINX_IMAGE}"
+        else
+            echo "  拉取失败，尝试下载预置镜像 ./nginx-1.31.1-${arch}.tar"
+            fetch_static_file "./nginx-1.31.1-${arch}.tar"
+        fi
+    done
 else
     if [ -d "images" ]; then
         TAR_ARGS+=("images")

@@ -275,6 +275,26 @@ download_url() {
     mv "$temporary" "$target"
 }
 
+# 与 download_url 类似，但下载失败时返回非零而非直接退出，
+# 便于处理“远端可能不存在”的可选文件（如按架构命名的 nginx 镜像）。
+download_url_optional() {
+    local url="$1"
+    local target="$2"
+    local temporary="${target}.part"
+
+    [[ "$OFFLINE" != true ]] || return 1
+    command -v curl >/dev/null 2>&1 || return 1
+    mkdir -p "$(dirname "$target")"
+    if curl -fL -C - \
+        --retry 3 --retry-delay 2 --connect-timeout 20 \
+        -o "$temporary" "$url"; then
+        mv "$temporary" "$target"
+        return 0
+    fi
+    rm -f "$temporary"
+    return 1
+}
+
 prepare_smc_cache() {
     local smc_dir="${CACHE_DIR}/tools/smc/linux/amd64/${SMC_VERSION}"
     local cached_smc="${smc_dir}/smc"
@@ -315,7 +335,10 @@ static_cache_complete() {
         [[ "$file_path" == "MANIFEST" || "$file_path" == "mirror-site.tar" ]] && continue
         [[ -s "${static_dir}/${file_path}" ]] || return 1
     done < "$manifest"
-    [[ -s "${static_dir}/nginx-1.31.1.tar" ]]
+    # 按架构命名的镜像任存在其一即可（同时兼容旧的单架构文件名）
+    [[ -s "${static_dir}/nginx-1.31.1.tar" \
+        || -s "${static_dir}/nginx-1.31.1-amd64.tar" \
+        || -s "${static_dir}/nginx-1.31.1-arm64.tar" ]]
 }
 
 prepare_static_cache() {
@@ -350,11 +373,27 @@ prepare_static_cache() {
         fi
     done < "$manifest"
 
+    # 按架构分别缓存 nginx 镜像，避免跨架构运行时 exec format error
+    local nginx_arch
+    for nginx_arch in amd64 arm64; do
+        if [[ ! -s "${static_cache}/nginx-1.31.1-${nginx_arch}.tar" || "$REFRESH_CACHE" == true ]]; then
+            log "Caching nginx image (linux/${nginx_arch})..."
+            download_url_optional \
+                "${STATIC_BASE_URL}/costrict-static/nginx-1.31.1-${nginx_arch}.tar" \
+                "${static_cache}/nginx-1.31.1-${nginx_arch}.tar" || \
+                log "nginx-1.31.1-${nginx_arch}.tar unavailable on server; skipped."
+        fi
+    done
+
+    # 兼容旧包：仅当缺少按架构命名的镜像时，才回退缓存单架构 nginx-1.31.1.tar
     if [[ ! -s "${static_cache}/nginx-1.31.1.tar" || "$REFRESH_CACHE" == true ]]; then
-        log "${static_cache}/nginx-1.31.1.tar no found. Caching nginx image..."
-        download_url \
-            "${STATIC_BASE_URL}/costrict-static/nginx-1.31.1.tar" \
-            "${static_cache}/nginx-1.31.1.tar"
+        if [[ ! -s "${static_cache}/nginx-1.31.1-amd64.tar" && ! -s "${static_cache}/nginx-1.31.1-arm64.tar" ]]; then
+            log "Caching legacy nginx image nginx-1.31.1.tar..."
+            download_url_optional \
+                "${STATIC_BASE_URL}/costrict-static/nginx-1.31.1.tar" \
+                "${static_cache}/nginx-1.31.1.tar" || \
+                log "nginx-1.31.1.tar unavailable on server; skipped."
+        fi
     fi
 
     static_cache_complete "$static_cache" || die "downloaded costrict-static cache is incomplete"
