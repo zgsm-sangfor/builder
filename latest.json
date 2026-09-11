@@ -26,14 +26,14 @@
       "file_count": 0
     },
     "costrict-admin-backend": {
-      "version": "1.0.114",
-      "checksum": "546a84b7ee53ad463cef7d86df86df2d043d028b9d39b67f8d5a26ae16fb4a9b",
+      "version": "1.0.115",
+      "checksum": "38352b9b100b9d6a6dd7280822789d1ee4b8d802944683c86d27e10a77acbb0c",
       "file_count": 4
     },
     "costrict-admin-frontend": {
-      "version": "1.0.59",
-      "checksum": "196a4cfcfa802341cd48a556affc64124373562ac149f27b7769ecc0804c591b",
-      "file_count": 24
+      "version": "1.0.60",
+      "checksum": "d861eb2f8e9a2c79c99fdb1ba5fb68a659a11c07d67f4eef084e5a5cba481bb7",
+      "file_count": 3
     },
     "system": {
       "version": "1.1.6",
@@ -41,8 +41,8 @@
       "file_count": 1
     },
     "firmware": {
-      "version": "1.0.140",
-      "checksum": "8a0691439d45528d4ee456b3709cc2e66718426b752a9a6d50f00b2d119b972c",
+      "version": "1.0.141",
+      "checksum": "b6905dfbfbb08ced5eb0c626b79a5658dba20137d6da702656e64dac110b50cf",
       "file_count": 34
     },
     "frontend": {
@@ -111,8 +111,8 @@
       "file_count": 28
     },
     "credit-manager": {
-      "version": "1.0.6",
-      "checksum": "6c460e7d96e4693de0331a2907cec0861fdf9a895c2c7769a55bd3a7299717cf",
+      "version": "1.0.7",
+      "checksum": "29b9a1ab81802e2d1125f241b40bac62533d91d42caa5bda9a30831f53c83109",
       "file_count": 5
     },
     "client-manager": {
@@ -166,7 +166,7 @@
       "file_count": 4
     },
     "costrict-system": {
-      "version": "1.0.287",
+      "version": "1.0.288",
       "checksum": "6e6ea13353a3c66162acf24f1e54ffb17bbad7b4a83627b0c28bb87193154dbe",
       "file_count": 1
     },

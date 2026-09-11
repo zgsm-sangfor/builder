@@ -70,12 +70,12 @@
     {
       "name": "costrict-admin-backend",
       "subsystem": "backend",
-      "version": "1.0.114"
+      "version": "1.0.115"
     },
     {
       "name": "costrict-admin-frontend",
       "subsystem": "backend",
-      "version": "1.0.59"
+      "version": "1.0.60"
     },
     {
       "name": "costrict-admin",
@@ -110,7 +110,7 @@
     {
       "name": "credit-manager",
       "subsystem": "backend",
-      "version": "1.0.6"
+      "version": "1.0.7"
     },
     {
       "name": "efficiency-dashboard",
@@ -130,7 +130,7 @@
     {
       "name": "firmware",
       "subsystem": "root",
-      "version": "1.0.140"
+      "version": "1.0.141"
     },
     {
       "name": "frontend",
