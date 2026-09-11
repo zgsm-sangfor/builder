@@ -166,8 +166,8 @@
       "file_count": 4
     },
     "costrict-system": {
-      "version": "1.0.285",
-      "checksum": "44cd9a77657dac1c8de3b0edf388c691a9a0419f2b6cdeedd1348549b3f7c70b",
+      "version": "1.0.287",
+      "checksum": "6e6ea13353a3c66162acf24f1e54ffb17bbad7b4a83627b0c28bb87193154dbe",
       "file_count": 1
     },
     "costrict-license-sdk": {
