@@ -17,17 +17,21 @@ options:
   -o|--output  <DIR>      输出目录 (默认: ./images)
   -i|--images  <STR>      镜像列表字符串, 格式: name:tag (空格/换行分隔多个)
   -f|--file    <FILE>     镜像列表文件路径 (默认: .images.list, 格式: name:tag 每行一个)
+  -a|--arch    <ARCH>     目标平台架构 (amd64/arm64), 不指定时自动检测当前平台
   -h|--help               显示帮助信息
+
+存储路径 (web服务器与本地同构): {arch}/{short-name}/{short-name}-{tag}.tar
 
 examples:
   $(basename "$0") -f .images.list
   $(basename "$0") -i 'nginx:1.27.1 redis:7.2.4' -o /tmp/images
   $(basename "$0") -b https://example.com/images -f my-images.list -o ./downloads
+  $(basename "$0") -a amd64 -f .images.list
 EOF
 }
 
 # 使用getopt解析参数
-TEMP=$(getopt -o b:o:i:f:h --long base-url:,output:,images:,file:,help -n "$0" -- "$@")
+TEMP=$(getopt -o b:o:i:f:a:h --long base-url:,output:,images:,file:,arch:,help -n "$0" -- "$@")
 if [ $? -ne 0 ]; then
     usage >&2
     exit 1
@@ -39,6 +43,7 @@ base_url="https://zgsm.sangfor.com/shenma-images"
 output_dir="./images"
 images_str=""
 images_file=".images.list"
+arch=""
 
 # 解析参数
 while true ; do
@@ -59,6 +64,10 @@ while true ; do
             images_file="$2"
             shift 2
             ;;
+        -a|--arch)
+            arch="$2"
+            shift 2
+            ;;
         -h|--help)
             usage
             exit 0
@@ -71,6 +80,19 @@ while true ; do
             ;;
     esac
 done
+
+# 解析目标平台架构: 优先使用 --arch 指定值, 未指定则自动检测 (支持 amd64/arm64)
+if [ -z "$arch" ]; then
+    case "$(uname -m)" in
+        x86_64|amd64) arch="amd64" ;;
+        aarch64|arm64) arch="arm64" ;;
+        *) arch="" ;;
+    esac
+fi
+if [ -z "$arch" ]; then
+    log "ERROR" "无法自动检测系统架构, 请使用 --arch 指定 (支持: amd64, arm64)" >&2
+    exit 1
+fi
 
 # 检测下载工具
 download_cmd=""
@@ -125,13 +147,15 @@ for image in $IMAGES; do
         continue
     fi
 
-    # 构建下载 URL: ${base-url}/{short-name}/{short-name}-{tag}.tar
     # 提取短名称 (去掉 repo 前缀, 即最后一个 '/' 之前的部分)
     short_name="${image_name##*/}"
-    file_url="${base_url}/${short_name}/${short_name}-${tag}.tar"
 
-    # 构建输出路径，目录结构镜像远程结构
-    output_path="${output_dir}/${short_name}-${tag}.tar"
+    # 构建下载 URL (服务器存储路径格式: {arch}/{short-name}/{short-name}-{tag}.tar)
+    file_url="${base_url}/${arch}/${short_name}/${short_name}-${tag}.tar"
+
+    # 构建输出路径, 本地目录结构与远程存储同构
+    #   ${output_dir}/{arch}/{short-name}/{short-name}-{tag}.tar
+    output_path="${output_dir}/${arch}/${short_name}/${short_name}-${tag}.tar"
     output_parent=$(dirname "$output_path")
     mkdir -p "$output_parent"
 

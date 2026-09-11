@@ -23,7 +23,7 @@ STATIC_DIR="${SCRIPT_DIR}/../costrict-static"
 CANDIDATE_TARS=()
 [ -n "${NGINX_ARCH}" ] && CANDIDATE_TARS+=("${STATIC_DIR}/nginx-1.31.1-${NGINX_ARCH}.tar")
 CANDIDATE_TARS+=("${STATIC_DIR}/nginx-1.31.1.tar")
-[ -n "${NGINX_ARCH}" ] && CANDIDATE_TARS+=("${IMAGES_BASE}/nginx/nginx-1.31.1-${NGINX_ARCH}.tar")
+[ -n "${NGINX_ARCH}" ] && CANDIDATE_TARS+=("${IMAGES_BASE}/${NGINX_ARCH}/nginx/nginx-1.31.1.tar")
 CANDIDATE_TARS+=("${IMAGES_BASE}/nginx/nginx-1.31.1.tar")
 
 service docker start

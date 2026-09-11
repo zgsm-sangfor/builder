@@ -5,7 +5,7 @@
 curl -i http://$APISIX_ADDR/apisix/admin/upstreams -H "$AUTH" -H "$TYPE" -X PUT -d '{
     "id": "costrict-admin-frontend",
     "nodes": {
-      "portal:80": 1
+      "costrict-admin-frontend:80": 1
     },
     "type": "roundrobin"
   }'

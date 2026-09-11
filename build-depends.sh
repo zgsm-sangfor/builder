@@ -9,7 +9,7 @@
 #   后续由 build-components.sh 对编译结果进行签名打包。
 #
 #   对于type为"docker"的依赖包，构建/拉取docker镜像，
-#   构建成功后将镜像导出为tar文件保存到 images/{packageName}/ 目录下。
+#   每个平台构建成功后将对应arch的镜像导出为tar文件保存到 images/{arch}/ 目录下。
 #
 #   对于type为"frontend"的依赖包，构建阶段行为与"docker"一致（本地clone源码并执行build命令），
 #   但构建产物为前端静态资源，不涉及docker镜像的保存和推送操作。
@@ -353,26 +353,64 @@ render_template_ex() {
     echo "$result"
 }
 
-# 单平台构建（渲染并执行构建命令）
+# 单平台构建（创建输出目录、初始化输出目标并执行构建命令），构建成功后导出该平台对应arch的docker镜像
 # 参数:
-#   $1: package_file - JSON 配置文件路径
-#   $2: depend_workdir - 构建工作目录
-#   $3: depend_command - 构建命令模板（支持 {{.os}}/{{.arch}}/{{.output}} 等模板变量）
-#   $4: os - 目标操作系统（如 linux, windows, darwin）
-#   $5: arch - 目标架构（如 amd64, arm64）
-#   $6: output_target - 输出文件完整路径
+#   $1: package - 依赖包名（对应 depends/{package}.json）
+#   $2: package_file - JSON 配置文件路径
+#   $3: build_workdir - 构建工作目录
+#   $4: build_command - 构建命令模板（支持 {{.os}}/{{.arch}}/{{.output}} 等模板变量）
+#   $5: os - 目标操作系统（如 linux, windows, darwin）
+#   $6: arch - 目标架构（如 amd64, arm64）
 build_single_platform() {
-    local package_file="$1"
-    local depend_workdir="$2"
-    local depend_command="$3"
-    local os="$4"
-    local arch="$5"
-    local output_target="$6"
+    local package="$1"
+    local package_file="$2"
+    local build_workdir="$3"
+    local build_command="$4"
+    local os="$5"
+    local arch="$6"
     
-    local rendered_cmd=$(render_template_ex "$depend_command" "$package_file" "$os" "$arch" "$output_target")
+    # 获取包名、版本和类型，用于构造输出路径及确定默认构建命令
+    local pkg_name=$(jq -r ".name // empty" "$package_file")
+    local pkg_version=$(jq -r ".version // empty" "$package_file")
+    local pkg_type=$(jq -r ".type // empty" "$package_file")
+    
+    
+    # 仅 exec 类型需要构建输出目录并初始化输出目标
+    local output_target=""
+    if [ "$pkg_type" = "exec" ]; then
+        # build_command 为空时，exec 类型回退到默认构建命令
+        if [ -z "$build_command" ] || [ "$build_command" = "null" ] || [ "$build_command" = "" ]; then
+            # exec 类型默认使用 build.py 构建
+            build_command="python ./build.py --software {{.version}} --os {{.os}} --arch {{.arch}} --output {{.output}}"
+        fi
+        # 创建输出目录: packages/{name}/{os}/{arch}/{version}/
+        local output_dir="$(pwd)/packages/$pkg_name/$os/$arch/$pkg_version"
+        mkdir -p "$output_dir"
+        
+        # 设置输出文件名
+        local output_file="$pkg_name"
+        if [ "$os" = "windows" ]; then
+            output_file="$output_file.exe"
+        fi
+        
+        output_target="$output_dir/$output_file"
+        echo "Output target: $output_target"
+    fi
+    if [ -z "$build_command" ] || [ "$build_command" = "null" ] || [ "$build_command" = "" ]; then
+        echo "Error: 'command' not found for dependency '${package}' (type=${pkg_type}) in ${package_file}!"
+        return 1
+    fi
+    
+    local rendered_cmd=$(render_template_ex "$build_command" "$package_file" "$os" "$arch" "$output_target")
     echo "Executing: $rendered_cmd"
-    (cd "$depend_workdir" && bash -c "$rendered_cmd")
-    return $?
+    (cd "$build_workdir" && bash -c "$rendered_cmd")
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+    
+    # 构建成功后，按平台导出对应arch的docker镜像（docker类型；exec/frontend类型内部跳过）
+    save_docker_image "$package" "$arch" || return 1
+    return 0
 }
 
 # 通用依赖构建函数，支持所有类型（exec / docker / frontend）
@@ -383,112 +421,85 @@ build_single_platform() {
 build_overall_dependency() {
     local package="$1"
     local package_file="$2"
-    local depend_name="$3"
-    local depend_path="$4"
-    local depend_version="$5"
-    local depend_type="$6"
+    local pkg_name="$3"
+    local pkg_path="$4"
+    local pkg_version="$5"
+    local pkg_type="$6"
     
     # 根据类型获取命令和工作目录
-    local depend_remote=$(jq -r ".remote // empty" "$package_file")
-    local depend_command=""
-    local depend_workdir=""
+    local build_command=""
+    local build_workdir=""
     
     if is_local_package "$package"; then
         # 本地模式：从.build读取本地构建命令（如 docker build / build.py）
-        depend_command=$(jq -r ".build.command // empty" "$package_file")
-        depend_workdir=$(jq -r ".build.workdir // empty" "$package_file")
+        build_command=$(jq -r ".build.command // empty" "$package_file")
+        build_workdir=$(jq -r ".build.workdir // empty" "$package_file")
     else
         # 远程模式：从.pull读取远程拉取命令（如 docker pull / github-fetch-release.sh）
-        depend_command=$(jq -r ".pull.command // empty" "$package_file")
-        depend_workdir=$(jq -r ".pull.workdir // empty" "$package_file")
+        build_command=$(jq -r ".pull.command // empty" "$package_file")
+        build_workdir=$(jq -r ".pull.workdir // empty" "$package_file")
     fi
     # 工作目录默认值为.path
-    if [ -z "$depend_workdir" ] || [ "$depend_workdir" = "null" ] || [ "$depend_workdir" = "" ]; then
-        depend_workdir="$depend_path"
+    if [ -z "$build_workdir" ] || [ "$build_workdir" = "null" ] || [ "$build_workdir" = "" ]; then
+        build_workdir="$pkg_path"
     fi
     
-    if [ -z "$depend_command" ] || [ "$depend_command" = "null" ] || [ "$depend_command" = "" ]; then
-        if [ "$depend_type" = "exec" ]; then
-            # exec 类型默认使用 build.py 构建
-            depend_command="python ./build.py --software {{.version}} --os {{.os}} --arch {{.arch}} --output {{.output}}"
-            echo "Using default build command for exec type: $depend_command"
-        else
-            echo "Error: 'command' not found for dependency '${package}' (type=${depend_type}) in ${package_file}!"
+    # 确保源码存在
+    if [ ! -d "$pkg_path" ]; then
+        local pkg_remote=$(jq -r ".remote // empty" "$package_file")
+        if [ -z "$pkg_remote" ] || [ "$pkg_remote" = "null" ]; then
+            echo "Error: Directory '$pkg_path' does not exist and 'remote' field is not configured!"
             return 1
         fi
-    fi
-    # 确保源码存在（docker/frontend/exec 类型需要本地源码）
-    if [ "$depend_type" = "frontend" ] || [ "$depend_type" = "docker" ] || [ "$depend_type" = "exec" ]; then
-        if [ ! -d "$depend_path" ]; then
-            if [ -z "$depend_remote" ] || [ "$depend_remote" = "null" ]; then
-                echo "Error: Directory '$depend_path' does not exist and 'remote' field is not configured!"
-                return 1
-            fi
-            echo "Directory '$depend_path' not found, cloning from $depend_remote ..."
-            git clone "$depend_remote" "$depend_path"
-            if [ $? -ne 0 ]; then
-                echo "Error: git clone failed for $depend_remote"
-                return 1
-            fi
-            echo "Successfully cloned to '$depend_path'"
+        echo "Directory '$pkg_path' not found, cloning from $pkg_remote ..."
+        git clone "$pkg_remote" "$pkg_path"
+        if [ $? -ne 0 ]; then
+            echo "Error: git clone failed for $pkg_remote"
+            return 1
         fi
+        echo "Successfully cloned to '$pkg_path'"
     fi
+
     # 检查 platforms 字段：exec 类型必填，其他类型默认 linux/amd64
-    local depend_platforms=$(jq -r ".platforms // empty" "$package_file")
-    if [ -z "$depend_platforms" ] || [ "$depend_platforms" = "null" ] || [ "$depend_platforms" = "" ]; then
-        if [ "$depend_type" = "exec" ]; then
-            echo "Error: 'platforms' not found for exec package '${depend_name}' in ${package_file}!"
+    local pkg_platforms=$(jq -r ".platforms // empty" "$package_file")
+    if [ -z "$pkg_platforms" ] || [ "$pkg_platforms" = "null" ] || [ "$pkg_platforms" = "" ]; then
+        if [ "$pkg_type" = "exec" ]; then
+            echo "Error: 'platforms' not found for exec package '${pkg_name}' in ${package_file}!"
             return 1
         fi
-        depend_platforms='[{"os":"linux","arch":"amd64"}]'
+        pkg_platforms='[{"os":"linux","arch":"amd64"}]'
     fi
-    
+
     # ============================================================
     # 分平台编译
     # ============================================================
-    local current_dir=$(pwd)
     
     # 解析 platforms 数组
-    local platform_count=$(echo "$depend_platforms" | jq 'length')
+    local platform_count=$(echo "$pkg_platforms" | jq 'length')
     echo "=============================================="
-    echo "Processing dependency: $depend_name, type: $depend_type, version: $depend_version"
-    echo "Path: $depend_path"
-    echo "Workdir: $depend_workdir"
-    echo "Building for $platform_count platform(s): $depend_platforms"
+    echo "Processing dependency: $pkg_name, type: $pkg_type, version: $pkg_version"
+    echo "Path: $pkg_path"
+    echo "Workdir: $build_workdir"
+    echo "Building for $platform_count platform(s): $pkg_platforms"
     echo "=============================================="
     
     local i
     for ((i=0; i<platform_count; i++)); do
-        local os=$(echo "$depend_platforms" | jq -r ".[$i].os")
-        local arch=$(echo "$depend_platforms" | jq -r ".[$i].arch")
+        local os=$(echo "$pkg_platforms" | jq -r ".[$i].os")
+        local arch=$(echo "$pkg_platforms" | jq -r ".[$i].arch")
         
-        echo "==== Building $depend_name for $os/$arch ===="
+        echo "==== Building $pkg_name for $os/$arch ===="
         
-        # 创建输出目录: packages/{name}/{os}/{arch}/{version}/
-        local output_dir="$current_dir/packages/$depend_name/$os/$arch/$depend_version"
-        mkdir -p "$output_dir"
-        
-        # 设置输出文件名
-        local output_file="$depend_name"
-        if [ "$os" = "windows" ]; then
-            output_file="$output_file.exe"
-        fi
-        
-        local output_target="$output_dir/$output_file"
-        echo "Output target: $output_target"
-        
-        # 调用单平台构建函数
-        build_single_platform "$package_file" "$depend_workdir" "$depend_command" "$os" "$arch" "$output_target"
+        # 调用单平台构建函数（内部会创建输出目录、初始化输出目标，并在构建成功后导出该平台对应arch的镜像）
+        build_single_platform "$package" "$package_file" "$build_workdir" "$build_command" "$os" "$arch"
         if [ $? -ne 0 ]; then
-            echo "Error: Build failed for $depend_name on $os/$arch"
+            echo "Error: Build failed for $pkg_name on $os/$arch"
             return 1
         fi
         echo ""
     done
     
-    echo "All platforms built successfully for dependency: $depend_name"
-    # 构建/拉取成功后，导出docker镜像tar文件（docker/github类型；frontend类型跳过）
-    save_docker_image "$package" || return 1
+    echo "All platforms built successfully for dependency: $pkg_name"
     return 0
 }
 
@@ -503,73 +514,68 @@ build_dependency() {
     fi
     
     # 从depends目录的对应JSON文件中获取配置
-    local depend_name=$(jq -r ".name // empty" "$package_file")
-    local depend_path=$(jq -r ".path // empty" "$package_file")
-    local depend_version=$(jq -r ".version // empty" "$package_file")
-    local depend_type=$(jq -r ".type // empty" "$package_file")
+    local pkg_name=$(jq -r ".name // empty" "$package_file")
+    local pkg_path=$(jq -r ".path // empty" "$package_file")
+    local pkg_version=$(jq -r ".version // empty" "$package_file")
+    local pkg_type=$(jq -r ".type // empty" "$package_file")
     
-    if [ -z "$depend_name" ] || [ "$depend_name" = "null" ] || [ "$depend_name" = "" ]; then
+    if [ -z "$pkg_name" ] || [ "$pkg_name" = "null" ] || [ "$pkg_name" = "" ]; then
         echo "Error: 'name' not found for package '${package}' in ${package_file}!"
         return 1
     fi
     
-    if [ -z "$depend_version" ] || [ "$depend_version" = "null" ] || [ "$depend_version" = "" ]; then
+    if [ -z "$pkg_version" ] || [ "$pkg_version" = "null" ] || [ "$pkg_version" = "" ]; then
         echo "Error: 'version' not found for package '${package}' in ${package_file}!"
         return 1
     fi
     
-    if [ -z "$depend_path" ] || [ "$depend_path" = "null" ] || [ "$depend_path" = "" ]; then
+    if [ -z "$pkg_path" ] || [ "$pkg_path" = "null" ] || [ "$pkg_path" = "" ]; then
         echo "Error: 'path' not found for package '${package}' in ${package_file}!"
         return 1
     fi
     # 统一委托给 build_overall_dependency（支持 exec / docker / frontend 所有类型）
-    build_overall_dependency "$package" "$package_file" "$depend_name" "$depend_path" "$depend_version" "$depend_type"
+    build_overall_dependency "$package" "$package_file" "$pkg_name" "$pkg_path" "$pkg_version" "$pkg_type"
     return $?
 }
 
-# 对 docker 类型的依赖包导出镜像tar文件；
+# 对 docker 类型的包导出镜像tar文件，按平台存储在 images/${arch}/ 目录下；
 # 对 exec/frontend 类型跳过（不涉及 docker 镜像）。
-# 参数: $1 - package name
+# 参数: $1 - package name, $2 - arch (目标架构，如 amd64/arm64)
 save_docker_image() {
     local package="$1"
+    local arch="$2"
     local package_file="depends/${package}.json"
     
-    # 获取依赖类型
-    local depend_type=$(jq -r ".type // empty" "$package_file")
-    
-    # exec / frontend 类型：无需导出docker镜像
-    if [ "$depend_type" = "exec" ] || [ "$depend_type" = "frontend" ]; then
-        local depend_name=$(jq -r ".name // empty" "$package_file")
-        echo "Skipping image export for ${depend_type}-type package '${depend_name}' (no docker image to export)"
+    # 获取模块类型
+    local pkg_type=$(jq -r ".type // empty" "$package_file")
+    if [ "$pkg_type" != "docker" ]; then
         return 0
     fi
 
-    # 以下仅处理 docker 类型
-    local depend_name=$(jq -r ".name // empty" "$package_file")
-    local depend_repo=$(jq -r ".repo // empty" "$package_file")
-    local depend_tag=$(jq -r ".tag // empty" "$package_file")
+    local pkg_name=$(jq -r ".name // empty" "$package_file")
+    local pkg_repo=$(jq -r ".repo // empty" "$package_file")
+    local pkg_tag=$(jq -r ".tag // empty" "$package_file")
     
     # tag字段为可选的，默认值为 '{{.version}}'
-    if [ -z "$depend_tag" ] || [ "$depend_tag" = "null" ] || [ "$depend_tag" = "" ]; then
-        depend_tag="{{.version}}"
+    if [ -z "$pkg_tag" ] || [ "$pkg_tag" = "null" ] || [ "$pkg_tag" = "" ]; then
+        pkg_tag="{{.version}}"
     fi
 
-    # 创建输出目录
-    local image_dir="images/${depend_name}"
+    # 创建输出目录: images/${arch}
+    local image_dir="images/${arch}"
     mkdir -p "$image_dir"
     
-    local image_full_name=$(render_template_ex "${depend_repo}/${depend_name}:${depend_tag}" "$package_file")
-    local tar_file=$(render_template_ex "${depend_name}-${depend_tag}.tar" "$package_file")
+    local image_full_name=$(render_template_ex "${pkg_repo}/${pkg_name}:${pkg_tag}" "$package_file")
+    local tar_file=$(render_template_ex "${pkg_name}-${pkg_tag}.tar" "$package_file")
     
     # 导出镜像为tar文件
-    echo "Exporting image ${image_full_name} to ${image_dir}/${tar_file}..."
     docker save -o "${image_dir}/${tar_file}" "$image_full_name"
     if [ $? -ne 0 ]; then
         echo "Error: Failed to export image $image_full_name"
         return 1
     fi
     
-    echo "Successfully exported image to ${image_dir}/${tar_file}"
+    echo "Successfully exported image ${image_full_name} to ${image_dir}/${tar_file}"
     return 0
 }
 
@@ -642,33 +648,33 @@ push_image() {
     fi
     
     # 从depends目录的对应JSON文件中获取配置
-    local depend_name=$(jq -r ".name // empty" "$package_file")
-    local depend_repo=$(jq -r ".repo // empty" "$package_file")
-    local depend_tag=$(jq -r ".tag // empty" "$package_file")
+    local pkg_name=$(jq -r ".name // empty" "$package_file")
+    local pkg_repo=$(jq -r ".repo // empty" "$package_file")
+    local pkg_tag=$(jq -r ".tag // empty" "$package_file")
     
     # tag字段为可选的，默认值为 '{{.version}}'
-    if [ -z "$depend_tag" ] || [ "$depend_tag" = "null" ] || [ "$depend_tag" = "" ]; then
-        depend_tag="{{.version}}"
+    if [ -z "$pkg_tag" ] || [ "$pkg_tag" = "null" ] || [ "$pkg_tag" = "" ]; then
+        pkg_tag="{{.version}}"
     fi
     
-    if [ -z "$depend_name" ] || [ "$depend_name" = "null" ]; then
+    if [ -z "$pkg_name" ] || [ "$pkg_name" = "null" ]; then
         echo "Error: 'name' not found for image '${package}' in ${package_file}!"
         return 1
     fi
     
-    local depend_full_name=$(render_template_ex "${depend_repo}/${depend_name}:${depend_tag}" "$package_file")
+    local pkg_full_name=$(render_template_ex "${pkg_repo}/${pkg_name}:${pkg_tag}" "$package_file")
     
     echo "=============================================="
-    echo "Pushing image: $depend_full_name"
+    echo "Pushing image: $pkg_full_name"
     echo "=============================================="
     
-    docker push "$depend_full_name"
+    docker push "$pkg_full_name"
     if [ $? -ne 0 ]; then
-        echo "Error: Push failed for image $depend_full_name"
+        echo "Error: Push failed for image $pkg_full_name"
         return 1
     fi
     
-    echo "Successfully pushed image: $depend_full_name"
+    echo "Successfully pushed image: $pkg_full_name"
     return 0
 }
 
@@ -763,19 +769,19 @@ upload_image_to_dh() {
     
     # 获取镜像信息
     local package_file="depends/${package}.json"
-    local depend_name=$(jq -r ".name // empty" "$package_file")
-    local depend_version=$(jq -r ".version // empty" "$package_file")
-    local depend_repo=$(jq -r ".repo // empty" "$package_file")
-    local depend_tag=$(jq -r ".tag // empty" "$package_file")
+    local pkg_name=$(jq -r ".name // empty" "$package_file")
+    local pkg_version=$(jq -r ".version // empty" "$package_file")
+    local pkg_repo=$(jq -r ".repo // empty" "$package_file")
+    local pkg_tag=$(jq -r ".tag // empty" "$package_file")
     
     # tag字段为可选的，默认值为 '{{.version}}'
-    if [ -z "$depend_tag" ] || [ "$depend_tag" = "null" ] || [ "$depend_tag" = "" ]; then
-        depend_tag="{{.version}}"
+    if [ -z "$pkg_tag" ] || [ "$pkg_tag" = "null" ] || [ "$pkg_tag" = "" ]; then
+        pkg_tag="{{.version}}"
     fi
     
-    local depend_full_name=$(render_template_ex "${depend_repo}/${depend_name}:${depend_tag}" "$package_file")
+    local pkg_full_name=$(render_template_ex "${pkg_repo}/${pkg_name}:${pkg_tag}" "$package_file")
     echo "=============================================="
-    echo "Uploading image $depend_full_name to environment: $env_name ($env_url)"
+    echo "Uploading image $pkg_full_name to environment: $env_name ($env_url)"
     echo "=============================================="
     
     # 登录到镜像仓库
@@ -787,9 +793,9 @@ upload_image_to_dh() {
     fi
     
     # 推送镜像
-    docker push "$depend_full_name"
+    docker push "$pkg_full_name"
     if [ $? -ne 0 ]; then
-        echo "Error: Push failed for image $depend_full_name"
+        echo "Error: Push failed for image $pkg_full_name"
         docker logout "$env_url"
         return 1
     fi
@@ -797,7 +803,7 @@ upload_image_to_dh() {
     # 登出
     docker logout "$env_url"
     
-    echo "Successfully uploaded image $depend_full_name to environment $env_name"
+    echo "Successfully uploaded image $pkg_full_name to environment $env_name"
     return 0
 }
 
@@ -845,10 +851,19 @@ process_package() {
     fi
     
     # 获取依赖类型，用于后续判断是否跳过 docker 相关操作
-    local depend_type=$(jq -r ".type // empty" "$package_file")
-    # 获取 name 和 version 字段，用于 write_build_json
-    local depend_name=$(jq -r ".name // empty" "$package_file")
-    local depend_version=$(jq -r ".version // empty" "$package_file")
+    local pkg_type=$(jq -r ".type // empty" "$package_file")
+    local pkg_name=$(jq -r ".name // empty" "$package_file")
+    local pkg_version=$(jq -r ".version // empty" "$package_file")
+    
+    # 构建前校验依赖类型，仅允许 docker / exec / frontend 三类
+    case "$pkg_type" in
+        docker|exec|frontend)
+            ;;
+        *)
+            echo "Error: Unsupported dependency type '${pkg_type}' for package '${package_name}' (expected one of: docker, exec, frontend)!"
+            exit 1
+            ;;
+    esac
     
     if [ "$NEED_BUILD" = true ]; then
         echo "Building 'dependency' for ${package_name}..."
@@ -859,7 +874,7 @@ process_package() {
         fi
         
         # 写入 build.json 记录构建完成时间戳
-        write_build_json "dependency" "${depend_name}" "${depend_version}" "build"
+        write_build_json "dependency" "${pkg_name}" "${pkg_version}" "build"
     else
         echo "Skipping build step for ${package_name}..."
     fi
@@ -873,29 +888,25 @@ process_package() {
             # 继续执行，不退出
         else
             # 写入 build.json 记录 update 完成时间戳
-            write_build_json "dependency" "${depend_name}" "${depend_version}" "update"
+            write_build_json "dependency" "${pkg_name}" "${pkg_version}" "update"
         fi
     else
         echo "Skipping update step for ${package_name}..."
     fi
     
     # push 操作仅对 docker 类型生效，exec / frontend 类型跳过
-    if [ "$depend_type" = "exec" ] || [ "$depend_type" = "frontend" ]; then
-        echo "Skipping push step for ${depend_type}-type package '${package_name}' (no docker image to push)..."
-    else
-        # 如果有指定的上传目标环境，上传到这些环境
-        if [ "$NEED_PUSH" = true ] && [ ${#PUSH_TARGETS[@]} -gt 0 ]; then
-            echo "Pushing image to specified environments: ${package_name}"
-            push_image_to_remotes "${package_name}"
-            if [ $? -ne 0 ]; then
-                echo "Error: Upload failed for ${package_name}"
-                exit 1
-            fi
-            # 写入 build.json 记录 push 完成时间戳
-            write_build_json "dependency" "${depend_name}" "${depend_version}" "push"
-        else
-            echo "Skipping push step for ${package_name}..."
+    # 如果是docker类型的模块，有指定的上传目标环境，上传到这些环境
+    if [ "$NEED_PUSH" = true ] && [ "$pkg_type" = "docker" ] && [ ${#PUSH_TARGETS[@]} -gt 0 ]; then
+        echo "Pushing image to specified environments: ${package_name}"
+        push_image_to_remotes "${package_name}"
+        if [ $? -ne 0 ]; then
+            echo "Error: Upload failed for ${package_name}"
+            exit 1
         fi
+        # 写入 build.json 记录 push 完成时间戳
+        write_build_json "dependency" "${pkg_name}" "${pkg_version}" "push"
+    else
+        echo "Skipping push step for ${package_name}..."
     fi
 }
 
@@ -912,17 +923,13 @@ process_packages() {
     # 如果包列表为空，从depends目录读取所有JSON文件
     if [ ${#package_list[@]} -eq 0 ]; then
         echo "No packages specified, reading from depends directory..."
-        if [ -d "depends" ]; then
-            for json_file in depends/*.json; do
-                if [ -f "$json_file" ]; then
-                    # 检查模块是否启用，如果禁用则跳过（禁用模块不做任何处理）
-                    if is_module_enabled "$json_file"; then
-                        local package_name=$(basename "$json_file" .json)
-                        package_list+=("$package_name")
-                    fi
-                fi
-            done
-        fi
+        for json_file in depends/*.json; do
+            # 跳过非普通文件
+            [ -f "$json_file" ] || continue
+            # 跳过禁用模块（禁用模块不做任何处理）
+            is_module_enabled "$json_file" || continue
+            package_list+=("$(basename "$json_file" .json)")
+        done
     fi
     
     echo "Processing ${#package_list[@]} package(s): ${package_list[*]}"
