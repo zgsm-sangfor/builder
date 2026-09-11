@@ -40,7 +40,7 @@
     {
       "name": "backend",
       "subsystem": "root",
-      "version": "1.0.73"
+      "version": "1.0.74"
     },
     {
       "name": "casdoor",
@@ -70,17 +70,17 @@
     {
       "name": "costrict-admin-backend",
       "subsystem": "backend",
-      "version": "1.0.113"
+      "version": "1.0.114"
     },
     {
       "name": "costrict-admin-frontend",
       "subsystem": "backend",
-      "version": "1.0.58"
+      "version": "1.0.59"
     },
     {
       "name": "costrict-admin",
       "subsystem": "frontend",
-      "version": "1.0.138"
+      "version": "1.0.144"
     },
     {
       "name": "costrict-auth-frontend",
@@ -90,7 +90,7 @@
     {
       "name": "costrict-daemon",
       "subsystem": "root",
-      "version": "1.0.138"
+      "version": "1.0.144"
     },
     {
       "name": "costrict-dept-sync",
