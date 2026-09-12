@@ -3,7 +3,7 @@
   "type": "zip",
   "subsystem": "backend",
   "path": "./configures",
-  "version": "1.0.61",
+  "version": "1.0.62",
   "display_name": "costrict-admin前端页面",
   "description": "CoStrict管理服务的前端页面"
 }

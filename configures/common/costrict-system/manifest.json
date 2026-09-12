@@ -35,7 +35,7 @@
     {
       "name": "authz",
       "subsystem": "backend",
-      "version": "1.0.2"
+      "version": "1.0.5"
     },
     {
       "name": "backend",
@@ -75,7 +75,7 @@
     {
       "name": "costrict-admin-frontend",
       "subsystem": "backend",
-      "version": "1.0.61"
+      "version": "1.0.62"
     },
     {
       "name": "costrict-admin",
@@ -130,7 +130,7 @@
     {
       "name": "firmware",
       "subsystem": "root",
-      "version": "1.0.141"
+      "version": "1.0.142"
     },
     {
       "name": "frontend",
@@ -155,7 +155,7 @@
     {
       "name": "orgd",
       "subsystem": "backend",
-      "version": "1.0.2"
+      "version": "1.0.6"
     },
     {
       "name": "portal",

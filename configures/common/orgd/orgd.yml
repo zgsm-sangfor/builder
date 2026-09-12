@@ -5,6 +5,7 @@ services:
     environment:
       - TZ=Asia/Shanghai
     volumes:
+      - ./config.yaml:/app/config.yaml:ro
       - ${COSTRICT_DATA_DIR}/backend/orgd/logs:/app/logs
     networks:
       - shenma

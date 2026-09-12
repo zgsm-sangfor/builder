@@ -152,18 +152,18 @@ start_docker() {
     return 0
 }
 
-stop_docker_services() {
-    if [[ ! -f "docker-compose.yml" ]]; then
-        return 0
-    fi
-    log "INFO" "停止Docker Compose服务..."
-    if ! docker-compose -f docker-compose.yml down; then
-        log "WARN" "Docker Compose服务停止失败"
-        return 1
-    fi
-    log "INFO" "Docker Compose服务已停止"
-    return 0
-}
+# stop_docker_services() {
+#     if [[ ! -f "docker-compose.yml" ]]; then
+#         return 0
+#     fi
+#     log "INFO" "停止Docker Compose服务..."
+#     if ! docker-compose -f docker-compose.yml down; then
+#         log "WARN" "Docker Compose服务停止失败，跳过并继续初始化"
+#         return 0
+#     fi
+#     log "INFO" "Docker Compose服务已停止"
+#     return 0
+# }
 
 start_docker_services() {
     # 启动Docker Compose服务
@@ -401,9 +401,10 @@ main() {
     confirm_init
     install_firmware_os
     check_environment
-    stop_docker_services
     gen_costrict_env
     gen_env_files
+    # 不用停旧服务，costrict-admin install会停
+    # stop_docker_services
     register_services
     fix_permissions
     start_docker

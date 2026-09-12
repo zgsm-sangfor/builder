@@ -1,0 +1,83 @@
+debug_mode: "debug"
+
+server:
+  host: "0.0.0.0"
+  port: 8083
+  tls:
+    enabled: false
+    cert_path: "../tools/certs/orgd.crt"
+    key_path: "../tools/certs/orgd.key"
+
+database:
+  type: "sqlite"
+  dsn: "../authd.db"
+  log_enabled: false
+
+# 内部服务认证配置
+internal_auth:
+  enabled: false
+  ca_cert: "../tools/certs/ca.crt"
+  public_key: "../tools/certs/token-signer.pub"
+  verify_client_cert: true
+  verify_access_token: true
+  protected_paths:
+    - "/costrict-authz/api/v1"
+  exempt_paths:
+    - "/health"
+    - "/metrics"
+    - "/swagger/"
+
+authz:
+  endpoint: "http://localhost:8082/costrict-authz/api/v1"
+  retry:
+    max_retries: 10
+    base_delay: 1
+    max_delay: 60
+  tls:
+    enabled: false
+    cert: "../tools/certs/orgd.crt"
+    key: "../tools/certs/orgd.key"
+    ca_cert: "../tools/certs/ca.crt"
+    access_token_header: "X-Access-Token"
+    access_token: ""
+
+# cs-user 服务连接（供"导入用户"搜索代理使用）
+# internal_token 建议通过环境变量 CSUSER_INTERNAL_TOKEN 注入，避免明文入仓库
+csuser:
+  endpoint: "http://localhost:8085"
+  internal_token: ""
+  timeout: 5
+
+sync:
+  max_concurrent_sync: 5
+  full_sync_timeout: 300
+  max_retries: 3
+  retry_base_delay: 5
+  cron_enabled: true
+  sftp:
+    host: ""
+    port: 22
+    user: ""
+    password: ""
+    key_path: ""
+    base_path: "/"
+
+# 回调配置（启动时自动注册回调，使 orgd 在组织结构变更时通知对应应用）
+# 注意：authz 不再通过 org-events 回调接收组织变更（authz 未实现该端点），
+# orgd 落库后会直接调用 authz 的 resources/refresh?resource_type={type} API 刷新其内存缓存。
+# 以下条目仅作为第三方应用接入回调的配置示例，默认关闭。
+callbacks:
+  - app: "authz"
+    url: "http://localhost:8082/costrict-authz/api/v1/org-events"
+    enabled: false
+    tls:
+      enabled: false
+      cert: "../tools/certs/orgd.crt"
+      key: "../tools/certs/orgd.key"
+      access_token_header: "X-Access-Token"
+      access_token: ""
+    events:
+      - "org.changed"
+# 注：信号+拉取模式下，组织结构变更统一收敛为 1 条 org.changed 信号，
+# 接收方收到信号后根据 changed_types 主动拉取 /costrict-orgd/api/v1 下的
+# users / departments / teams 只读端点获取最新数据，不再订阅行级事件。

@@ -3,9 +3,15 @@
 #
 # github-fetch-release.sh - 从GitHub下载指定版本的release
 #
-# 功能：
 #   从GitHub Release页面下载指定平台(OS/ARCH)和版本的二进制发布包，
 #   保存到 packages/{package}/{os}/{arch}/{version}/ 目录下。
+#
+# 下载方式（官方方法优先）：
+#   1. 优先使用官方 GitHub CLI（gh release download）——自动处理私有仓库认证，
+#      与 local-build.sh 保持一致；若系统未安装 gh，则自动下载官方二进制并复用
+#      （可用 GH_FETCH_NO_BOOTSTRAP=1 禁用该自动下载）；
+#   2. 无 gh 或 gh 失败时回退到 curl 直连 URL，再回退到 GitHub API 资产端点。
+#
 #
 # 选项说明：
 #   --os <OS>            操作系统（必填），如 linux, darwin, windows
@@ -130,6 +136,135 @@ do_download_api() {
     else
         curl -fSL -H "Accept: application/octet-stream" -o "${output}" "${api_url}"
     fi
+}
+
+# 官方方法：使用 GitHub CLI (gh release download) 下载 Release 资产
+# 说明：
+#   - gh 会自动处理私有仓库认证（基于 `gh auth login` 凭据或 GH_TOKEN/GITHUB_TOKEN 环境变量）；
+#   - --pattern 使用资产文件名 glob（形如 {package}-{os}-{arch}-*）定位目标资产；
+#   - --output 将匹配到的单个资产写入指定文件，--clobber 覆盖已存在文件。
+# 参数: repo, version, os, arch, package, output
+do_download_gh() {
+    local repo="$1"
+    local version="$2"
+    local target_os="$3"
+    local target_arch="$4"
+    local target_package="$5"
+    local output="$6"
+
+    "${GH_BIN}" release download "v${version}" \
+        --repo "${repo}" \
+        --pattern "${target_package}-${target_os}-${target_arch}-*" \
+        --output "${output}" \
+        --clobber
+}
+
+# gh 可执行文件路径（由 ensure_gh 设置；默认回退到 PATH 中的 gh）
+GH_BIN="gh"
+# 官方 CLI 引导目录：系统未安装 gh 时，自动下载官方二进制并缓存到此目录复用
+GH_BOOTSTRAP_DIR="${GH_BOOTSTRAP_DIR:-${HOME:-/tmp}/.cache/costrict/gh-cli}"
+
+# 确保官方 GitHub CLI (gh) 可用（即“如果没有 gh，自动下载”）：
+#   1. 系统已安装 gh -> 直接使用；
+#   2. 引导目录已缓存官方二进制 -> 复用；
+#   3. 否则自动从官方仓库 cli/cli 下载对应平台最新版并解压到引导目录。
+# 可通过 GH_FETCH_NO_BOOTSTRAP=1 禁用自动下载。
+# 成功返回 0 并设置 GH_BIN；失败返回 1（由调用方回退到 curl）。
+ensure_gh() {
+    # 1. 系统已安装
+    if command -v gh >/dev/null 2>&1; then
+        GH_BIN="$(command -v gh)"
+        return 0
+    fi
+
+    # 2. 引导目录缓存（兼容 gh 与 gh.exe）
+    local cached
+    cached="$(find "${GH_BOOTSTRAP_DIR}" -type f \( -name gh -o -name gh.exe \) 2>/dev/null | head -1)"
+    if [ -n "${cached}" ]; then
+        chmod +x "${cached}" 2>/dev/null
+        GH_BIN="${cached}"
+        export PATH="$(dirname "${cached}"):${PATH}"
+        return 0
+    fi
+
+    if [ "${GH_FETCH_NO_BOOTSTRAP:-}" = "1" ]; then
+        return 1
+    fi
+
+    # 3. 自动下载官方二进制
+    if ! command -v curl >/dev/null 2>&1; then
+        echo "Warning: curl is required to bootstrap the gh CLI." >&2
+        return 1
+    fi
+
+    local os_raw arch_raw gh_os gh_arch
+    os_raw="$(uname -s)"
+    arch_raw="$(uname -m)"
+
+    case "${os_raw}" in
+        Linux*)                        gh_os="linux" ;;
+        Darwin*)                       gh_os="macOS" ;;
+        MINGW*|MSYS*|CYGWIN*|Windows*) gh_os="windows" ;;
+        *) echo "Warning: unsupported OS for gh bootstrap: ${os_raw}" >&2; return 1 ;;
+    esac
+
+    case "${arch_raw}" in
+        x86_64|amd64)  gh_arch="amd64" ;;
+        aarch64|arm64) gh_arch="arm64" ;;
+        *) echo "Warning: unsupported arch for gh bootstrap: ${arch_raw}" >&2; return 1 ;;
+    esac
+
+    local api_url tag ver asset_name archive url
+    api_url="https://api.github.com/repos/cli/cli/releases/latest"
+    tag="$(curl -sfL "${api_url}" 2>/dev/null | jq -r '.tag_name // empty' 2>/dev/null)"
+    if [ -z "${tag}" ] || [ "${tag}" = "null" ]; then
+        echo "Warning: failed to query the latest gh CLI version." >&2
+        return 1
+    fi
+    ver="${tag#v}"
+
+    case "${gh_os}" in
+        windows) asset_name="gh_${ver}_windows_${gh_arch}.zip" ;;
+        macOS)   asset_name="gh_${ver}_macOS_${gh_arch}.zip" ;;
+        *)       asset_name="gh_${ver}_linux_${gh_arch}.tar.gz" ;;
+    esac
+
+    echo "gh not found; downloading official GitHub CLI ${tag} (${gh_os}/${gh_arch})..."
+    mkdir -p "${GH_BOOTSTRAP_DIR}" || return 1
+    archive="${GH_BOOTSTRAP_DIR}/${asset_name}"
+    url="https://github.com/cli/cli/releases/download/${tag}/${asset_name}"
+    if ! curl -fSL -o "${archive}" "${url}"; then
+        echo "Warning: failed to download gh CLI from: ${url}" >&2
+        rm -f "${archive}"
+        return 1
+    fi
+
+    case "${asset_name}" in
+        *.zip)
+            if ! command -v unzip >/dev/null 2>&1; then
+                echo "Warning: unzip is required to extract the gh CLI." >&2
+                return 1
+            fi
+            unzip -oq "${archive}" -d "${GH_BOOTSTRAP_DIR}" || return 1
+            ;;
+        *)
+            tar -xzf "${archive}" -C "${GH_BOOTSTRAP_DIR}" || return 1
+            ;;
+    esac
+
+    local extracted
+    extracted="$(find "${GH_BOOTSTRAP_DIR}" -type f \( -name gh -o -name gh.exe \) 2>/dev/null | head -1)"
+    if [ -z "${extracted}" ]; then
+        echo "Warning: gh binary not found after extraction." >&2
+        return 1
+    fi
+
+    chmod +x "${extracted}" 2>/dev/null
+    GH_BIN="${extracted}"
+    export PATH="$(dirname "${extracted}"):${PATH}"
+    rm -f "${archive}"
+    echo "gh CLI ready: ${GH_BIN}"
+    return 0
 }
 
 # 默认参数值
@@ -268,30 +403,55 @@ if [ $? -ne 0 ]; then
 fi
 
 #
-# 下载策略：
-#   1. 优先尝试直接 URL（适合公共仓库或 URL 由用户通过 --url 显式指定）
-#   2. 若失败且 URL 是自动生成的，通过 GitHub API 获取资产 API URL 重试
+# 下载策略（官方方法优先）：
+#   1. 优先使用官方 GitHub CLI：`gh release download`
+#      （自动处理私有仓库认证，与 local-build.sh 保持一致）
+#   2. 无 gh 或 gh 失败时，回退到直接 URL（curl）
+#      （适合公共仓库或 URL 由用户通过 --url 显式指定）
+#   3. 若仍失败且 URL 是自动生成的，通过 GitHub API 获取资产 API URL 重试
 #      （API URL 重定向在 api.github.com 同主机内，认证头不会丢失）
 #
-do_download_direct "${PACKAGE_URL}" "${TARGET_FILE}"
-DOWNLOAD_EXIT_CODE=$?
+DOWNLOAD_SUCCEEDED=false
 
-if [ $DOWNLOAD_EXIT_CODE -ne 0 ] && [ "$AUTO_GENERATED_URL" = true ]; then
-    echo "Direct URL failed, trying GitHub API to discover asset..."
-    ASSET_API_URL=$(fetch_release_asset_api_url "$PACKAGE_REPO" "$PACKAGE_VERSION" "$PACKAGE_OS" "$PACKAGE_ARCH" "$PACKAGE_NAME")
-    if [ $? -eq 0 ] && [ -n "$ASSET_API_URL" ]; then
-        echo "Found asset API URL: ${ASSET_API_URL}"
-        do_download_api "${ASSET_API_URL}" "${TARGET_FILE}"
-        DOWNLOAD_EXIT_CODE=$?
+if ensure_gh; then
+    echo "Using official method: gh release download"
+    if do_download_gh "${PACKAGE_REPO}" "${PACKAGE_VERSION}" "${PACKAGE_OS}" "${PACKAGE_ARCH}" "${PACKAGE_NAME}" "${TARGET_FILE}"; then
+        DOWNLOAD_SUCCEEDED=true
     else
-        echo "Warning: Could not find matching asset via GitHub API for ${PACKAGE_NAME} (os=${PACKAGE_OS}, arch=${PACKAGE_ARCH})"
+        echo "gh download failed, falling back to curl..."
     fi
+else
+    echo "gh unavailable, using curl..."
 fi
 
-if [ $DOWNLOAD_EXIT_CODE -ne 0 ]; then
-    echo "Error: Failed to download from: ${PACKAGE_URL}"
-    rm -f "${TARGET_FILE}"
-    exit 1
+if [ "$DOWNLOAD_SUCCEEDED" != true ]; then
+    do_download_direct "${PACKAGE_URL}" "${TARGET_FILE}"
+    DOWNLOAD_EXIT_CODE=$?
+
+    if [ $DOWNLOAD_EXIT_CODE -ne 0 ] && [ "$AUTO_GENERATED_URL" = true ]; then
+        echo "Direct URL failed, trying GitHub API to discover asset..."
+        ASSET_API_URL=$(fetch_release_asset_api_url "$PACKAGE_REPO" "$PACKAGE_VERSION" "$PACKAGE_OS" "$PACKAGE_ARCH" "$PACKAGE_NAME")
+        if [ $? -eq 0 ] && [ -n "$ASSET_API_URL" ]; then
+            echo "Found asset API URL: ${ASSET_API_URL}"
+            do_download_api "${ASSET_API_URL}" "${TARGET_FILE}"
+            DOWNLOAD_EXIT_CODE=$?
+        else
+            echo "Warning: Could not find matching asset via GitHub API for ${PACKAGE_NAME} (os=${PACKAGE_OS}, arch=${PACKAGE_ARCH})"
+            if [ -z "${GH_TOKEN}" ] && [ -z "${GITHUB_TOKEN}" ]; then
+                echo "Hint: No GH_TOKEN/GITHUB_TOKEN is set. If the repository '${PACKAGE_REPO}' is private,"
+                echo "      GitHub returns HTTP 404 for unauthenticated requests and the download will always fail."
+                echo "      Authenticate the official GitHub CLI (auto-installed when missing), or export a token and retry:"
+                echo "        gh auth login            # 官方 CLI 登录（推荐）"
+                echo "        export GH_TOKEN=<your-github-token>"
+            fi
+        fi
+    fi
+
+    if [ $DOWNLOAD_EXIT_CODE -ne 0 ]; then
+        echo "Error: Failed to download from: ${PACKAGE_URL}"
+        rm -f "${TARGET_FILE}"
+        exit 1
+    fi
 fi
 
 # 设置可执行权限

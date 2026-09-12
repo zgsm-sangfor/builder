@@ -14,6 +14,6 @@ if [ -z "${COSTRICT_LOCAL_STORAGE:-}" ]; then
 fi
 export COSTRICT_LOCAL_STORAGE
 
-./install-os-firmware.sh
-./start-nginx.sh
+"${SCRIPT_DIR}/install-os-firmware.sh"
+"${SCRIPT_DIR}/start-nginx.sh"
 

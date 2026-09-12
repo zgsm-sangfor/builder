@@ -41,5 +41,5 @@ if [ "${loaded}" != true ]; then
     exit 1
 fi
 
-docker compose up -d
+docker compose -f "${SCRIPT_DIR}/docker-compose.yml" up -d
 
