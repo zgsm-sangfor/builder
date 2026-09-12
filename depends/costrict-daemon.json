@@ -24,6 +24,6 @@
     "workdir": ".",
     "command": "github-fetch-release.sh --repo zgsm-sangfor/costrict-admin --package costrict-daemon --os {{os}} --arch {{arch}} --version {{.version}}"
   },
-  "version": "1.0.145",
+  "version": "1.0.146",
   "description": "The daemon of costrict"
 }

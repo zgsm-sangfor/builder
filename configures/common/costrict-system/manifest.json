@@ -70,17 +70,17 @@
     {
       "name": "costrict-admin-backend",
       "subsystem": "backend",
-      "version": "1.0.116"
+      "version": "1.0.117"
     },
     {
       "name": "costrict-admin-frontend",
       "subsystem": "backend",
-      "version": "1.0.62"
+      "version": "1.0.63"
     },
     {
       "name": "costrict-admin",
       "subsystem": "frontend",
-      "version": "1.0.145"
+      "version": "1.0.146"
     },
     {
       "name": "costrict-auth-frontend",
@@ -90,7 +90,7 @@
     {
       "name": "costrict-daemon",
       "subsystem": "root",
-      "version": "1.0.145"
+      "version": "1.0.146"
     },
     {
       "name": "costrict-dept-sync",
