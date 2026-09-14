@@ -63,8 +63,7 @@ jobs:
           GITHUB_FIRST: 1
         run: |
           chmod +x *.sh
-          ./build-mirror.sh --ignore-images --github-first --arch arm64
-          ./build-mirror.sh --ignore-images --github-first --arch amd64
+          ./build-mirror.sh --no-images --github-first --arch all
 
       - name: Prepare package repository artifact
         run: |

@@ -47,8 +47,8 @@ set -e
 #                          指定时，在调用 gen-manifest.sh 之后，将该版本号写入
 #                          components/costrict-system.json 的 version 字段，不再自动递增；
 #                          未指定时，调用 check-update.sh 检测 costrict-system 变更并自动递增版本号
-#   --mirror              构建离线镜像包（Step 7）：调用 build-mirror.sh 构建 costrict-mirror.tar.gz，
-#                          默认参数为 --ignore-images --github-first
+#   --mirror              构建离线镜像包（Step 7）：调用 build-mirror.sh 构建 costrict-mirror-{arch}.tar.gz，
+#                          默认参数为 --no-images --github-first
 
 source ./.env
 
@@ -93,8 +93,8 @@ show_help() {
     echo "                        指定时，在 gen-manifest.sh 之后将该版本号写入"
     echo "                        components/costrict-system.json 的 version 字段（跳过自动递增）；"
     echo "                        未指定时，自动检测 costrict-system 变更并递增版本号"
-    echo "  --mirror              构建离线镜像包（Step 7）：调用 build-mirror.sh 构建 costrict-mirror.tar.gz"
-    echo "                        默认参数为 --ignore-images --github-first"
+    echo "  --mirror              构建离线镜像包（Step 7）：调用 build-mirror.sh 构建 costrict-mirror-{archs}.tar.gz"
+    echo "                        默认参数为 --no-images --github-first"
     echo "  --help, -h            显示此帮助信息"
     echo ""
     echo "执行步骤:"
@@ -107,8 +107,8 @@ show_help() {
     echo "     (指定 --version 时写入指定版本号，否则自动递增版本号)"
     echo "  6. 检查尚未打包的 component 包，若有则调用 build-components.sh 构建、打包并索引"
     echo "     (若指定 --pack <target>，则按指定目标打包：all=全部, auto=自动检测, 或指定包名列表)"
-    echo "  7. (仅 --mirror) 调用 build-mirror.sh 构建离线镜像包 costrict-mirror.tar.gz"
-    echo "     (默认参数：--ignore-images --github-first)"
+    echo "  7. (仅 --mirror) 调用 build-mirror.sh 构建离线镜像包 costrict-mirror-{archs}.tar.gz"
+    echo "     (默认参数：--no-images --github-first)"
     echo ""
     echo "示例:"
     echo "  $0                                    # 构建镜像（不推送），然后构建包"
@@ -330,12 +330,12 @@ else
 fi
 
 # Step 7: 仅当 --mirror 为 true 时，构建离线镜像包
-# 调用 build-mirror.sh 构建 costrict-mirror.tar.gz，默认参数为 --ignore-images --github-first
+# 调用 build-mirror.sh 构建 costrict-mirror-{archs}.tar.gz，默认参数为 --no-images --github-first
 if [ "$NEED_MIRROR" = true ]; then
     echo "----------------------------------------------------------------"
-    echo "Step 7: Building offline mirror package (costrict-mirror.tar.gz)..."
+    echo "Step 7: Building offline mirror package (costrict-mirror-{archs}.tar.gz)..."
     echo "----------------------------------------------------------------"
-    ./build-mirror.sh --ignore-images --github-first
+    ./build-mirror.sh --no-images --github-first
 else
     echo "----------------------------------------------------------------"
     echo "--mirror not set, skipping Step 7 (offline mirror package build)..."
