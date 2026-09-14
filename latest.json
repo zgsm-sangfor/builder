@@ -26,13 +26,13 @@
       "file_count": 0
     },
     "costrict-admin-backend": {
-      "version": "1.0.117",
-      "checksum": "0d1311c6b92dd68cd47bb387752618c8575ab48e7378acac9e51a8223b641e93",
+      "version": "1.0.118",
+      "checksum": "9ddd7356f9244bd20a553388866ddd42d948d6d5af0a199fde642a1b08279c15",
       "file_count": 4
     },
     "costrict-admin-frontend": {
-      "version": "1.0.64",
-      "checksum": "2ef0ad8af9d9baca879be3377f0f31759ed8825a68ecf99accc62850656225f3",
+      "version": "1.0.65",
+      "checksum": "c5e18042b11083f86361edec84a8d3378a707e60999153228e986f85fe6480e6",
       "file_count": 4
     },
     "system": {
@@ -321,8 +321,8 @@
       "file_count": 6
     },
     "costrict-auth-frontend": {
-      "version": "1.0.3",
-      "checksum": "8be242ab2a081eb346da37e1b5520cf458048aae1c2a432f3ad13fd0552162b1",
+      "version": "1.0.4",
+      "checksum": "e1f5aeed23a20ef16c1fd3ebbb8e08a5e09b0f89e3a7dfbcd39de571dbd76b49",
       "file_count": 5
     }
   },
