@@ -130,7 +130,7 @@
     {
       "name": "firmware",
       "subsystem": "root",
-      "version": "1.0.142"
+      "version": "1.0.143"
     },
     {
       "name": "frontend",
