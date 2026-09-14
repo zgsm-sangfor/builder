@@ -1,10 +1,10 @@
 {
   "name": "costrict-admin-frontend",
   "type": "docker",
-  "version": "1.0.146",
+  "version": "1.0.147",
   "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
   "path": "../costrict-admin",
-  "repo": "zgsm-sangfor",
+  "repo": "zgsm",
   "tag": "v{{.version}}",
   "enabled": true,
   "sources": [

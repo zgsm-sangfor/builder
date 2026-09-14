@@ -63,7 +63,8 @@ jobs:
           GITHUB_FIRST: 1
         run: |
           chmod +x *.sh
-          ./build-mirror.sh --ignore-images --github-first
+          ./build-mirror.sh --ignore-images --github-first --arch arm64
+          ./build-mirror.sh --ignore-images --github-first --arch amd64
 
       - name: Prepare package repository artifact
         run: |
@@ -72,7 +73,8 @@ jobs:
           mkdir -p packages
           cp packages.json packages/
           tar -czf artifact/packages.tar.gz packages
-          cp ./costrict-mirror.tar.gz artifact/
+          cp ./costrict-mirror-amd64.tar.gz artifact/
+          cp ./costrict-mirror-arm64.tar.gz artifact/
 
       - name: Upload package repository artifact
         uses: actions/upload-artifact@v4

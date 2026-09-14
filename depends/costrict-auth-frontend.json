@@ -1,9 +1,9 @@
 {
   "name": "costrict-auth-frontend",
-  "version": "0.4.7",
+  "version": "0.4.8",
   "type": "docker",
   "remote": "git@github.com:zgsm-sangfor/authd.git",
-  "repo": "zgsm-sangfor",
+  "repo": "zgsm",
   "tag": "v{{.version}}",
   "path": "../authd",
   "command": "bash build.sh",
@@ -15,16 +15,26 @@
     "*/.git/*",
     "*/node_modules/*"
   ],
+  "platforms": [
+    {
+      "os": "linux",
+      "arch": "amd64"
+    },
+    {
+      "os": "linux",
+      "arch": "arm64"
+    }
+  ],
   "build": {
     "workdir": "../authd/frontend",
-    "command": "export DOCKER_BUILDKIT=1 && docker build -f ./Dockerfile --build-arg VERSION={{.version}} .. -t {{.repo}}/costrict-auth-frontend:v{{.version}}"
+    "command": "export DOCKER_BUILDKIT=1 && docker build -f ./Dockerfile --build-arg VERSION={{.version}} .. -t {{.repo}}/{{.name}}:{{.tag}}"
   },
   "pull": {
     "workdir": "../authd/frontend",
-    "command": "docker-pull-via.sh --proxy-id ghcr.io/zgsm-sangfor/costrict-auth-frontend:{{.tag}} --image-id  {{.repo}}/costrict-auth-frontend:v{{.version}}"
+    "command": "docker-pull-via.sh --arch {{arch}} --proxy-id ghcr.io/zgsm-sangfor/{{.name}}:{{.tag}} --image-id  {{.repo}}/{{.name}}:{{.tag}}"
   },
   "update": {
     "workdir": "./configures/common/costrict-auth-frontend",
-    "command": "echo IMAGE_COSTRICT_AUTH_FRONTEND={{.repo}}/costrict-auth-frontend:v{{.version}} > ./image.env"
+    "command": "echo IMAGE_COSTRICT_AUTH_FRONTEND={{.repo}}/{{.name}}:{{.tag}} > ./image.env"
   }
 }

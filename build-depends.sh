@@ -545,7 +545,7 @@ save_docker_image() {
     local package="$1"
     local arch="$2"
     local package_file="depends/${package}.json"
-    
+
     # 获取模块类型
     local pkg_type=$(jq -r ".type // empty" "$package_file")
     if [ "$pkg_type" != "docker" ]; then
@@ -561,20 +561,25 @@ save_docker_image() {
         pkg_tag="{{.version}}"
     fi
 
-    # 创建输出目录: images/${arch}
-    local image_dir="images/${arch}"
-    mkdir -p "$image_dir"
-    
+    local image_dir="images/${arch}/${pkg_name}"
+    # 创建 tar 文件所在目录（含 {pkg_name} 子目录）: images/${arch}/${pkg_name}
+    # 与 web 服务器存储结构同构: {arch}/{short-name}/{short-name}-{tag}.tar
+    mkdir -p "${image_dir}"
+
     local image_full_name=$(render_template_ex "${pkg_repo}/${pkg_name}:${pkg_tag}" "$package_file")
     local tar_file=$(render_template_ex "${pkg_name}-${pkg_tag}.tar" "$package_file")
-    
+
+    if [ -f "${image_dir}/${tar_file}" ]; then
+        echo "Image file ${image_dir}/${tar_file} already exist!"
+        return 0
+    fi
     # 导出镜像为tar文件
     docker save -o "${image_dir}/${tar_file}" "$image_full_name"
     if [ $? -ne 0 ]; then
         echo "Error: Failed to export image $image_full_name"
         return 1
     fi
-    
+
     echo "Successfully exported image ${image_full_name} to ${image_dir}/${tar_file}"
     return 0
 }
@@ -583,55 +588,55 @@ save_docker_image() {
 update_component() {
     local package="$1"
     local package_file="depends/${package}.json"
-    
+
     # 检查配置文件是否存在
     if [ ! -f "$package_file" ]; then
         echo "Error: Image configuration file $package_file does not exist!"
         return 1
     fi
-    
+
     # 检查update字段是否存在
     local has_update=$(jq -r 'has("update")' "$package_file")
     if [ "$has_update" != "true" ]; then
         echo "Skipping component update for ${package} (update field not found)..."
         return
     fi
-    
+
     # 从配置文件中获取update.workdir和update.command
     local workdir=$(jq -r ".update.workdir // empty" "$package_file")
     local command=$(jq -r ".update.command // empty" "$package_file")
-    
+
     # 获取package name用于显示
     local package_name=$(jq -r ".name // empty" "$package_file")
-    
+
     # 检查workdir是否为空
     if [ -z "$workdir" ] || [ "$workdir" = "null" ] || [ "$workdir" = "" ]; then
         echo "Skipping component update for ${package} (update.workdir not found)..."
         return
     fi
-    
+
     # 检查command是否为空
     if [ -z "$command" ] || [ "$command" = "null" ] || [ "$command" = "" ]; then
         echo "Skipping component update for ${package} (update.command not found)..."
         return
     fi
-    
+
     echo "=============================================="
     echo "Updating component: $package_name"
     echo "Workdir: $workdir"
     echo "=============================================="
-    
+
     # 渲染命令模板
     local rendered_command=$(render_template_ex "$command" "$package_file")
     echo "Executing: $rendered_command"
-    
+
     # 执行命令（在指定的工作目录下）
     (cd "$workdir" && bash -c "$rendered_command")
     if [ $? -ne 0 ]; then
         echo "Error: Component update failed for $package_name"
         return 1
     fi
-    
+
     echo "Successfully updated component: $package_name"
     return 0
 }
@@ -640,40 +645,40 @@ update_component() {
 push_image() {
     local package="$1"
     local package_file="depends/${package}.json"
-    
+
     # 检查配置文件是否存在
     if [ ! -f "$package_file" ]; then
         echo "Error: Image configuration file $package_file does not exist!"
         return 1
     fi
-    
+
     # 从depends目录的对应JSON文件中获取配置
     local pkg_name=$(jq -r ".name // empty" "$package_file")
     local pkg_repo=$(jq -r ".repo // empty" "$package_file")
     local pkg_tag=$(jq -r ".tag // empty" "$package_file")
-    
+
     # tag字段为可选的，默认值为 '{{.version}}'
     if [ -z "$pkg_tag" ] || [ "$pkg_tag" = "null" ] || [ "$pkg_tag" = "" ]; then
         pkg_tag="{{.version}}"
     fi
-    
+
     if [ -z "$pkg_name" ] || [ "$pkg_name" = "null" ]; then
         echo "Error: 'name' not found for image '${package}' in ${package_file}!"
         return 1
     fi
-    
+
     local pkg_full_name=$(render_template_ex "${pkg_repo}/${pkg_name}:${pkg_tag}" "$package_file")
-    
+
     echo "=============================================="
     echo "Pushing image: $pkg_full_name"
     echo "=============================================="
-    
+
     docker push "$pkg_full_name"
     if [ $? -ne 0 ]; then
         echo "Error: Push failed for image $pkg_full_name"
         return 1
     fi
-    
+
     echo "Successfully pushed image: $pkg_full_name"
     return 0
 }

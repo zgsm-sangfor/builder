@@ -14,8 +14,8 @@
 #
 #
 # 选项说明：
-#   --os <OS>            操作系统（必填），如 linux, darwin, windows
-#   --arch <ARCH>        架构（必填），如 amd64, arm64
+#   --os <OS>            操作系统（可选），默认: 当前 OS，如 linux, darwin, windows
+#   --arch <ARCH>        架构（可选），默认: 当前硬件平台，如 amd64, arm64
 #   --version <VERSION>  版本号（必填）
 #   --package <NAME>     包名称（必填），如 costrict-admin
 #   --repo <REPO>        GitHub仓库名（可选），默认: zgsm-sangfor/<package>
@@ -36,8 +36,8 @@ usage() {
     echo "从GitHub下载指定版本的release发布包。"
     echo ""
     echo "Options:"
-    echo "  --os <OS>            操作系统（必填），如 linux, darwin, windows"
-    echo "  --arch <ARCH>        架构（必填），如 amd64, arm64"
+    echo "  --os <OS>            操作系统（可选），默认: 当前 OS，如 linux, darwin, windows"
+    echo "  --arch <ARCH>        架构（可选），默认: 当前硬件平台，如 amd64, arm64"
     echo "  --version <VERSION>  版本号（必填）"
     echo "  --package <NAME>     包名称（必填），如 costrict-admin"
     echo "  --repo <REPO>        GitHub仓库名（可选），默认: zgsm-sangfor/<package>"
@@ -267,6 +267,9 @@ ensure_gh() {
     return 0
 }
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source ${SCRIPT_DIR}/.env
+
 # 默认参数值
 PACKAGE_OS=""
 PACKAGE_ARCH=""
@@ -333,17 +336,34 @@ while true; do
     esac
 done
 
-# 验证必填参数
+# 如果未指定 --os，则获取当前 OS 作为 PACKAGE_OS 的值
 if [ -z "$PACKAGE_OS" ]; then
-    echo "Error: --os is required."
-    usage
+    case "$(uname -s)" in
+        Linux*)                        PACKAGE_OS="linux" ;;
+        Darwin*)                       PACKAGE_OS="darwin" ;;
+        MINGW*|MSYS*|CYGWIN*|Windows*) PACKAGE_OS="windows" ;;
+        *)
+            echo "Error: failed to detect current OS (uname -s: $(uname -s)); please specify --os."
+            usage
+            ;;
+    esac
+    echo "Info: --os not specified, using current OS: ${PACKAGE_OS}"
 fi
 
+# 如果未指定 --arch，则获取当前硬件平台作为 PACKAGE_ARCH 的值
 if [ -z "$PACKAGE_ARCH" ]; then
-    echo "Error: --arch is required."
-    usage
+    case "$(uname -m)" in
+        x86_64|amd64)  PACKAGE_ARCH="amd64" ;;
+        aarch64|arm64) PACKAGE_ARCH="arm64" ;;
+        *)
+            echo "Error: failed to detect current arch (uname -m: $(uname -m)); please specify --arch."
+            usage
+            ;;
+    esac
+    echo "Info: --arch not specified, using current arch: ${PACKAGE_ARCH}"
 fi
 
+# 验证必填参数
 if [ -z "$PACKAGE_VERSION" ]; then
     echo "Error: --version is required."
     usage

@@ -35,7 +35,7 @@
     {
       "name": "authz",
       "subsystem": "backend",
-      "version": "1.0.5"
+      "version": "1.0.6"
     },
     {
       "name": "backend",
@@ -70,27 +70,27 @@
     {
       "name": "costrict-admin-backend",
       "subsystem": "backend",
-      "version": "1.0.117"
+      "version": "1.0.118"
     },
     {
       "name": "costrict-admin-frontend",
       "subsystem": "backend",
-      "version": "1.0.63"
+      "version": "1.0.64"
     },
     {
       "name": "costrict-admin",
       "subsystem": "frontend",
-      "version": "1.0.146"
+      "version": "1.0.147"
     },
     {
       "name": "costrict-auth-frontend",
       "subsystem": "backend",
-      "version": "1.0.1"
+      "version": "1.0.3"
     },
     {
       "name": "costrict-daemon",
       "subsystem": "root",
-      "version": "1.0.146"
+      "version": "1.0.147"
     },
     {
       "name": "costrict-dept-sync",
@@ -150,12 +150,12 @@
     {
       "name": "oidc-auth",
       "subsystem": "backend",
-      "version": "1.0.12"
+      "version": "1.0.13"
     },
     {
       "name": "orgd",
       "subsystem": "backend",
-      "version": "1.0.6"
+      "version": "1.0.7"
     },
     {
       "name": "portal",

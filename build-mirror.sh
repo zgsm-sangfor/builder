@@ -6,6 +6,9 @@ set -e
 # build-mirror.sh - 构建离线安装包 costrict-mirror.tar.gz
 #
 # 选项:
+#   --arch <amd64|arm64>
+#                     仅打包指定架构相关内容，输出 costrict-mirror-${arch}.tar.gz；
+#                     未指定时同时打包 amd64 与 arm64 相关内容，输出 costrict-mirror.tar.gz
 #   --ignore-images   打包时忽略 images 目录
 #   --force   强制更新 costrict-static 内容（即使本地已存在）
 #   --github-first    下载文件时优先从 GitHub 下载（默认优先从 zgsm.sangfor.com 下载）
@@ -13,7 +16,12 @@ set -e
 # 流程:
 #   Step 1: 获取/更新 costrict-static 的内容
 #   Step 2: 打包 site 目录并拷贝到 costrict-static 下
-#   Step 3: 将 costrict-static、packages、images 打包为 costrict-mirror.tar.gz
+#   Step 3: 将 costrict-static、packages、images 打包为 costrict-mirror[-<arch>].tar.gz
+#
+# 架构相关内容（指定 --arch 时仅保留目标架构，其余架构内容被排除）:
+#   images/<arch>/                              镜像目录
+#   costrict-static/linux/<arch>/               离线安装包（docker/compose/jq 等）
+#   costrict-static/nginx-1.31.1-<arch>.tar     按架构命名的 nginx 镜像
 #
 
 ZGSM_BASE_URL="https://zgsm.sangfor.com/costrict-static"
@@ -24,8 +32,12 @@ SITE_DIR="site"
 SITE_TAR="mirror-site.tar"
 OUTPUT_FILE="costrict-mirror.tar.gz"
 NGINX_IMAGE="nginx:1.31.1"
-# 目标架构列表：离线包需同时提供 amd64 与 arm64 两种架构的 nginx 镜像
-NGINX_ARCHES=("amd64" "arm64")
+# 支持的架构列表：离线包默认同时提供 amd64 与 arm64 两种架构
+SUPPORTED_ARCHES=("amd64" "arm64")
+# 目标架构：为空时打包全部架构；指定为 amd64/arm64 时仅打包该架构
+ARCH=""
+# 实际参与打包的架构列表（解析参数后确定）
+TARGET_ARCHES=("${SUPPORTED_ARCHES[@]}")
 NGINX_IMAGE_TAR="${STATIC_DIR}/nginx-1.31.1.tar"
 STATIC_TAR_FILE="costrict-static.tar"
 
@@ -36,6 +48,9 @@ show_help() {
     echo "构建 CoStrict 离线安装包 costrict-mirror.tar.gz"
     echo ""
     echo "选项:"
+    echo "  --arch <amd64|arm64>"
+    echo "                    仅打包指定架构相关内容，输出 costrict-mirror-<arch>.tar.gz；"
+    echo "                    未指定时同时打包 amd64 与 arm64，输出 costrict-mirror.tar.gz"
     echo "  --ignore-images   打包时忽略 images 目录"
     echo "  --github-first    下载文件时优先从 GitHub 下载（默认优先从 ${ZGSM_BASE_URL} 下载）"
     echo "  --force           强制更新本地文件（即使本地已存在）"
@@ -44,10 +59,12 @@ show_help() {
     echo "执行步骤:"
     echo "  1. 获取/更新 costrict-static 的内容（从 ${ZGSM_BASE_URL} 或 GitHub 下载 MANIFEST 及其列出的文件）"
     echo "  2. 打包 site 目录为 ${SITE_TAR} 并拷贝到 ${STATIC_DIR} 下"
-    echo "  3. 将 ${STATIC_DIR}、packages、images 打包为 ${OUTPUT_FILE}"
+    echo "  3. 将 ${STATIC_DIR}、packages、images 打包为 costrict-mirror[-<arch>].tar.gz"
     echo ""
     echo "示例:"
     echo "  $0                  # 仅打包（不忽略 images，已有静态文件不更新）"
+    echo "  $0 --arch amd64     # 仅打包 amd64 相关内容，输出 costrict-mirror-amd64.tar.gz"
+    echo "  $0 --arch arm64     # 仅打包 arm64 相关内容，输出 costrict-mirror-arm64.tar.gz"
     echo "  $0 --ignore-images  # 打包但不包含 images"
     echo "  $0 --force          # 强制更新静态文件后打包"
     echo "  $0 --github-first   # 优先从 GitHub 下载静态文件后打包"
@@ -248,6 +265,15 @@ while [[ $# -gt 0 ]]; do
             GITHUB_FIRST=true
             shift
             ;;
+        --arch)
+            if [ -z "${2:-}" ]; then
+                echo "错误: --arch 需要指定架构 (支持: ${SUPPORTED_ARCHES[*]})"
+                show_help
+                exit 1
+            fi
+            ARCH="$2"
+            shift 2
+            ;;
         --help|-h)
             show_help
             exit 0
@@ -259,6 +285,26 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# 处理 --arch：校验取值并确定输出文件名与实际打包的架构列表
+if [ -n "${ARCH}" ]; then
+    arch_valid=false
+    for a in "${SUPPORTED_ARCHES[@]}"; do
+        if [ "${ARCH}" = "${a}" ]; then
+            arch_valid=true
+            break
+        fi
+    done
+    if [ "${arch_valid}" != true ]; then
+        echo "错误: 不支持的 --arch 取值: ${ARCH} (支持: ${SUPPORTED_ARCHES[*]})"
+        exit 1
+    fi
+    TARGET_ARCHES=("${ARCH}")
+    OUTPUT_FILE="costrict-mirror-${ARCH}.tar.gz"
+else
+    TARGET_ARCHES=("${SUPPORTED_ARCHES[@]}")
+    OUTPUT_FILE="costrict-mirror.tar.gz"
+fi
 
 #
 # Step 1: 获取/更新 costrict-static 的内容
@@ -274,7 +320,7 @@ echo "正在尝试下载 ${STATIC_TAR_FILE}..."
 if fetch_file "${STATIC_TAR_FILE}"; then
     echo "下载成功，正在解压 ${STATIC_TAR_FILE} 到 ${STATIC_DIR}/..."
     tar -xf "${STATIC_TAR_FILE}" -C "${STATIC_DIR}"
-    rm -f "${STATIC_TAR_FILE}"
+    # rm -f "${STATIC_TAR_FILE}"
     echo "${STATIC_TAR_FILE} 解压完成。"
 else
     echo "下载 ${STATIC_TAR_FILE} 失败，将使用原有 MANIFEST 方式获取。"
@@ -330,7 +376,7 @@ else
 fi
 
 #
-# Step 3: 打包 costrict-static、packages、images 为 costrict-mirror.tar.gz
+# Step 3: 打包 costrict-static、packages、images 为 costrict-mirror[-<arch>].tar.gz
 #
 echo ""
 echo "----------------------------------------------------------------"
@@ -339,6 +385,23 @@ echo "----------------------------------------------------------------"
 
 # 构建 tar 命令的参数列表
 TAR_ARGS=("-czf" "${OUTPUT_FILE}")
+
+# 指定 --arch 时，排除非目标架构的相关内容，仅保留目标架构：
+#   images/<arch>/、costrict-static/linux/<arch>/、costrict-static/nginx-1.31.1-<arch>.tar
+if [ -n "${ARCH}" ]; then
+    other_arch=""
+    for a in "${SUPPORTED_ARCHES[@]}"; do
+        if [ "${a}" != "${ARCH}" ]; then
+            other_arch="${a}"
+            break
+        fi
+    done
+    if [ -n "${other_arch}" ]; then
+        TAR_ARGS+=("--exclude=images/${other_arch}")
+        TAR_ARGS+=("--exclude=${STATIC_DIR}/linux/${other_arch}")
+        TAR_ARGS+=("--exclude=${STATIC_DIR}/nginx-1.31.1-${other_arch}.tar")
+    fi
+fi
 
 # 始终包含 costrict-static（如果存在）
 if [ -d "${STATIC_DIR}" ]; then
@@ -359,9 +422,13 @@ if [ "$IGNORE_IMAGES" = true ]; then
     echo "已指定 --ignore-images，跳过 images 目录。"
     # 按目标架构分别拉取并保存 nginx 镜像，避免跨架构运行时出现：
     #   exec /docker-entrypoint.sh: exec format error
-    echo "正在准备 nginx 多架构镜像: ${NGINX_IMAGE}"
-    for arch in "${NGINX_ARCHES[@]}"; do
+    echo "正在准备 nginx 镜像: ${NGINX_IMAGE} (架构: ${TARGET_ARCHES[*]})"
+    for arch in "${TARGET_ARCHES[@]}"; do
         arch_tar="${STATIC_DIR}/nginx-1.31.1-${arch}.tar"
+        if [ "$FORCE" != true ] && [ -f "${arch_tar}" ]; then
+            echo "  [跳过] ${arch_tar} (本地已存在)"
+            continue
+        fi
         echo "  [拉取] ${NGINX_IMAGE} (linux/${arch})"
         if docker pull --platform "linux/${arch}" "${NGINX_IMAGE}"; then
             echo "  [保存] ${NGINX_IMAGE} (linux/${arch}) -> ${arch_tar}"
