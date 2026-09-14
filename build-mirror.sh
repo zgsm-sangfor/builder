@@ -273,6 +273,22 @@ fetch_static_file() {
     fetch_file "${file_path}" "${STATIC_DIR}"
 }
 
+#
+# 为指定目录中的 .sh 脚本文件设置可执行标识（chmod +x）
+# 参数:
+#   $1 dir 目标目录（不存在时直接返回）
+#
+set_scripts_executable() {
+    local dir="$1"
+
+    if [ -z "${dir}" ] || [ ! -d "${dir}" ]; then
+        return 0
+    fi
+
+    find "${dir}" -type f -name "*.sh" -exec chmod +x {} +
+    echo "设置 ${dir} 目录 .sh 脚本文件为可执行文件"
+}
+
 # 解析参数
 NO_IMAGES=false
 FORCE=false
@@ -409,6 +425,8 @@ echo "----------------------------------------------------------------"
 echo ""
 echo "正在将 static 目录下的所有内容拷贝到 ${STATIC_DIR} 目录..."
 if [ -d "static" ]; then
+    # 拷贝前为 static 目录中的 .sh 脚本文件设置可执行标识，确保打包后权限正确
+    set_scripts_executable "static"
     cp -rf static/. "${STATIC_DIR}/"
     echo "static 目录内容拷贝完成: static/ -> ${STATIC_DIR}/"
 else
@@ -416,6 +434,8 @@ else
 fi
 
 if [ -d "${SITE_DIR}" ]; then
+    # 打包前为 site 目录中的 .sh 脚本文件设置可执行标识，确保打包后权限正确
+    set_scripts_executable "${SITE_DIR}"
     echo "将 ${SITE_DIR} 目录打包为 ${STATIC_DIR}/${SITE_TAR}..."
     tar -cf "${SITE_TAR}" -C "${SITE_DIR}" .
     cp "${SITE_TAR}" "${STATIC_DIR}/${SITE_TAR}"
