@@ -21,7 +21,7 @@
   },
   "pull": {
     "workdir": "../costrict-admin/frontend",
-    "command": "docker-pull-via.sh --proxy-id ghcr.io/{{.repo}}/{{.name}}:{{.tag}} --image-id  {{.repo}}/{{.name}}:{{.tag}}"
+    "command": "docker-pull-via.sh --proxy-id ghcr.io/zgsm-sangfor/{{.name}}:{{.tag}} --image-id  {{.repo}}/{{.name}}:{{.tag}}"
   },
   "update": {
     "workdir": "./configures/common/costrict-admin-frontend",
