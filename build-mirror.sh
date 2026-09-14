@@ -323,7 +323,6 @@ if [ -d "${SITE_DIR}" ]; then
     tar -cf "${SITE_TAR}" -C "${SITE_DIR}" .
     echo "正在将 ${SITE_TAR} 拷贝到 ${STATIC_DIR}/ 目录..."
     cp "${SITE_TAR}" "${STATIC_DIR}/${SITE_TAR}"
-    # 清理临时 tar 文件
     rm -f "${SITE_TAR}"
     echo "site 目录打包完成: ${STATIC_DIR}/${SITE_TAR}"
 else

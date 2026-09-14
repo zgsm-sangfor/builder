@@ -924,9 +924,8 @@ process_packages() {
     if [ ${#package_list[@]} -eq 0 ]; then
         echo "No packages specified, reading from depends directory..."
         for json_file in depends/*.json; do
-            # 跳过非普通文件
+            # 跳过非普通文件,跳过禁用模块（禁用模块不做任何处理）
             [ -f "$json_file" ] || continue
-            # 跳过禁用模块（禁用模块不做任何处理）
             is_module_enabled "$json_file" || continue
             package_list+=("$(basename "$json_file" .json)")
         done
