@@ -6,11 +6,13 @@
 # - 支持两种检测模式，通过 --build-type (-t) 选项切换：
 #   1. component（默认）: 检测 components 目录中组件包的版本是否已构建
 #   2. dependency: 检测 depends 目录中依赖包的指定版本是否已构建
-# - 检测依据: builds/{type}/{packageName}/{version}/build.json 是否存在且 timestamp.build 非空
-# - 输出尚未构建的模块列表
+# - 检测依据: builds/{type}/{packageName}/{version}/build.json 是否存在且 timestamp.{action} 非空
+#   action 可通过 --action (-a) 指定（build/update/push/pack/upload），默认 build
+# - 输出尚未完成的模块列表
 #
 # 选项说明：
 #   -t, --build-type TYPE  检测类型: 'component' 或 'dependency' (默认: component)
+#   -a, --action ACTION    检测的时间戳动作: build/update/push/pack/upload (默认: build)
 #   -p, --packages LIST    仅检测指定包（逗号分隔）
 #   -v, --verbose          显示详细检测信息
 #   -h, --help             显示帮助信息
@@ -22,6 +24,7 @@ VERBOSE=false
 PACKAGES=""
 BUILD_TYPE="component"
 PACKAGES_DIR="components"
+ACTION="build"
 
 print_usage() {
     echo "Usage: check-build.sh [OPTIONS]"
@@ -30,6 +33,7 @@ print_usage() {
     echo "  -t, --build-type TYPE  Check type: 'component' or 'dependency' (default: component)"
     echo "                         component  - Check if component packages are packaged (from components/)"
     echo "                         dependency - Check if dependency packages are built (from depends/)"
+    echo "  -a, --action ACTION    Timestamp action to check: build/update/push/pack/upload (default: build)"
     echo "  -p, --packages LIST    Only check specified packages (comma-separated list)"
     echo "  -v, --verbose          Show detailed check information"
     echo "  -h, --help             Show this help message"
@@ -67,12 +71,10 @@ is_module_enabled() {
 # 参数:
 #   $1: type      - "component" 或 "dependency"
 #   $2: package_file - JSON 配置文件路径
-#   $3: use_name  - 是否使用 JSON 中的 name 字段作为路径名（dependency=true, component=false）
 # 返回值: 0=已构建, 1=未构建
 check_package_build() {
     local type="$1"
     local package_file="$2"
-    local use_name="${3:-false}"
     local package_name=$(basename "$package_file" .json)
 
     local version=$(jq -r ".version // empty" "$package_file")
@@ -81,27 +83,18 @@ check_package_build() {
         return 0
     fi
 
-    # dependency 类型使用 JSON 中的 name 字段，fallback 到文件名
-    local path_name="$package_name"
-    if [ "$use_name" = "true" ]; then
-        local json_name=$(jq -r ".name // empty" "$package_file")
-        if [ -n "$json_name" ] && [ "$json_name" != "null" ] && [ "$json_name" != "" ]; then
-            path_name="$json_name"
-        fi
-    fi
-
     prompt_verbose "Checking: $package_name, version: $version"
 
-    local build_json="builds/${type}/${path_name}/${version}/build.json"
+    local build_json="builds/${type}/${package_name}/${version}/build.json"
     if [ -f "$build_json" ]; then
-        local build_time=$(jq -r '.timestamp.build // empty' "$build_json" 2>/dev/null)
-        if [ -n "$build_time" ] && [ "$build_time" != "null" ] && [ "$build_time" != "" ]; then
-            prompt_verbose "  OK: build.json found with build timestamp: $build_time"
-            log "INFO" "$package_name v$version: built ($build_json)"
+        local action_time=$(jq -r ".timestamp.${ACTION} // empty" "$build_json" 2>/dev/null)
+        if [ -n "$action_time" ] && [ "$action_time" != "null" ] && [ "$action_time" != "" ]; then
+            prompt_verbose "  OK: build.json found with ${ACTION} timestamp: $action_time"
+            log "INFO" "$package_name v$version: ${ACTION} done ($build_json)"
             return 0
         fi
     fi
-    log "MISSING" "$package_name v$version: build.json not found or build timestamp empty"
+    log "MISSING" "$package_name v$version: build.json not found or ${ACTION} timestamp empty"
     return 1
 }
 
@@ -110,15 +103,13 @@ check_package_build() {
 main_check() {
     local type="$1"
     local label_singular="$type"
-    local use_name="false"
 
     if [ "$type" = "dependency" ]; then
         label_singular="dependency"
-        use_name="true"
     fi
 
     prompt "=============================================="
-    prompt "Checking packaged status from ${PACKAGES_DIR}"
+    prompt "Checking '${ACTION}' status from ${PACKAGES_DIR}"
     prompt "=============================================="
     prompt ""
 
@@ -161,7 +152,7 @@ main_check() {
         fi
 
         checked=$((checked + 1))
-        if ! check_package_build "$type" "$package_file" "$use_name"; then
+        if ! check_package_build "$type" "$package_file"; then
             not_built+=("$pkg")
         fi
     done
@@ -169,12 +160,12 @@ main_check() {
     prompt "=============================================="
     if [ ${#not_built[@]} -gt 0 ]; then
         prompt ""
-        prompt "Not built ${label_singular}s (${#not_built[@]}):"
+        prompt "Not ${ACTION} ${label_singular}s (${#not_built[@]}):"
         for p in "${not_built[@]}"; do
             prompt "  - $p"
         done
     else
-        prompt "All checked ${label_singular}s are built."
+        prompt "All checked ${label_singular}s have '${ACTION}' done."
     fi
 
     if [ ${#skipped[@]} -gt 0 ]; then
@@ -201,7 +192,7 @@ main_check() {
 #  主入口
 # ============================================================
 
-args=$(getopt -o hp:t:v --long help,packages:,build-type:,verbose -n 'check-build.sh' -- "$@")
+args=$(getopt -o hp:t:a:v --long help,packages:,build-type:,action:,verbose -n 'check-build.sh' -- "$@")
 [ $? -ne 0 ] && print_usage && exit 1
 
 eval set -- "$args"
@@ -216,6 +207,18 @@ while true; do
                 print_usage
                 exit 1
             fi
+            shift 2
+            ;;
+        -a|--action)
+            ACTION="$2"
+            case "$ACTION" in
+                build|update|push|pack|upload) ;;
+                *)
+                    log "ERROR" "Invalid action '$ACTION'. Must be one of: build, update, push, pack, upload."
+                    print_usage
+                    exit 1
+                    ;;
+            esac
             shift 2
             ;;
         -v|--verbose) VERBOSE=true; shift;;

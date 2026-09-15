@@ -25,5 +25,6 @@ services:
       ENCRYPT_AESKEY: pUD8mylndVVK7hTNt56VZMkNrppinbNg
     volumes:
       - ${COSTRICT_DATA_DIR}/backend/oidc-auth/logs:/app/logs
+      - ./config:/app/config
     networks:
       - shenma

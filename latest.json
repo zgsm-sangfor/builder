@@ -41,8 +41,8 @@
       "file_count": 1
     },
     "firmware": {
-      "version": "1.0.142",
-      "checksum": "76e46e2bb1cab260ae71dfafe597d83e0b1ebd0c4f60855aad510f3d76311cce",
+      "version": "1.0.143",
+      "checksum": "6346fb4d6bf1685a573638906662982becc6aeb35115a9857f7b4c291da4f49c",
       "file_count": 34
     },
     "frontend": {
@@ -166,8 +166,8 @@
       "file_count": 4
     },
     "costrict-system": {
-      "version": "1.0.299",
-      "checksum": "733e923ae59aa60dc4429de6e175080dae164bd5a505663553734304c185ba75",
+      "version": "1.0.301",
+      "checksum": "05cc34b99f07fc1e990ee90324f1bff60bb8c717cce480e72c30c25fffe4ff85",
       "file_count": 1
     },
     "costrict-license-sdk": {
@@ -181,9 +181,9 @@
       "file_count": 0
     },
     "oidc-auth": {
-      "version": "1.0.13",
-      "checksum": "385943c17720ab34cff6fd528889d920b4e8315f1f13cb21914f681d82adf869",
-      "file_count": 5
+      "version": "1.0.14",
+      "checksum": "1242f947df445beca60c72d4f773e883ee2eab548d1db70653edc25dbc382374",
+      "file_count": 8
     },
     "es": {
       "version": "1.0.4",

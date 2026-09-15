@@ -244,7 +244,7 @@ elif [ "$BUILD_TARGET" = "auto" ]; then
     echo "----------------------------------------------------------------"
     # check-build.sh 以未构建包的数量作为退出码，当存在未构建包时返回非0，
     # 此处使用 '|| true' 防止 set -e 中断脚本执行
-    need_build_packages=$(./check-build.sh --build-type dependency || true)
+    need_build_packages=$(./check-build.sh --build-type dependency --action build || true)
     echo "Need build 'dependency' packages: $need_build_packages"
 
     if [ -n "$need_build_packages" ]; then
@@ -311,7 +311,7 @@ elif [ "$PACK_TARGET" = "auto" ]; then
     echo "----------------------------------------------------------------"
     # check-build.sh 以未打包包的数量作为退出码，当存在未打包包时返回非0，
     # 此处使用 '|| true' 防止 set -e 中断脚本执行
-    need_pack_packages=$(./check-build.sh --build-type component || true)
+    need_pack_packages=$(./check-build.sh --build-type component --action pack || true)
     echo "Need build 'component' packages: $need_pack_packages"
 
     if [ -n "$need_pack_packages" ]; then
