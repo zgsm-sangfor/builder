@@ -1,4 +1,5 @@
 {
+  "enabled": false,
   "name": "oidc-auth",
   "type": "zip",
   "subsystem": "backend",

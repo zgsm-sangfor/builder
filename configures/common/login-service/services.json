@@ -1,0 +1,24 @@
+{
+  "component_name": "login-service",
+  "services": [
+    {
+      "service_name": "login-service",
+      "health_url": "http://localhost:8080/healthz",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/login-service/logs/login-service.log",
+      "dependencies": [
+        {
+          "service": "postgres",
+          "condition": "service_healthy"
+        },
+        {
+          "service": "casdoor",
+          "condition": "service_started"
+        },
+        {
+          "service": "costrict-web-cs-user",
+          "condition": "service_started"
+        }
+      ]
+    }
+  ]
+}

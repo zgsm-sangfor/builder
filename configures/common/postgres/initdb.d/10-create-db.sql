@@ -13,3 +13,4 @@ CREATE DATABASE gitea;
 CREATE DATABASE efficiency_dashboard;
 CREATE DATABASE chat_indicator_statistics;
 CREATE DATABASE dept_sync;
+CREATE DATABASE loginservice;

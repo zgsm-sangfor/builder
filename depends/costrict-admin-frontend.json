@@ -1,7 +1,7 @@
 {
   "name": "costrict-admin-frontend",
   "type": "docker",
-  "version": "1.0.144",
+  "version": "1.0.189",
   "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
   "path": "../costrict-admin",
   "repo": "zgsm-sangfor",
@@ -25,7 +25,7 @@
   },
   "update": {
     "workdir": "./configures/common/costrict-admin-frontend",
-    "command": "echo IMAGE_COSTRICT_ADMIN_FRONTEND={{.repo}}/{{.name}}:{{.tag}} > ./image.env"
+    "command": "echo IMAGE_COSTRICT_ADMIN_FRONTEND=ghcr.io/{{.repo}}/{{.name}}:{{.tag}} > ./image.env"
   },
   "description": "Build the front-end page to be released for the costrict system."
 }

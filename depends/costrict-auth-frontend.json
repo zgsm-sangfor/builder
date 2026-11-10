@@ -25,6 +25,6 @@
   },
   "update": {
     "workdir": "./configures/common/costrict-auth-frontend",
-    "command": "echo IMAGE_COSTRICT_AUTH_FRONTEND={{.repo}}/costrict-auth-frontend:v{{.version}} > ./image.env"
+    "command": "echo IMAGE_COSTRICT_AUTH_FRONTEND=ghcr.io/{{.repo}}/costrict-auth-frontend:v{{.version}} > ./image.env"
   }
 }

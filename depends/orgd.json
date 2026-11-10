@@ -18,7 +18,7 @@
   },
   "update": {
     "workdir": "./configures/common/orgd",
-    "command": "echo IMAGE_ORGD={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
+    "command": "echo IMAGE_ORGD=ghcr.io/{{.repo}}/{{.name}}:v{{.version}} > ./image.env"
   },
   "description": "The orgd of costrict"
 }

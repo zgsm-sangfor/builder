@@ -11,6 +11,7 @@
 !gen-depend.sh
 !gen-backend-spec.sh
 !gen-manifest.sh
+!gen-images.sh
 !docker-pull-via.sh
 !github-fetch-release.sh
 !local-build.sh
@@ -20,6 +21,7 @@
 !costrict-manifest.json
 !costrict-backend-spec.json
 !README.md
+!MEMORY.md
 !developer.md
 !configures/
 !configures/**

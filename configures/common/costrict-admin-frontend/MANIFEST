@@ -34,3 +34,8 @@
 
 assets
 index.html
+
+@@costrict-admin-frontend
+costrict-admin-frontend.yml
+image.env
+services.json

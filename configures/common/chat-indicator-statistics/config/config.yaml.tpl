@@ -19,9 +19,26 @@ sync:
   gap_max_hours: 24
   max_retry: 3
 
+bootstrap:
+  datasource:
+    name: "default_es"
+    source_type: "elasticsearch"
+    enabled: true
+    config:
+      hosts: ["https://elasticsearch:9200"]
+      username: "elastic"
+      password: "{{PASSWORD_ELASTIC}}"
+      index: "costrict_chat_metrics_v4"
+      verify_certs: true
+      scroll_duration: "5m"
+  daily_etl:
+    enabled: true
+    cron: "0 2 * * *"
+    source: "default_es"
+
 cron:
   daily_etl: "0 2 * * *"
-  enabled: false
+  enabled: true
 
 encryption:
   enabled: true

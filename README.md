@@ -492,6 +492,21 @@ builder/
 
 **输出**：`configures/common/backend/system-spec.json`
 
+生成当前已启用服务的镜像列表（依赖 Python 3 和 PyYAML）：
+
+```bash
+./gen-images.sh
+./gen-images.sh > images.list
+# 自定义配置目录和组件开关目录
+./gen-images.sh --source ./configures/common --components ./components
+```
+
+`gen-images.sh` 读取当前 `components/*.json` 的启用开关（`enabled: false` 禁用，省略则启用），
+按 `services.json` 中的服务读取对应 Compose 文件，仅输出实际引用的镜像，并排序去重。
+服务自身声明 `enabled: false` 时也会跳过；未列入服务定义的镜像不会输出。
+镜像地址和版本取自组件的 `image.env`，保留原始仓库前缀，不依赖已生成的 `system-spec.json`。
+标准输出只有镜像列表，错误写入标准错误。
+
 **工作原理**：
 - 扫描 `components/` 目录，筛选出 `enabled` 且 `subsystem=backend` 的模块，提取 components 数组
 - 扫描 `configures/common/*/services.json`，聚合所有已启用模块的 services 定义

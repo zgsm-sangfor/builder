@@ -1,0 +1,9 @@
+{
+  "name": "login-service",
+  "type": "zip",
+  "path": "./configures",
+  "version": "0.1.0",
+  "subsystem": "backend",
+  "display_name": "LoginService 登录服务",
+  "description": "基于 LoginService Helm 部署契约的 Docker Compose 部署配置"
+}

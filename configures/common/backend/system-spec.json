@@ -110,6 +110,11 @@
       "description": "CoStrict授权服务"
     },
     {
+      "component_name": "login-service",
+      "display_name": "LoginService 登录服务",
+      "description": "基于 LoginService Helm 部署契约的 Docker Compose 部署配置"
+    },
+    {
       "component_name": "nacos",
       "display_name": "Nacos",
       "description": "配置管理中心"
@@ -302,6 +307,26 @@
       "component_name": "license-manager",
       "service_name": "license-manager",
       "visible": false
+    },
+    {
+      "component_name": "login-service",
+      "service_name": "login-service",
+      "health_url": "http://localhost:8080/healthz",
+      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/login-service/logs/login-service.log",
+      "dependencies": [
+        {
+          "service": "postgres",
+          "condition": "service_healthy"
+        },
+        {
+          "service": "casdoor",
+          "condition": "service_started"
+        },
+        {
+          "service": "costrict-web-cs-user",
+          "condition": "service_started"
+        }
+      ]
     },
     {
       "component_name": "nacos",

@@ -1,0 +1,23 @@
+services:
+  login-service:
+    image: ${IMAGE_LOGIN_SERVICE}
+    command: ["serve", "--config", "/app/config.yaml"]
+    restart: unless-stopped
+    stop_grace_period: ${LOGIN_SERVICE_STOP_GRACE_PERIOD:-30s}
+    volumes:
+      # config.yaml 由 config.yaml.tpl 经安装阶段模板处理生成。
+      - ./config.yaml:/app/config.yaml:ro
+      - ${COSTRICT_DATA_DIR}/backend/login-service/logs:/app/logs
+    ports: []
+      # Helm 中是 ClusterIP；不需要宿主机暴露时可删除此段，供 APISIX 通过容器网络访问。
+      # - "${PORT_LOGIN_SERVICE:-8080}:8080"
+    healthcheck:
+      # Alpine 运行镜像自带 busybox wget；Compose 以 readyz 作为流量就绪条件。
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8080/readyz >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 6s
+      retries: 3
+      start_period: 300s
+    networks:
+      - shenma
+

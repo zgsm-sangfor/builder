@@ -1,7 +1,7 @@
 {
   "name": "costrict-admin-backend",
   "type": "docker",
-  "version": "1.0.144",
+  "version": "1.0.189",
   "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
   "repo": "zgsm-sangfor",
   "path": "../costrict-admin",
@@ -19,7 +19,7 @@
   },
   "update": {
     "workdir": "./configures/common/costrict-admin-backend",
-    "command": "echo IMAGE_COSTRICT_ADMIN_BACKEND={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
+    "command": "echo IMAGE_COSTRICT_ADMIN_BACKEND=ghcr.io/{{.repo}}/{{.name}}:v{{.version}} > ./image.env"
   },
   "description": "The back-end docker-service of costrict"
 }
