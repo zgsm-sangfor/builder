@@ -195,7 +195,6 @@ build_app() {
     local current_dir=$(pwd)
     
     # exec 类型的编译工作已迁移至 build-depends.sh，此处检查 packages/ 目录下是否已有编译产物
-    echo "Skipping exec-type build for '${package_name}' (should be pre-built by build-depends.sh)"
     local build_output_exists=false
     local platform_count=$(echo "$platforms_json" | jq 'length')
     local i
@@ -205,9 +204,9 @@ build_app() {
         local expected_output="packages/${package_name}/${os}/${arch}/${version}"
         if [ -d "$expected_output" ]; then
             build_output_exists=true
-            echo "  Found pre-built output: $expected_output"
+            echo "Info: Found pre-built output: $expected_output"
         else
-            echo "  WARNING: Pre-built output not found: $expected_output (run build-depends.sh --build first)"
+            echo "WARNING: Pre-built output not found: $expected_output (run build-depends.sh --build first)"
         fi
     done
     if [ "$build_output_exists" = false ]; then

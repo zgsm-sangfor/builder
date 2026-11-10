@@ -35,7 +35,7 @@
     {
       "name": "authz",
       "subsystem": "backend",
-      "version": "1.0.2"
+      "version": "1.0.6"
     },
     {
       "name": "backend",
@@ -70,27 +70,27 @@
     {
       "name": "costrict-admin-backend",
       "subsystem": "backend",
-      "version": "1.0.114"
+      "version": "1.0.119"
     },
     {
       "name": "costrict-admin-frontend",
       "subsystem": "backend",
-      "version": "1.0.59"
+      "version": "1.0.66"
     },
     {
       "name": "costrict-admin",
       "subsystem": "frontend",
-      "version": "1.0.144"
+      "version": "1.0.148"
     },
     {
       "name": "costrict-auth-frontend",
       "subsystem": "backend",
-      "version": "1.0.1"
+      "version": "1.0.4"
     },
     {
       "name": "costrict-daemon",
       "subsystem": "root",
-      "version": "1.0.144"
+      "version": "1.0.148"
     },
     {
       "name": "costrict-dept-sync",
@@ -110,7 +110,7 @@
     {
       "name": "credit-manager",
       "subsystem": "backend",
-      "version": "1.0.6"
+      "version": "1.0.7"
     },
     {
       "name": "efficiency-dashboard",
@@ -125,12 +125,12 @@
     {
       "name": "etcd",
       "subsystem": "backend",
-      "version": "1.0.7"
+      "version": "1.0.8"
     },
     {
       "name": "firmware",
       "subsystem": "root",
-      "version": "1.0.140"
+      "version": "1.0.143"
     },
     {
       "name": "frontend",
@@ -150,12 +150,12 @@
     {
       "name": "oidc-auth",
       "subsystem": "backend",
-      "version": "1.0.12"
+      "version": "1.0.14"
     },
     {
       "name": "orgd",
       "subsystem": "backend",
-      "version": "1.0.2"
+      "version": "1.0.7"
     },
     {
       "name": "portal",

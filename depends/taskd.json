@@ -3,7 +3,7 @@
   "type": "docker",
   "version": "1.0.3",
   "remote": "git@github.com:zgsm-ai/taskd.git",
-  "repo": "zgsm",
+  "repo": "ghcr.io/zgsm-sangfor",
   "path": "../services/taskd",
   "command": "docker build --build-arg VERSION={{.version}} . -t {{.repo}}/{{.name}}:v{{.version}}",
   "tag": "v{{.version}}",

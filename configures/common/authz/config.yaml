@@ -1,0 +1,80 @@
+server:
+  host: "0.0.0.0"
+  port: 8082
+  tls:
+    enabled: false
+    cert_path: "../tools/certs/authz.crt"
+    key_path: "../tools/certs/authz.key"
+
+database:
+  type: "sqlite"
+  dsn: "../authd.db"
+  log_enabled: true
+
+logging:
+  level: "info"
+  format: "json"
+
+debug_mode: "debug"
+run_mode: "multi-tenant"
+
+# OAuth 登录回调配置（Casdoor），用于 /auth/callback 用授权码换取 JWT
+oauth:
+  casdoor_addr: "http://casdoor.costrict.svc.cluster.local:8000"
+  client_id: "7c51a6b92dfebfa55d96"
+  client_secret: "bcb3dc222a07fad21aabdd5035dadba2f09e05d6"
+  redirect_uri: ""
+
+# 内部服务认证配置
+internal_auth:
+  enabled: false
+  ca_cert: "/certs/ca.crt"
+  public_key: "/keys/token-signer.pub"
+  verify_client_cert: true
+  verify_access_token: true
+  protected_paths:
+    - "/authz/api/v1"
+    - "/costrict-authz/api/v1"
+  exempt_paths:
+    - "/health"
+    - "/metrics"
+    - "/swagger/"
+
+# 资源配置：服务、资源类型、Action 注册（无需 orgd，authz 自行完成注册）
+registry:
+  services:
+    - service_name: "docd"
+      display_name: "文档服务"
+      description: "文档服务"
+      status: "active"
+      resources:
+        - resource_type: "document"
+          display_name: "文档"
+          description: "文档资源"
+          hierarchical: "1"
+          namespace: "user"
+          callback_url: "http://127.0.0.1:8084/costrict-docd/api/v1/documents/list"
+          # Api 为资源类型的子概念，引用一个 Action（domain+action）；domain_name 缺省沿用资源类型名
+          apis:
+            - api_name: "查看文档"
+              verb: "GET"
+              path: "/docs"
+              action_name: "read"
+              domain_name: "document"
+            - api_name: "修改文档"
+              verb: "POST"
+              path: "/docs"
+              action_name: "write"
+              domain_name: "document"
+      # action 与资源类型解耦，平级注册；domain_name 为动作命名空间（沿用资源类型名，保持权限串不变）
+      actions:
+        - action_name: "read"
+          domain_name: "document"
+          display_name: "查看"
+          description: "查看文档"
+          builtin_roles: "reader,maintainer,leader,owner,admin"
+        - action_name: "write"
+          domain_name: "document"
+          display_name: "修改"
+          description: "修改文档"
+          builtin_roles: "maintainer,leader,owner,admin"

@@ -1,9 +1,9 @@
 {
   "name": "authz",
   "type": "docker",
-  "version": "0.4.7",
+  "version": "0.4.8",
   "remote": "git@github.com:zgsm-sangfor/authd.git",
-  "repo": "zgsm-sangfor",
+  "repo": "ghcr.io/zgsm-sangfor",
   "path": "../authd",
   "sources": [
     "../authd/authz"
@@ -18,7 +18,7 @@
   },
   "update": {
     "workdir": "./configures/common/authz",
-    "command": "echo IMAGE_AUTHZ=ghcr.io/{{.repo}}/{{.name}}:v{{.version}} > ./image.env"
+    "command": "echo IMAGE_AUTHZ={{.repo}}/{{.name}}:v{{.version}} > ./image.env"
   },
   "description": "The authz of costrict"
 }

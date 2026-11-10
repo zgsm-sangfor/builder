@@ -1,0 +1,56 @@
+server:
+  serverPort: "8080"
+  baseURL: "https://shenma.sangfor.com.cn"
+  isPrivate: "false"
+  http:
+    timeout: "60s"
+    dialTimeout: "30s"
+    keepAlive: "30s"
+    tlsHandshakeTimeout: "10s"
+    responseHeaderTimeout: "30s"
+    maxIdleConns: "2000"
+    maxIdleConnsPerHost: "200"
+    idleConnTimeout: "90s"
+providers:
+  casdoor:
+    clientID: "7c51a6b92dfebfa55d96"
+    clientSecret: "bcb3dc222a07fad21aabdd5035dadba2f09e05d6"
+    baseURL: "https://shenma.sangfor.com.cn"
+    internalURL: http://casdoor:8000
+syncStar:
+  enabled: "false"
+  personalToken: ""
+  owner: "zgsm-ai"
+  repo: "zgsm"
+  interval: 1  # minute
+database:
+  type: "postgres"
+  host: "postgresql-ha-pgpool"
+  port: 5432
+  username: "costrict"
+  password: "costrict"
+  dbname: "auth"
+  maxIdleConns: 50
+  maxOpenConns: 300
+encrypt:
+  aesKey: "b49X29AYlaKZtwR3Jd2vLYy8Bog3/T9b"
+  enableRsa: "false"
+  privateKey: ""
+  publicKey: ""
+log:
+  level: "info"
+  filename: "logs/app.log"
+  maxSize: 100
+  maxBackups: 10
+  maxAge: 30
+  compress: true
+sms:
+  enabledTest: "false"
+  appID: ""
+  apiKey: ""
+  mchID: ""
+  templateID: ""
+  sendURL: ""
+redirect:
+  uris:
+    act_2026: /credit/manager/annual-summary

@@ -17,7 +17,13 @@ set -e
 set -u
 set -o pipefail 2>/dev/null || true
 
-. ./utils.sh
+# -------------------------- 运行目录（定位离线包） --------------------------
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+[ -n "$SCRIPT_DIR" ] || SCRIPT_DIR="$(pwd)"
+DOWNLOADS_DIR="${SCRIPT_DIR}/downloads"
+
+# 以脚本所在目录为基准加载工具脚本，避免依赖当前工作目录
+. "${SCRIPT_DIR}/utils.sh"
 
 # -------------------------- 版本要求 --------------------------
 if [ -n "${COSTRICT_MIRROR:-}" ]; then
@@ -28,11 +34,6 @@ fi
 MIN_DOCKER_VERSION="19.0"     # docker 最低版本
 MIN_COMPOSE_VERSION="2.0.0"   # docker compose 最低版本
 MIN_JQ_VERSION="1.5"          # jq 最低版本
-
-# -------------------------- 运行目录（定位离线包） --------------------------
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
-[ -n "$SCRIPT_DIR" ] || SCRIPT_DIR="$(pwd)"
-DOWNLOADS_DIR="${SCRIPT_DIR}/downloads"
 
 # -------------------------- 日志 --------------------------
 log() {

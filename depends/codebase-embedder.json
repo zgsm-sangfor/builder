@@ -3,7 +3,7 @@
   "type": "docker",
   "version": "0.2.6",
   "remote": "https://github.com/zgsm-sangfor/codebase-embedder.git",
-  "repo": "zgsm",
+  "repo": "ghcr.io/zgsm-sangfor",
   "path": "../zgsm-ai/codebase-embedder",
   "tag": "v{{.version}}",
   "enabled": false,

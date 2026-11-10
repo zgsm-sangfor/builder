@@ -33,5 +33,5 @@
 !site/**
 !.github/
 !.github/**
-!costrict-static
+!static
 !artifact-latest

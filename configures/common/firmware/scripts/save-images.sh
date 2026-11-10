@@ -4,8 +4,8 @@
 #   1. linux机器
 #   2. 安装了docker
 #
-# 输出目录结构（与 download-images.sh 的远程读取结构保持一致）:
-#   ${SAVE_DIR}/${short_name}/${short_name}-${tag}.tar
+# 输出目录结构（与远程web服务器存储结构同构）:
+#   ${SAVE_DIR}/${arch}/${short_name}/${short_name}-${tag}.tar
 
 log() {
     local level=$1
@@ -23,8 +23,11 @@ options:
   -o|--output  <DIR>      输出目录 (默认: ./images)
   -i|--images  <STR>      镜像列表字符串, 格式: name:tag (空格/换行分隔多个)
   -f|--file    <FILE>     镜像列表文件路径 (默认: .images.list, 格式: name:tag 每行一个)
+  -a|--arch    <ARCH>     目标平台架构 (amd64/arm64), 不指定时自动检测当前平台
   --force                 强制覆盖已存在的 tar 文件
   -h|--help               显示帮助信息
+
+存储路径 (与web服务器同构): {output}/{arch}/{short-name}/{short-name}-{tag}.tar
 
 examples:
   $(basename "$0") -f .images.list
@@ -35,7 +38,7 @@ EOF
 }
 
 # 使用getopt解析参数
-TEMP=$(getopt -o o:i:f:h --long output:,images:,file:,force,help -n "$0" -- "$@")
+TEMP=$(getopt -o o:i:f:a:h --long output:,images:,file:,arch:,force,help -n "$0" -- "$@")
 if [ $? -ne 0 ]; then
     usage >&2
     exit 1
@@ -46,6 +49,7 @@ eval set -- "$TEMP"
 SAVE_DIR="./images"
 images_str=""
 images_file=".images.list"
+arch=""
 force=false
 
 # 解析参数
@@ -61,6 +65,10 @@ while true ; do
             ;;
         -f|--file)
             images_file="$2"
+            shift 2
+            ;;
+        -a|--arch)
+            arch="$2"
             shift 2
             ;;
         --force)
@@ -79,6 +87,19 @@ while true ; do
             ;;
     esac
 done
+
+# 解析目标平台架构: 优先使用 --arch 指定值, 未指定则自动检测 (支持 amd64/arm64)
+if [ -z "$arch" ]; then
+    case "$(uname -m)" in
+        x86_64|amd64) arch="amd64" ;;
+        aarch64|arm64) arch="arm64" ;;
+        *) arch="" ;;
+    esac
+fi
+if [ -z "$arch" ]; then
+    log "ERROR" "无法自动检测系统架构, 请使用 --arch 指定 (支持: amd64, arm64)" >&2
+    exit 1
+fi
 
 # 检查 docker 命令
 if ! command -v docker >/dev/null 2>&1; then
@@ -126,9 +147,9 @@ for image in $IMAGES; do
     fi
 
     # 提取短名称 (去掉 repo 前缀, 即最后一个 '/' 之前的部分)
-    # 与 download-images.sh 保持一致的命名规则: ${short_name}/${short_name}-${tag}.tar
+    # 与远程web服务器存储结构同构: ${arch}/${short_name}/${short_name}-${tag}.tar
     short_name="${image_name##*/}"
-    output_path="${SAVE_DIR}/${short_name}/${short_name}-${tag}.tar"
+    output_path="${SAVE_DIR}/${arch}/${short_name}/${short_name}-${tag}.tar"
     output_parent=$(dirname "$output_path")
 
     # 检查目标 tar 是否已存在

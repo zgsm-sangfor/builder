@@ -3,7 +3,7 @@
   "type": "docker",
   "version": "1.7.105",
   "remote": "git@github.com:zgsm-ai/code-completions-go.git",
-  "repo": "zgsm",
+  "repo": "ghcr.io/zgsm-sangfor",
   "path": "../services/code-completions-go",
   "tag": "v{{.version}}",
   "build": {

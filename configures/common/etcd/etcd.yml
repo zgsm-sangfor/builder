@@ -7,6 +7,7 @@ services:
     user: "1000:1000"
     environment:
       TZ: "Asia/Shanghai"
+      ETCD_DATA_DIR: "/bitnami/etcd/data"
       ETCD_ENABLE_V2: "true"
       ALLOW_NONE_AUTHENTICATION: "yes"
       ETCD_ADVERTISE_CLIENT_URLS: "http://127.0.0.1:2379"

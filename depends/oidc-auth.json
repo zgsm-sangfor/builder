@@ -4,7 +4,7 @@
   "type": "docker",
   "version": "1.3.7",
   "remote": "git@github.com:zgsm-sangfor/oidc-auth.git",
-  "repo": "zgsm",
+  "repo": "ghcr.io/zgsm-sangfor",
   "path": "../zgsm-ai/oidc-auth",
   "tag": "v{{.version}}",
   "build": {

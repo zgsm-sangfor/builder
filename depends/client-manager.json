@@ -3,7 +3,7 @@
   "type": "docker",
   "version": "1.0.14",
   "remote": "git@github.com:zgsm-ai/client-manager.git",
-  "repo": "zgsm",
+  "repo": "ghcr.io/zgsm-sangfor",
   "path": "../services/client-manager",
   "tag": "v{{.version}}",
   "build": {

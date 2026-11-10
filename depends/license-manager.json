@@ -2,7 +2,7 @@
   "name": "license-manager",
   "type": "docker",
   "version": "1.0.5",
-  "repo": "zgsm",
+  "repo": "ghcr.io/zgsm-sangfor",
   "path": "../deploy/license",
   "tag": "v{{.version}}",
   "enabled": false,
