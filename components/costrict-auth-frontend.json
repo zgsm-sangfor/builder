@@ -3,7 +3,7 @@
   "type": "zip",
   "path": "./configures",
   "version": "1.0.5",
-  "enabled": false,
+  "enabled": true,
   "subsystem": "backend",
   "dependences": [
     {

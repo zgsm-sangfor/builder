@@ -4,6 +4,6 @@
   "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.18",
-  "enabled": false,
+  "enabled": true,
   "description": "CoStrict department synchronization service"
 }

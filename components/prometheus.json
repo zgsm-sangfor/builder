@@ -4,7 +4,7 @@
   "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.3",
-  "enabled": false,
+  "enabled": true,
   "description": "提供系统监控功能",
   "display_name": "Prometheus指标监控服务"
 }

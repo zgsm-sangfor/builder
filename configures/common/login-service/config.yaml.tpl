@@ -117,7 +117,7 @@ cookie:
   # 必填；布尔；按用户要求已确认默认 false（与上游 zgsmAdminToken 的 HttpOnly=false 一致，供前端 JS 读取）；关闭时页面 XSS 可读取该凭据。
   http_only: false
   # 必填；已确认默认 None；允许 Lax/Strict/None；None 必须同时 secure=true；secure=false 时禁止 None（HTTP 部署须显式改 Lax/Strict）。
-  same_site: "None"
+  same_site:  "Lax"
   # 已确认不设字段：业务 Cookie 名固定 zgsmAdminToken；流程 Cookie 名按协议固定 __Host-oidc_flow（HTTPS）/ oidc_flow（HTTP）；业务 Cookie 的 Expires 固定取已验证 cs-user token 的 exp，不写 Max-Age；流程 Cookie 保持会话 Cookie，不写 Max-Age/Expires；不设独立期限配置。
 
 security:

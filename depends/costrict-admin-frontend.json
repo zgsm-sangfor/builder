@@ -4,7 +4,7 @@
   "version": "1.0.189",
   "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
   "path": "../SLA/costrict-admin",
-  "repo": "zgsm",
+  "repo": "ghcr.io/zgsm-sangfor",
   "tag": "v{{.version}}",
   "enabled": true,
   "sources": [

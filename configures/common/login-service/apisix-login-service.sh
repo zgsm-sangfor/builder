@@ -18,13 +18,13 @@ curl -i http://$APISIX_ADDR/apisix/admin/upstreams -H "$AUTH" -H "$TYPE" -X PUT 
   }'
 
 curl -i http://$APISIX_ADDR/apisix/admin/routes -H "$AUTH" -H "$TYPE" -X PUT -d '{
-  "id": "costrict-login-service",
+  "id": "costrict-login-oidc",
   "name": "oidc-auth-old-routes",
   "uris": [
     "/oidc-auth/api/v1/plugin*",
     "/oidc-auth/api/v1/manager*"
   ],
-  "upstream_id": "oidc-auth"
+  "upstream_id": "costrict-login-service"
 }'
 
 curl -i http://$APISIX_ADDR/apisix/admin/routes -H "$AUTH" -H "$TYPE" -X PUT -d '{
