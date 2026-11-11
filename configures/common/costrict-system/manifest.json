@@ -85,7 +85,7 @@
     {
       "name": "costrict-model-proxy",
       "subsystem": "backend",
-      "version": "1.0.13"
+      "version": "1.0.14"
     },
     {
       "name": "credit-manager",
