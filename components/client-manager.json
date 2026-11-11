@@ -1,4 +1,5 @@
 {
+  "enabled": false,
   "name": "client-manager",
   "type": "zip",
   "subsystem": "backend",

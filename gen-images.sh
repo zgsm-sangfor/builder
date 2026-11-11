@@ -7,12 +7,15 @@ import argparse
 import json
 from pathlib import Path
 import re
+import shutil
+import subprocess
 import sys
 
 root = Path(sys.argv.pop(1))
 parser = argparse.ArgumentParser(description="仅输出已启用服务实际引用的镜像，每行一个，排序去重。依赖 Python 3、PyYAML。")
 parser.add_argument("-s", "--source", type=Path, default=root / "configures/common", help="服务配置目录（默认：脚本目录/configures/common）")
 parser.add_argument("-c", "--components", type=Path, default=root / "components", help="组件定义目录（默认：脚本目录/components）")
+parser.add_argument("--check", action="store_true", help="调用 Docker 检查镜像是否已存在，并输出安装脚本相同格式的状态")
 args = parser.parse_args()
 
 try:
@@ -89,8 +92,31 @@ try:
             expression = compose["services"][name]["image"]
             images.add(resolve_image(expression, read_images(directory / "image.env")))
     # 全部解析成功后再输出，避免出错时留下不完整列表。
-    for image in sorted(images):
-        print(image)
-except (OSError, ValueError, KeyError, TypeError, yaml.YAMLError) as error:
+    image_list = sorted(images)
+    if not args.check:
+        for image in image_list:
+            print(image)
+    else:
+        docker = shutil.which("docker")
+        if docker is None:
+            raise RuntimeError("未找到 docker 命令；请安装 Docker，或不使用 --check 仅生成镜像列表")
+        missing = 0
+        for image in image_list:
+            result = subprocess.run(
+                [docker, "image", "inspect", image],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            )
+            if result.returncode == 0:
+                print(f"[存在] ({image})")
+            else:
+                print(f"[缺失] ({image})")
+                missing += 1
+        if missing:
+            print(f"检查完成，共有 {missing} 个镜像缺失")
+            sys.exit(1)
+        print("所有镜像已存在")
+except (OSError, RuntimeError, ValueError, KeyError, TypeError, yaml.YAMLError) as error:
     sys.exit(f"错误：{error}")
 PY

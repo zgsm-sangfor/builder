@@ -1,4 +1,5 @@
 {
+  "enabled": false,
   "name": "code-completion",
   "type": "zip",
   "subsystem": "backend",

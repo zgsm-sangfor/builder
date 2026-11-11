@@ -1,4 +1,5 @@
 {
+  "enabled": false,
   "name": "client-manager",
   "type": "docker",
   "version": "1.0.14",
