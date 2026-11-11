@@ -44,11 +44,6 @@
       "description": "客户端管理支撑服务"
     },
     {
-      "component_name": "code-completion",
-      "display_name": "Code-Completion",
-      "description": "提供智能代码补全和建议功能"
-    },
-    {
       "component_name": "costrict-admin-backend",
       "display_name": "costrict-admin后端服务",
       "description": "CoStrict管理服务的后端服务"
@@ -59,40 +54,14 @@
       "description": "CoStrict管理服务的前端页面"
     },
     {
-      "component_name": "costrict-auth-frontend",
-      "display_name": "costrict-auth前端页面",
-      "description": "costrict-auth-frontend package component",
-      "dependences": [
-        {
-          "depend_component": "portal",
-          "depend_versions": ">=1.0.0"
-        }
-      ]
-    },
-    {
-      "component_name": "costrict-dept-sync",
-      "display_name": "",
-      "description": "CoStrict department synchronization service"
-    },
-    {
       "component_name": "costrict-model-proxy",
       "display_name": "大模型代理服务",
       "description": "简化的大模型网关，聚合多来源多类型大语言模型API"
     },
     {
-      "component_name": "costrict-web",
-      "display_name": "",
-      "description": "costrict-web package component"
-    },
-    {
       "component_name": "credit-manager",
       "display_name": "Credit-Manager",
       "description": "提供用户额度和配额管理功能"
-    },
-    {
-      "component_name": "efficiency-dashboard",
-      "display_name": "",
-      "description": "efficiency-dashboard package component"
     },
     {
       "component_name": "es",
@@ -139,11 +108,6 @@
       "component_name": "postgres",
       "display_name": "PostgreSQL",
       "description": "关系型数据库，存储业务数据"
-    },
-    {
-      "component_name": "prometheus",
-      "display_name": "Prometheus指标监控服务",
-      "description": "提供系统监控功能"
     },
     {
       "component_name": "redis",
@@ -200,12 +164,6 @@
       "health_url": "http://localhost:8098/healthz"
     },
     {
-      "component_name": "code-completion",
-      "service_name": "code-completion",
-      "health_url": "http://localhost:8099/healthz",
-      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/code-completion/logs/code-completion.log"
-    },
-    {
       "component_name": "costrict-admin-backend",
       "service_name": "costrict-admin-backend",
       "display_name": "CoStrict后端管理",
@@ -222,70 +180,14 @@
       "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/costrict-admin-frontend/logs/costrict-admin-frontend.log"
     },
     {
-      "component_name": "costrict-auth-frontend",
-      "service_name": "costrict-auth-frontend",
-      "display_name": "组织结构与授权访问前端",
-      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_APISIX_ENTRY }}",
-      "health_url": "http://localhost:8080/healthz",
-      "log_file": "{{ .COSTRICT_DATA_DIR }}/backend/costrict-auth-frontend/logs/costrict-auth-frontend.log"
-    },
-    {
-      "component_name": "costrict-dept-sync",
-      "service_name": "costrict-dept-sync"
-    },
-    {
       "component_name": "costrict-model-proxy",
       "service_name": "costrict-model-proxy",
       "health_url": "http://costrict-model-proxy:8080/healthz"
     },
     {
-      "component_name": "costrict-web",
-      "service_name": "costrict-web-api",
-      "display_name": "costrict-web的API服务"
-    },
-    {
-      "component_name": "costrict-web",
-      "service_name": "costrict-web-gateway"
-    },
-    {
-      "component_name": "costrict-web",
-      "service_name": "costrict-web-portal"
-    },
-    {
-      "component_name": "costrict-web",
-      "service_name": "costrict-web-worker"
-    },
-    {
-      "component_name": "costrict-web",
-      "service_name": "costrict-web-cs-user",
-      "display_name": "costrict-web的用户中心服务"
-    },
-    {
-      "component_name": "costrict-web",
-      "service_name": "costrict-web-workflow-backend",
-      "display_name": "costrict-web工作流后端服务"
-    },
-    {
-      "component_name": "costrict-web",
-      "service_name": "costrict-web-workflow-web",
-      "display_name": "costrict-web工作流前端服务"
-    },
-    {
       "component_name": "credit-manager",
       "service_name": "credit-manager",
       "health_url": "http://localhost:8098/healthz"
-    },
-    {
-      "component_name": "efficiency-dashboard",
-      "service_name": "efficiency-dashboard-server"
-    },
-    {
-      "component_name": "efficiency-dashboard",
-      "service_name": "efficiency-dashboard-portal"
-    },
-    {
-      "component_name": "efficiency-dashboard",
-      "service_name": "efficiency-dashboard-kbcli"
     },
     {
       "component_name": "es",
@@ -339,12 +241,6 @@
       "component_name": "postgres",
       "service_name": "postgres",
       "health_url": "http://localhost:35432/healthz"
-    },
-    {
-      "component_name": "prometheus",
-      "service_name": "prometheus",
-      "http_address": "http://{{ .COSTRICT_HOST }}:{{ .PORT_PROMETHEUS }}",
-      "health_url": "http://localhost:{{ .PORT_PROMETHEUS }}/healthz"
     },
     {
       "component_name": "redis",

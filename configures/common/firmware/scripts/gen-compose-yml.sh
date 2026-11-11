@@ -137,7 +137,7 @@ replace_in_file() {
                 return 1
             fi
             
-            log "INFO" "第 $((line_num + 1)) 行: 替换标记 $match 为 ${func} 密钥 (${#result} 字符)"
+            log "INFO" "第 $((line_num + 1)) 行: 替换标记 $match 为 ${func} 输出的结果 (${#result} 字符)"
             
             # 替换该行中的第一个匹配标记
             new_line="${new_line//$match/$result}"

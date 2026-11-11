@@ -35,12 +35,12 @@
     {
       "name": "authz",
       "subsystem": "backend",
-      "version": "1.0.6"
+      "version": "1.0.7"
     },
     {
       "name": "backend",
       "subsystem": "root",
-      "version": "1.0.74"
+      "version": "1.0.76"
     },
     {
       "name": "casdoor",
@@ -63,39 +63,24 @@
       "version": "1.0.14"
     },
     {
-      "name": "code-completion",
-      "subsystem": "backend",
-      "version": "1.7.106"
-    },
-    {
       "name": "costrict-admin-backend",
       "subsystem": "backend",
-      "version": "1.0.119"
+      "version": "1.0.121"
     },
     {
       "name": "costrict-admin-frontend",
       "subsystem": "backend",
-      "version": "1.0.66"
+      "version": "1.0.68"
     },
     {
       "name": "costrict-admin",
       "subsystem": "frontend",
-      "version": "1.0.148"
-    },
-    {
-      "name": "costrict-auth-frontend",
-      "subsystem": "backend",
-      "version": "1.0.4"
+      "version": "1.0.151"
     },
     {
       "name": "costrict-daemon",
       "subsystem": "root",
-      "version": "1.0.148"
-    },
-    {
-      "name": "costrict-dept-sync",
-      "subsystem": "backend",
-      "version": "1.0.18"
+      "version": "1.0.150"
     },
     {
       "name": "costrict-model-proxy",
@@ -103,19 +88,9 @@
       "version": "1.0.13"
     },
     {
-      "name": "costrict-web",
-      "subsystem": "backend",
-      "version": "1.0.21"
-    },
-    {
       "name": "credit-manager",
       "subsystem": "backend",
       "version": "1.0.7"
-    },
-    {
-      "name": "efficiency-dashboard",
-      "subsystem": "backend",
-      "version": "1.0.13"
     },
     {
       "name": "es",
@@ -130,7 +105,7 @@
     {
       "name": "firmware",
       "subsystem": "root",
-      "version": "1.0.143"
+      "version": "1.0.145"
     },
     {
       "name": "frontend",
@@ -155,7 +130,7 @@
     {
       "name": "orgd",
       "subsystem": "backend",
-      "version": "1.0.7"
+      "version": "1.0.8"
     },
     {
       "name": "portal",
@@ -168,11 +143,6 @@
       "version": "1.0.16"
     },
     {
-      "name": "prometheus",
-      "subsystem": "backend",
-      "version": "1.0.3"
-    },
-    {
       "name": "redis",
       "subsystem": "backend",
       "version": "1.0.9"
@@ -180,7 +150,7 @@
     {
       "name": "user-indicator",
       "subsystem": "backend",
-      "version": "1.0.12"
+      "version": "1.0.13"
     }
   ]
 }

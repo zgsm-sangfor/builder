@@ -2,7 +2,8 @@
   "name": "costrict-auth-frontend",
   "type": "zip",
   "path": "./configures",
-  "version": "1.0.4",
+  "version": "1.0.5",
+  "enabled": false,
   "subsystem": "backend",
   "dependences": [
     {

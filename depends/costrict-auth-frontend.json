@@ -1,6 +1,6 @@
 {
   "name": "costrict-auth-frontend",
-  "version": "0.4.8",
+  "version": "0.5.0",
   "type": "docker",
   "remote": "git@github.com:zgsm-sangfor/authd.git",
   "repo": "zgsm",

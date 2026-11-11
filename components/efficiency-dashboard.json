@@ -4,6 +4,6 @@
   "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.13",
-  "enabled": true,
+  "enabled": false,
   "description": "efficiency-dashboard package component"
 }

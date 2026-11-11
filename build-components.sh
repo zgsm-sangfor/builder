@@ -164,25 +164,6 @@ is_module_enabled() {
     return 0
 }
 
-# Function to render build command template
-# 支持 {{.version}}, {{.os}}, {{.arch}}, {{.output}} 模板变量
-# 参数: $1 - template string, $2 - version, $3 - os, $4 - arch, $5 - output
-render_build_template() {
-    local template="$1"
-    local version="$2"
-    local os="$3"
-    local arch="$4"
-    local output="$5"
-    
-    local result="$template"
-    result="${result//\{\{.version\}\}/$version}"
-    result="${result//\{\{.os\}\}/$os}"
-    result="${result//\{\{.arch\}\}/$arch}"
-    result="${result//\{\{.output\}\}/$output}"
-    
-    echo "$result"
-}
-
 # Function to build a package for multiple platforms (仅用于 exec 类型)
 build_app() {
     local package_name="$1"

@@ -337,9 +337,11 @@ render_template_ex() {
             fi
             # 提取{{和}}之间的文本作为jq表达式
             local expr="${match:2:${#match}-4}"
+            # 兼容 {{os}} 与 {{.os}} 两种写法：去除前导'.'后再匹配特殊变量
+            local name="${expr#.}"
             # 如果表达式是 os/arch/output，直接使用参数值；否则从 JSON 文件查询
             local value
-            case "$expr" in
+            case "$name" in
                 os)     value="$os" ;;
                 arch)   value="$arch" ;;
                 output) value="$output" ;;

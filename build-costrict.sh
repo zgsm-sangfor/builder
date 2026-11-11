@@ -22,7 +22,11 @@ set -e
 #
 
 # build-costrict.sh支持以下可选参数：
-#   --update    检测 dependency 包变更并自动递增版本号（Step 1），默认不执行
+#   --update [target]      检测 dependency 包变更并自动递增版本号（Step 1），默认不执行
+#                          target 为逗号分隔的包名列表（如 "casdoor,chat-rag"），或下列值之一：
+#                            all  - 检测并递增所有 enabled 依赖包
+#                            auto - 同 all（自动检测变更并递增）
+#                          省略 target（仅 --update）等同于 all
 #   --build <target>       指定要构建的依赖包列表（Step 2），传给 build-depends.sh 的 --packages 选项
 #                          target 为逗号分隔的包名列表（如 "casdoor,chat-rag"），或下列值之一：
 #                            all  - 构建所有 enabled 依赖
@@ -59,8 +63,12 @@ show_help() {
     echo "构建 CoStrict 系统包"
     echo ""
     echo "选项:"
-    echo "  --update              检测 dependency 包变更并自动递增版本号（Step 1）"
+    echo "  --update [target]     检测 dependency 包变更并自动递增版本号（Step 1）"
     echo "                        默认不执行 Step 1，仅当指定此选项时才执行"
+    echo "                        target 为逗号分隔的包名列表（如 \"casdoor,chat-rag\"），或："
+    echo "                          all  - 检测并递增所有 enabled 依赖包"
+    echo "                          auto - 同 all（自动检测变更并递增）"
+    echo "                        省略 target（仅 --update）等同于 all"
     echo "  --build <target>      指定要构建的依赖包（Step 2）"
     echo "                        target 为逗号分隔的包名列表（如 \"casdoor,chat-rag\"），或："
     echo "                          all  - 构建所有 enabled 依赖"
@@ -98,7 +106,7 @@ show_help() {
     echo "  --help, -h            显示此帮助信息"
     echo ""
     echo "执行步骤:"
-    echo "  1. (仅 --update) 检测 dependency 包变更并自动递增版本号"
+    echo "  1. (仅 --update) 检测 dependency 包变更并自动递增版本号（可指定 all/auto 或包名列表）"
     echo "  2. 检查尚未构建的 dependency 包（构建物包括 Docker 镜像、前端页面包、可执行程序等），若有则调用 build-depends.sh 构建（可选推送镜像）"
     echo "     (若指定 --build <target>，则按指定目标构建：all=全部, auto=自动检测, 或指定包名列表)"
     echo "  3. 调用 gen-backend-spec.sh 生成 backend/system-spec.json"
@@ -113,6 +121,8 @@ show_help() {
     echo "示例:"
     echo "  $0                                    # 构建镜像（不推送），然后构建包"
     echo "  $0 --update                           # 先检测 dependency 变更并递增版本，再构建镜像和包"
+    echo "  $0 --update all                       # 同上（显式指定 all，检测所有 enabled 依赖）"
+    echo "  $0 --update casdoor,chat-rag          # 仅检测并递增指定依赖包的版本"
     echo "  $0 --build all                        # 跳过检查，构建所有依赖"
     echo "  $0 --build casdoor,chat-rag           # 构建指定的依赖包"
     echo "  $0 --build auto --push docker         # 构建镜像并推送到 docker hub"
@@ -133,6 +143,7 @@ show_help() {
 UPLOAD_ENV=""
 PUSH_ENV=""
 NEED_UPDATE=false
+UPDATE_TARGET=""
 NEED_LOCAL=false
 NEED_MIRROR=false
 BUILD_TARGET=""
@@ -151,7 +162,16 @@ while [[ $# -gt 0 ]]; do
             ;;
         --update)
             NEED_UPDATE=true
-            shift
+            # --update 支持可选 target 参数（与 --build/--pack 保持一致）：
+            #   省略 target，或为 all/auto -> 处理所有 enabled 依赖包
+            #   逗号分隔的包名列表           -> 仅处理指定依赖包
+            if [ $# -ge 2 ] && [[ "$2" != -* ]]; then
+                UPDATE_TARGET="$2"
+                shift 2
+            else
+                UPDATE_TARGET="all"
+                shift
+            fi
             ;;
         --build)
             BUILD_TARGET="$2"
@@ -193,6 +213,14 @@ if [ "$NEED_LOCAL" = true ]; then
     LOCAL_OPT="--local"
 fi
 
+# --update 的包过滤选项（传给 check-update.sh 的 --packages）：
+# all/auto（或省略 target）表示处理所有 enabled 依赖包，无需过滤选项；
+# 其余情况视为逗号分隔的包名列表，转换为 --packages 参数
+UPDATE_OPT=""
+if [ -n "$UPDATE_TARGET" ] && [ "$UPDATE_TARGET" != "all" ] && [ "$UPDATE_TARGET" != "auto" ]; then
+    UPDATE_OPT="--packages $UPDATE_TARGET"
+fi
+
 # 当启用 --local 时，从 local.json 读取需要本地构建的模块列表（packages 字段）
 # 列表中的模块由下层脚本（check-update.sh / build-depends.sh）使用本地源码构建/检测；
 # 列表外的模块从 GitHub 获取版本列表与编译结果
@@ -213,11 +241,13 @@ if [ -n "$UPLOAD_ENV" ]; then
 fi
 
 # Step 1: 仅当 --update 为 true 时，调用check-update.sh自动递增dependency包的版本号
+# 若 --update 指定了包名列表，则仅处理指定的依赖包；否则处理所有 enabled 依赖包
 if [ "$NEED_UPDATE" = true ]; then
     echo "----------------------------------------------------------------"
     echo "Step 1: Detecting dependency changes and auto-incrementing versions..."
+    echo "  target: ${UPDATE_TARGET}"
     echo "----------------------------------------------------------------"
-    ./check-update.sh --update --build-type dependency $LOCAL_OPT
+    ./check-update.sh --update --build-type dependency $UPDATE_OPT $LOCAL_OPT
 else
     echo "----------------------------------------------------------------"
     echo "--update not set, skipping Step 1 (dependency version auto-increment)..."
