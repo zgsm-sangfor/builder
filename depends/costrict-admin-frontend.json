@@ -1,14 +1,14 @@
 {
   "name": "costrict-admin-frontend",
   "type": "docker",
-  "version": "1.0.150",
+  "version": "1.0.189",
   "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
-  "path": "../costrict-admin",
+  "path": "../SLA/costrict-admin",
   "repo": "zgsm",
   "tag": "v{{.version}}",
   "enabled": true,
   "sources": [
-    "../costrict-admin/frontend"
+    "../SLA/costrict-admin/frontend"
   ],
   "excludes": [
     "*/dist/*",
@@ -16,11 +16,11 @@
     "*/node_modules/*"
   ],
   "build": {
-    "workdir": "../costrict-admin/frontend",
+    "workdir": "../SLA/costrict-admin/frontend",
     "command": "export DOCKER_BUILDKIT=1 && docker build -f ./Dockerfile --build-arg VERSION={{.version}} .. -t {{.repo}}/{{.name}}:{{.tag}}"
   },
   "pull": {
-    "workdir": "../costrict-admin/frontend",
+    "workdir": "../SLA/costrict-admin/frontend",
     "command": "docker-pull-via.sh --proxy-id ghcr.io/zgsm-sangfor/{{.name}}:{{.tag}} --image-id  {{.repo}}/{{.name}}:{{.tag}}"
   },
   "update": {

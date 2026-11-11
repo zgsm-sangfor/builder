@@ -3,10 +3,10 @@
   "type": "exec",
   "subsystem": "backend",
   "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
-  "path": "../costrict-admin",
+  "path": "../SLA/costrict-admin",
   "sources": [
-    "../costrict-admin/backend",
-    "../costrict-admin/common"
+    "../SLA/costrict-admin/backend",
+    "../SLA/costrict-admin/common"
   ],
   "platforms": [
     {

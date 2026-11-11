@@ -2,10 +2,10 @@
   "name": "costrict-daemon",
   "type": "exec",
   "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
-  "path": "../costrict-admin",
+  "path": "../SLA/costrict-admin",
   "sources": [
-    "../costrict-admin/daemon",
-    "../costrict-admin/common"
+    "../SLA/costrict-admin/daemon",
+    "../SLA/costrict-admin/common"
   ],
   "platforms": [
     {
@@ -18,12 +18,12 @@
     }
   ],
   "build": {
-    "workdir": "../costrict-admin/daemon"
+    "workdir": "../SLA/costrict-admin/daemon"
   },
   "pull": {
     "workdir": ".",
     "command": "github-fetch-release.sh --repo zgsm-sangfor/costrict-admin --package costrict-daemon --os {{os}} --arch {{arch}} --version {{.version}}"
   },
-  "version": "1.0.150",
+  "version": "1.0.189",
   "description": "The daemon of costrict"
 }

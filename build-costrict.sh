@@ -3,7 +3,7 @@
 set -e
 
 #
-# Step 1: 调用check-update.sh检测dependency包的变更并自动递增版本号；
+# Step 1: 调用check-update.sh检测dependency包的变更并更新版本号；
 # Step 2: 调用check-build.sh检查哪些dependency包当前版本尚未构建；
 #         dependency包的构建物包括：Docker镜像、前端页面包、可执行程序等；
 #         若有，调用build-depends.sh进行构建（可选推送镜像），否则跳过；
@@ -17,12 +17,12 @@ set -e
 #         若有，调用build-components.sh执行--clean --pack（--pack = build/pack/index 完整流程，
 #         若指定--upload则上传至云环境），否则跳过。
 #
-# 说明：check-update.sh 只负责自动递增包的版本号，不再用于获取待构建的包列表；
+# 说明：check-update.sh 只负责更新包的版本号，不再用于获取待构建的包列表；
 #       待构建的包列表统一由 check-build.sh 获取。
 #
 
 # build-costrict.sh支持以下可选参数：
-#   --update [target]      检测 dependency 包变更并自动递增版本号（Step 1），默认不执行
+#   --update [target]      检测 dependency 包变更并更新版本号（Step 1），默认不执行
 #                          target 为逗号分隔的包名列表（如 "casdoor,chat-rag"），或下列值之一：
 #                            all  - 检测并递增所有 enabled 依赖包
 #                            auto - 同 all（自动检测变更并递增）
@@ -63,7 +63,7 @@ show_help() {
     echo "构建 CoStrict 系统包"
     echo ""
     echo "选项:"
-    echo "  --update [target]     检测 dependency 包变更并自动递增版本号（Step 1）"
+    echo "  --update [target]     检测依赖包(dependency)变更并更新版本号（Step 1）"
     echo "                        默认不执行 Step 1，仅当指定此选项时才执行"
     echo "                        target 为逗号分隔的包名列表（如 \"casdoor,chat-rag\"），或："
     echo "                          all  - 检测并递增所有 enabled 依赖包"
@@ -106,7 +106,7 @@ show_help() {
     echo "  --help, -h            显示此帮助信息"
     echo ""
     echo "执行步骤:"
-    echo "  1. (仅 --update) 检测 dependency 包变更并自动递增版本号（可指定 all/auto 或包名列表）"
+    echo "  1. (仅 --update) 检测 dependency 包变更并更新版本号（可指定 all/auto 或包名列表）"
     echo "  2. 检查尚未构建的 dependency 包（构建物包括 Docker 镜像、前端页面包、可执行程序等），若有则调用 build-depends.sh 构建（可选推送镜像）"
     echo "     (若指定 --build <target>，则按指定目标构建：all=全部, auto=自动检测, 或指定包名列表)"
     echo "  3. 调用 gen-backend-spec.sh 生成 backend/system-spec.json"
@@ -240,7 +240,7 @@ if [ -n "$UPLOAD_ENV" ]; then
     UPLOAD_OPT="--upload $UPLOAD_ENV"
 fi
 
-# Step 1: 仅当 --update 为 true 时，调用check-update.sh自动递增dependency包的版本号
+# Step 1: 仅当 --update 为 true 时，调用check-update.sh更新dependency包的版本号
 # 若 --update 指定了包名列表，则仅处理指定的依赖包；否则处理所有 enabled 依赖包
 if [ "$NEED_UPDATE" = true ]; then
     echo "----------------------------------------------------------------"
