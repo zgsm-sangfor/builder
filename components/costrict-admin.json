@@ -9,6 +9,7 @@
       "arch": "amd64"
     }
   ],
-  "version": "1.0.188",
+
+  "version": "1.0.189",
   "description": "Utilities for backend management of Costrict"
 }

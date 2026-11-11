@@ -2,10 +2,10 @@
   "name": "costrict-admin",
   "type": "exec",
   "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
-  "path": "../costrict-admin",
+  "path": "../SLA/costrict-admin",
   "sources": [
-    "../costrict-admin/utility",
-    "../costrict-admin/common"
+    "../SLA/costrict-admin/utility",
+    "../SLA/costrict-admin/common"
   ],
   "platforms": [
     {
@@ -18,12 +18,12 @@
     }
   ],
   "build": {
-    "workdir": "../costrict-admin/utility"
+    "workdir": "../SLA/costrict-admin/utility"
   },
   "pull": {
     "workdir": ".",
     "command": "github-fetch-release.sh --package costrict-admin --os {{os}} --arch {{arch}} --version {{.version}}"
   },
-  "version": "1.0.188",
+  "version": "1.0.189",
   "description": "Utilities for backend management of Costrict"
 }

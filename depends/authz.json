@@ -1,7 +1,7 @@
 {
   "name": "authz",
   "type": "docker",
-  "version": "0.4.8",
+  "version": "0.5.0",
   "remote": "git@github.com:zgsm-sangfor/authd.git",
   "repo": "ghcr.io/zgsm-sangfor",
   "path": "../authd",

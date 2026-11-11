@@ -22,6 +22,7 @@
 #   --url <URL>          GitHub Release下载URL（可选），默认自动拼接
 #   --output-dir <DIR>   输出根目录（可选），默认: ../packages
 #   --output <FILE>      输出文件路径（可选），默认: 自动拼接到 {output-dir}/{package}/{os}/{arch}/{version}/{package}
+#   -f, --force          强制重新下载（即使目标文件已存在）
 #   -h, --help           显示帮助信息
 #
 # 使用示例：
@@ -44,6 +45,7 @@ usage() {
     echo "  --url <URL>          GitHub Release下载URL（可选），默认自动拼接"
     echo "  --output-dir <DIR>   输出根目录（可选），默认: ../packages"
     echo "  --output <FILE>      输出文件路径（可选），默认: {output-dir}/{package}/{os}/{arch}/{version}/{package}"
+    echo "  -f, --force          强制重新下载（即使目标文件已存在）"
     echo "  -h, --help           显示帮助信息"
     echo ""
     echo "Examples:"
@@ -279,9 +281,10 @@ PACKAGE_REPO=""
 PACKAGE_URL=""
 OUTPUT_DIR="./packages"
 OUTPUT_FILE=""
+FORCE=false
 
 # 解析命令行选项
-args=$(getopt -o h --long help,os:,arch:,version:,package:,repo:,url:,output-dir:,output: -n 'github-fetch-release.sh' -- "$@")
+args=$(getopt -o hf --long help,force,os:,arch:,version:,package:,repo:,url:,output-dir:,output: -n 'github-fetch-release.sh' -- "$@")
 if [ $? -ne 0 ]; then
     usage
 fi
@@ -325,6 +328,10 @@ while true; do
         --output)
             OUTPUT_FILE="$2"
             shift 2
+            ;;
+        -f|--force)
+            FORCE=true
+            shift
             ;;
         --)
             shift
@@ -422,6 +429,16 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# 下载状态标记（true 表示目标文件已就绪，无需再次下载）
+DOWNLOAD_SUCCEEDED=false
+
+# 若目标文件已存在且未指定 --force，则跳过下载，直接视为下载成功
+if [ -f "${TARGET_FILE}" ] && [ "${FORCE}" != "true" ]; then
+    echo "Target file already exists, skipping download: ${TARGET_FILE}"
+    echo "  (use --force to force re-download)"
+    DOWNLOAD_SUCCEEDED=true
+fi
+
 #
 # 下载策略（官方方法优先）：
 #   1. 优先使用官方 GitHub CLI：`gh release download`
@@ -431,17 +448,17 @@ fi
 #   3. 若仍失败且 URL 是自动生成的，通过 GitHub API 获取资产 API URL 重试
 #      （API URL 重定向在 api.github.com 同主机内，认证头不会丢失）
 #
-DOWNLOAD_SUCCEEDED=false
-
-if ensure_gh; then
-    echo "Using official method: gh release download"
-    if do_download_gh "${PACKAGE_REPO}" "${PACKAGE_VERSION}" "${PACKAGE_OS}" "${PACKAGE_ARCH}" "${PACKAGE_NAME}" "${TARGET_FILE}"; then
-        DOWNLOAD_SUCCEEDED=true
+if [ "$DOWNLOAD_SUCCEEDED" != true ]; then
+    if ensure_gh; then
+        echo "Using official method: gh release download"
+        if do_download_gh "${PACKAGE_REPO}" "${PACKAGE_VERSION}" "${PACKAGE_OS}" "${PACKAGE_ARCH}" "${PACKAGE_NAME}" "${TARGET_FILE}"; then
+            DOWNLOAD_SUCCEEDED=true
+        else
+            echo "gh download failed, falling back to curl..."
+        fi
     else
-        echo "gh download failed, falling back to curl..."
+        echo "gh unavailable, using curl..."
     fi
-else
-    echo "gh unavailable, using curl..."
 fi
 
 if [ "$DOWNLOAD_SUCCEEDED" != true ]; then

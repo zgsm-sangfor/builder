@@ -4,14 +4,14 @@
   "version": "1.0.189",
   "remote": "git@github.com:zgsm-sangfor/costrict-admin.git",
   "repo": "ghcr.io/zgsm-sangfor",
-  "path": "../costrict-admin",
+  "path": "../SLA/costrict-admin",
   "sources": [
-    "../costrict-admin/backend",
-    "../costrict-admin/common"
+    "../SLA/costrict-admin/backend",
+    "../SLA/costrict-admin/common"
   ],
   "tag": "v{{.version}}",
   "build": {
-    "workdir": "../costrict-admin/backend",
+    "workdir": "../SLA/costrict-admin/backend",
     "command": "export DOCKER_BUILDKIT=1 && docker build -f ./Dockerfile --build-arg VERSION={{.version}} .. -t {{.repo}}/{{.name}}:v{{.version}}"
   },
   "pull": {

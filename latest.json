@@ -21,18 +21,18 @@
       "file_count": 42
     },
     "costrict-admin": {
-      "version": "1.0.148",
+      "version": "1.0.189",
       "checksum": "",
       "file_count": 0
     },
     "costrict-admin-backend": {
-      "version": "1.0.119",
-      "checksum": "e86aa9405b109deb1681a3978897db6b632905601e4ae62194bad5569d0fdc94",
+      "version": "1.0.122",
+      "checksum": "ef6de75ec9ef3050541dc2ed4a44e6f7bdfd5b3092a61c93113d68cdaa6316d3",
       "file_count": 4
     },
     "costrict-admin-frontend": {
-      "version": "1.0.66",
-      "checksum": "363c9b8d2d72efd43de01d335062f51887d1fb72142c84f2ba73241c86915213",
+      "version": "1.0.69",
+      "checksum": "934eb6e88c14cf219690fad9645c1b1c34f1db573495a2515246e8a58023eb3a",
       "file_count": 4
     },
     "system": {
@@ -41,8 +41,8 @@
       "file_count": 1
     },
     "firmware": {
-      "version": "1.0.143",
-      "checksum": "6346fb4d6bf1685a573638906662982becc6aeb35115a9857f7b4c291da4f49c",
+      "version": "1.0.145",
+      "checksum": "d1f51b5638b357301569356a21c90dcd6d9a89d930faf5d09eb91f7d54aff197",
       "file_count": 34
     },
     "frontend": {
@@ -51,8 +51,8 @@
       "file_count": 1
     },
     "backend": {
-      "version": "1.0.74",
-      "checksum": "c5b1a27633ae2ad494b263b12bf0d19d1ea7474302fde80dad7262a40cd5c3cf",
+      "version": "1.0.76",
+      "checksum": "31cae8798132ec47868a05c37300ceeaa92f896421e10047294023cd8adc3f98",
       "file_count": 3
     },
     "costrict-config": {
@@ -166,8 +166,8 @@
       "file_count": 4
     },
     "costrict-system": {
-      "version": "1.0.298",
-      "checksum": "05cc34b99f07fc1e990ee90324f1bff60bb8c717cce480e72c30c25fffe4ff85",
+      "version": "1.0.304",
+      "checksum": "50046cedabc60aa0e51613a520fa12699c30a2c39f01d371d2ab171921700779",
       "file_count": 1
     },
     "costrict-license-sdk": {
@@ -176,7 +176,7 @@
       "file_count": 3
     },
     "costrict-daemon": {
-      "version": "1.0.148",
+      "version": "1.0.150",
       "checksum": "",
       "file_count": 0
     },
@@ -206,8 +206,8 @@
       "file_count": 6
     },
     "user-indicator": {
-      "version": "1.0.12",
-      "checksum": "d9517798d7b2f88c9e82a0b722787832f164b2ba2d46939ad77816ee9f8e5b69",
+      "version": "1.0.13",
+      "checksum": "2c4cdc4449d4a36e291c065d65173c6c85a4e21a912f23e16256443e8a18c155",
       "file_count": 7
     },
     "costrict-serve": {
@@ -236,13 +236,13 @@
       "file_count": 3
     },
     "costrict-model-proxy": {
-      "version": "1.0.13",
-      "checksum": "fb5c9be63ad9c9ab0fa0f8284337314e1c104d7c047e749dde6b516be0b66f42",
+      "version": "1.0.14",
+      "checksum": "35110e1714626264b5880c35bafaa470884fba93429de5b774f553bc5724e7d5",
       "file_count": 8
     },
     "license-manager": {
-      "version": "1.0.13",
-      "checksum": "7aa979690380061a0df78f32e39c2b826b931f7717d44eb9a6ae00b3d9f20a01",
+      "version": "1.0.14",
+      "checksum": "51743f4f22a57e6fd4ef0b3c36008148be76de1ccca7d1279e77919ff639136c",
       "file_count": 8
     },
     "costrict-web": {
@@ -306,13 +306,13 @@
       "file_count": 5
     },
     "authz": {
-      "version": "1.0.6",
-      "checksum": "51d7255d8a039bbeaf29e4709a08270462a2ca4f45df56b58fba6c4cc3141bfa",
+      "version": "1.0.7",
+      "checksum": "aea59e4e084db8748dda87c0f46506826faa8bec690b23163f0fabbbd42568d4",
       "file_count": 7
     },
     "orgd": {
-      "version": "1.0.7",
-      "checksum": "3969ddbad3b4d2891fc21e326db0ee28d994172945497a019c2ad1e3b68fbcbe",
+      "version": "1.0.8",
+      "checksum": "7a4e8dfc93e3299e5920c1251556f61de233d9a3856ef5528a135fec93caeedb",
       "file_count": 7
     },
     "costrict-dept-sync": {
@@ -321,8 +321,8 @@
       "file_count": 6
     },
     "costrict-auth-frontend": {
-      "version": "1.0.4",
-      "checksum": "e1f5aeed23a20ef16c1fd3ebbb8e08a5e09b0f89e3a7dfbcd39de571dbd76b49",
+      "version": "1.0.5",
+      "checksum": "b2584a8f8944da27b19c23f454c4b04ca600428b041348b86a69350da6333929",
       "file_count": 5
     }
   },
@@ -348,8 +348,8 @@
       "file_count": 39
     },
     "costrict-admin-backend": {
-      "version": "1.0.148",
-      "checksum": "v1.0.148",
+      "version": "1.0.189",
+      "checksum": "v1.0.189",
       "file_count": 0
     },
     "cotun": {
@@ -383,8 +383,8 @@
       "file_count": 134
     },
     "costrict-admin-frontend": {
-      "version": "1.0.148",
-      "checksum": "v1.0.148",
+      "version": "1.0.189",
+      "checksum": "v1.0.189",
       "file_count": 0
     },
     "code-completion": {
@@ -403,8 +403,8 @@
       "file_count": 0
     },
     "costrict-model-proxy": {
-      "version": "0.1.3",
-      "checksum": "v0.1.3",
+      "version": "0.1.5",
+      "checksum": "v0.1.5",
       "file_count": 0
     },
     "license-manager": {
@@ -428,28 +428,28 @@
       "file_count": 401
     },
     "costrict-admin": {
-      "version": "1.0.148",
-      "checksum": "v1.0.148",
+      "version": "1.0.189",
+      "checksum": "v1.0.189",
       "file_count": 0
     },
     "costrict-daemon": {
-      "version": "1.0.148",
-      "checksum": "v1.0.148",
+      "version": "1.0.189",
+      "checksum": "v1.0.189",
       "file_count": 0
     },
     "authz": {
-      "version": "0.4.8",
-      "checksum": "v0.4.8",
+      "version": "0.5.0",
+      "checksum": "v0.5.0",
       "file_count": 0
     },
     "orgd": {
-      "version": "0.4.8",
-      "checksum": "v0.4.8",
+      "version": "0.5.0",
+      "checksum": "v0.5.0",
       "file_count": 0
     },
     "costrict-auth-frontend": {
-      "version": "0.4.8",
-      "checksum": "v0.4.8",
+      "version": "0.5.0",
+      "checksum": "v0.5.0",
       "file_count": 0
     }
   }

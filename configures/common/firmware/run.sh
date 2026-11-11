@@ -57,10 +57,11 @@ check_core_dependencies() {
         "scripts/gen-env-file.sh"
         "docker-compose.yml"
         "costrict-admin-backend"
+        "costrict-admin-frontend"
         "apisix"
         "portal"
-        "portal/data/costrict-admin"
-        "portal/data/costrict-admin/index.html"
+        # "portal/data/costrict-admin"
+        # "portal/data/costrict-admin/index.html"
     )
     
     for dep in "${deps[@]}"; do

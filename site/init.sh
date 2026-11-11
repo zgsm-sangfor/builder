@@ -14,6 +14,11 @@ if [ -z "${COSTRICT_LOCAL_STORAGE:-}" ]; then
 fi
 export COSTRICT_LOCAL_STORAGE
 
+# 将 COSTRICT_LOCAL_STORAGE 的值持久化到 /root/.costrict.mirror.env，
+# 供其他脚本（如 firmware 安装流程）source 读取。
+MIRROR_ENV_FILE="/root/.costrict.mirror.env"
+echo "COSTRICT_LOCAL_STORAGE=${COSTRICT_LOCAL_STORAGE}" > "${MIRROR_ENV_FILE}"
+
 "${SCRIPT_DIR}/install-os-firmware.sh"
 "${SCRIPT_DIR}/start-nginx.sh"
 

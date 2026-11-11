@@ -4,5 +4,6 @@
   "subsystem": "backend",
   "path": "./configures",
   "version": "1.0.21",
+  "enabled": false,
   "description": "costrict-web package component"
 }
