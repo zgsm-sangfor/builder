@@ -25,7 +25,7 @@ bootstrap:
     source_type: "elasticsearch"
     enabled: true
     config:
-      hosts: ["https://elasticsearch:9200"]
+      hosts: ["http://es:9200"]
       username: "elastic"
       password: "{{PASSWORD_ELASTIC}}"
       index: "costrict_chat_metrics_v4"

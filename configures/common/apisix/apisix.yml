@@ -11,3 +11,5 @@ services:
       - "${PORT_APISIX_ENTRY}:9080/tcp"
     networks:
       - shenma
+    depends_on:
+      - etcd

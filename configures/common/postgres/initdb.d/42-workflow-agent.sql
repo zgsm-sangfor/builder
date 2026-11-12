@@ -1,0 +1,260 @@
+-- Source table structure (reference; Workflow migrations own executable DDL):
+-- --
+-- -- PostgreSQL database dump
+-- --
+-- 
+\c costrict_workflow
+\restrict tlx72MdnqdjU3ZLVMzWyZ6PRP4bjaN5WwcLywtdQrPKaw8aVhywsb8sNorvqmmS
+-- 
+-- -- Dumped from database version 17.9 (Debian 17.9-1.pgdg13+1)
+-- -- Dumped by pg_dump version 17.9 (Debian 17.9-1.pgdg13+1)
+-- 
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: multica_agent; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.multica_agent (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    workspace_id uuid,
+    name text NOT NULL,
+    avatar_url text,
+    runtime_mode text,
+    runtime_config jsonb DEFAULT '{}'::jsonb NOT NULL,
+    visibility text DEFAULT 'private'::text NOT NULL,
+    status text DEFAULT 'offline'::text NOT NULL,
+    max_concurrent_tasks integer DEFAULT 6 NOT NULL,
+    owner_id uuid,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    description text DEFAULT ''::text NOT NULL,
+    runtime_id uuid,
+    instructions text DEFAULT ''::text NOT NULL,
+    archived_at timestamp with time zone,
+    archived_by uuid,
+    custom_env jsonb DEFAULT '{}'::jsonb NOT NULL,
+    custom_args jsonb DEFAULT '[]'::jsonb NOT NULL,
+    mcp_config jsonb,
+    model text,
+    thinking_level text,
+    is_builtin boolean DEFAULT false NOT NULL,
+    CONSTRAINT agent_description_length CHECK ((char_length(description) <= 255)),
+    CONSTRAINT agent_runtime_mode_check CHECK ((runtime_mode = ANY (ARRAY['local'::text, 'cloud'::text]))),
+    CONSTRAINT agent_status_check CHECK ((status = ANY (ARRAY['idle'::text, 'working'::text, 'blocked'::text, 'error'::text, 'offline'::text]))),
+    CONSTRAINT agent_visibility_check CHECK ((visibility = ANY (ARRAY['workspace'::text, 'private'::text])))
+);
+
+
+--
+-- Name: multica_agent_plugin; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.multica_agent_plugin (
+    agent_id uuid NOT NULL,
+    plugin_name text NOT NULL,
+    plugin_id text DEFAULT ''::text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT multica_agent_plugin_name_not_empty CHECK ((btrim(plugin_name) <> ''::text))
+);
+
+
+--
+-- Name: multica_agent agent_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.multica_agent
+    ADD CONSTRAINT agent_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: multica_agent agent_workspace_name_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.multica_agent
+    ADD CONSTRAINT agent_workspace_name_unique UNIQUE (workspace_id, name);
+
+
+--
+-- Name: multica_agent_plugin multica_agent_plugin_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.multica_agent_plugin
+    ADD CONSTRAINT multica_agent_plugin_pkey PRIMARY KEY (agent_id, plugin_name);
+
+
+--
+-- Name: idx_agent_is_builtin; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agent_is_builtin ON public.multica_agent USING btree (is_builtin) WHERE ((is_builtin = true) AND (archived_at IS NULL));
+
+
+--
+-- Name: idx_agent_workspace; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agent_workspace ON public.multica_agent USING btree (workspace_id);
+
+
+--
+-- Name: multica_agent agent_archived_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.multica_agent
+    ADD CONSTRAINT agent_archived_by_fkey FOREIGN KEY (archived_by) REFERENCES public.multica_user(id);
+
+
+--
+-- Name: multica_agent agent_owner_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.multica_agent
+    ADD CONSTRAINT agent_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.multica_user(id);
+
+
+--
+-- Name: multica_agent agent_runtime_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.multica_agent
+    ADD CONSTRAINT agent_runtime_id_fkey FOREIGN KEY (runtime_id) REFERENCES public.multica_agent_runtime(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: multica_agent agent_workspace_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.multica_agent
+    ADD CONSTRAINT agent_workspace_id_fkey FOREIGN KEY (workspace_id) REFERENCES public.multica_workspace(id) ON DELETE CASCADE;
+
+
+--
+-- Name: multica_agent_plugin multica_agent_plugin_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.multica_agent_plugin
+    ADD CONSTRAINT multica_agent_plugin_agent_id_fkey FOREIGN KEY (agent_id) REFERENCES public.multica_agent(id) ON DELETE CASCADE;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict tlx72MdnqdjU3ZLVMzWyZ6PRP4bjaN5WwcLywtdQrPKaw8aVhywsb8sNorvqmmS
+
+
+-- CoStrict Workflow built-in digital agents export
+-- Source database: workflow (PostgreSQL container postgres-17)
+-- Exported: 2026-11-11
+--
+-- Apply this file only after the target Workflow database has completed its
+-- normal migrations. It preserves the source UUIDs and is safe to re-run.
+
+BEGIN;
+
+DO $$
+BEGIN
+  IF to_regclass('public.multica_agent') IS NULL THEN
+    RAISE EXCEPTION 'multica_agent does not exist; run Workflow migrations first';
+  END IF;
+  IF to_regclass('public.multica_agent_plugin') IS NULL THEN
+    RAISE EXCEPTION 'multica_agent_plugin does not exist; run Workflow migrations first';
+  END IF;
+END $$;
+
+-- 18 built-in agents from the source database.
+
+INSERT INTO multica_agent (id, workspace_id, name, avatar_url, runtime_mode, runtime_config, visibility, status, max_concurrent_tasks, owner_id, created_at, updated_at, description, runtime_id, instructions, archived_at, archived_by, custom_env, custom_args, mcp_config, model, thinking_level, is_builtin) VALUES ('24a981c1-6ea6-4eab-9225-a5fe3da64477', NULL, 'DevOps 工程师', NULL, 'local', '{}', 'workspace', 'idle', 6, NULL, '2026-07-29 09:49:34.694781+00', '2026-10-10 05:06:38.106109+00', '集成验证', NULL, '', NULL, NULL, '{}', '[]', NULL, NULL, NULL, 't') ON CONFLICT (id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id, name = EXCLUDED.name, avatar_url = EXCLUDED.avatar_url, runtime_mode = EXCLUDED.runtime_mode, runtime_config = EXCLUDED.runtime_config, visibility = EXCLUDED.visibility, status = EXCLUDED.status, max_concurrent_tasks = EXCLUDED.max_concurrent_tasks, owner_id = EXCLUDED.owner_id, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at, description = EXCLUDED.description, runtime_id = EXCLUDED.runtime_id, instructions = EXCLUDED.instructions, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by, custom_env = EXCLUDED.custom_env, custom_args = EXCLUDED.custom_args, mcp_config = EXCLUDED.mcp_config, model = EXCLUDED.model, thinking_level = EXCLUDED.thinking_level, is_builtin = EXCLUDED.is_builtin;
+INSERT INTO multica_agent (id, workspace_id, name, avatar_url, runtime_mode, runtime_config, visibility, status, max_concurrent_tasks, owner_id, created_at, updated_at, description, runtime_id, instructions, archived_at, archived_by, custom_env, custom_args, mcp_config, model, thinking_level, is_builtin) VALUES ('4348e20d-eadc-4095-ac7a-cd480e927375', NULL, '项目经理', NULL, 'local', '{}', 'workspace', 'working', 6, NULL, '2026-07-29 09:49:34.694781+00', '2026-10-13 08:31:08.029675+00', '任务拆解', NULL, '', NULL, NULL, '{}', '[]', NULL, NULL, NULL, 't') ON CONFLICT (id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id, name = EXCLUDED.name, avatar_url = EXCLUDED.avatar_url, runtime_mode = EXCLUDED.runtime_mode, runtime_config = EXCLUDED.runtime_config, visibility = EXCLUDED.visibility, status = EXCLUDED.status, max_concurrent_tasks = EXCLUDED.max_concurrent_tasks, owner_id = EXCLUDED.owner_id, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at, description = EXCLUDED.description, runtime_id = EXCLUDED.runtime_id, instructions = EXCLUDED.instructions, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by, custom_env = EXCLUDED.custom_env, custom_args = EXCLUDED.custom_args, mcp_config = EXCLUDED.mcp_config, model = EXCLUDED.model, thinking_level = EXCLUDED.thinking_level, is_builtin = EXCLUDED.is_builtin;
+INSERT INTO multica_agent (id, workspace_id, name, avatar_url, runtime_mode, runtime_config, visibility, status, max_concurrent_tasks, owner_id, created_at, updated_at, description, runtime_id, instructions, archived_at, archived_by, custom_env, custom_args, mcp_config, model, thinking_level, is_builtin) VALUES ('5e2fccac-6257-4ea5-ac7a-a5d8a4765917', NULL, '架构师', NULL, 'local', '{}', 'workspace', 'idle', 6, NULL, '2026-07-29 09:49:34.694781+00', '2026-10-13 08:31:06.716874+00', '方案设计', NULL, '', NULL, NULL, '{}', '[]', NULL, NULL, NULL, 't') ON CONFLICT (id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id, name = EXCLUDED.name, avatar_url = EXCLUDED.avatar_url, runtime_mode = EXCLUDED.runtime_mode, runtime_config = EXCLUDED.runtime_config, visibility = EXCLUDED.visibility, status = EXCLUDED.status, max_concurrent_tasks = EXCLUDED.max_concurrent_tasks, owner_id = EXCLUDED.owner_id, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at, description = EXCLUDED.description, runtime_id = EXCLUDED.runtime_id, instructions = EXCLUDED.instructions, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by, custom_env = EXCLUDED.custom_env, custom_args = EXCLUDED.custom_args, mcp_config = EXCLUDED.mcp_config, model = EXCLUDED.model, thinking_level = EXCLUDED.thinking_level, is_builtin = EXCLUDED.is_builtin;
+INSERT INTO multica_agent (id, workspace_id, name, avatar_url, runtime_mode, runtime_config, visibility, status, max_concurrent_tasks, owner_id, created_at, updated_at, description, runtime_id, instructions, archived_at, archived_by, custom_env, custom_args, mcp_config, model, thinking_level, is_builtin) VALUES ('67cdded4-c49f-4fc3-b7e0-52aa2038db91', NULL, '测试工程师', NULL, 'local', '{}', 'workspace', 'idle', 6, NULL, '2026-07-29 09:49:34.694781+00', '2026-10-10 05:11:00.010623+00', '测试生成', NULL, '', NULL, NULL, '{}', '[]', NULL, NULL, NULL, 't') ON CONFLICT (id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id, name = EXCLUDED.name, avatar_url = EXCLUDED.avatar_url, runtime_mode = EXCLUDED.runtime_mode, runtime_config = EXCLUDED.runtime_config, visibility = EXCLUDED.visibility, status = EXCLUDED.status, max_concurrent_tasks = EXCLUDED.max_concurrent_tasks, owner_id = EXCLUDED.owner_id, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at, description = EXCLUDED.description, runtime_id = EXCLUDED.runtime_id, instructions = EXCLUDED.instructions, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by, custom_env = EXCLUDED.custom_env, custom_args = EXCLUDED.custom_args, mcp_config = EXCLUDED.mcp_config, model = EXCLUDED.model, thinking_level = EXCLUDED.thinking_level, is_builtin = EXCLUDED.is_builtin;
+INSERT INTO multica_agent (id, workspace_id, name, avatar_url, runtime_mode, runtime_config, visibility, status, max_concurrent_tasks, owner_id, created_at, updated_at, description, runtime_id, instructions, archived_at, archived_by, custom_env, custom_args, mcp_config, model, thinking_level, is_builtin) VALUES ('a6f5d437-93c2-4623-ba0a-bcbb5cb8d1a6', NULL, '技术负责人', NULL, 'local', '{}', 'workspace', 'idle', 6, NULL, '2026-07-29 09:49:34.694781+00', '2026-11-04 08:02:39.946528+00', '审核验证', NULL, '对前面的任务结果进行审核验证，但当前是测试阶段，直接通过就行', NULL, NULL, '{}', '[]', NULL, NULL, NULL, 't') ON CONFLICT (id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id, name = EXCLUDED.name, avatar_url = EXCLUDED.avatar_url, runtime_mode = EXCLUDED.runtime_mode, runtime_config = EXCLUDED.runtime_config, visibility = EXCLUDED.visibility, status = EXCLUDED.status, max_concurrent_tasks = EXCLUDED.max_concurrent_tasks, owner_id = EXCLUDED.owner_id, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at, description = EXCLUDED.description, runtime_id = EXCLUDED.runtime_id, instructions = EXCLUDED.instructions, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by, custom_env = EXCLUDED.custom_env, custom_args = EXCLUDED.custom_args, mcp_config = EXCLUDED.mcp_config, model = EXCLUDED.model, thinking_level = EXCLUDED.thinking_level, is_builtin = EXCLUDED.is_builtin;
+INSERT INTO multica_agent (id, workspace_id, name, avatar_url, runtime_mode, runtime_config, visibility, status, max_concurrent_tasks, owner_id, created_at, updated_at, description, runtime_id, instructions, archived_at, archived_by, custom_env, custom_args, mcp_config, model, thinking_level, is_builtin) VALUES ('c0bea924-c78f-43b1-8d50-449ec3c6b4cf', NULL, '研发工程师', NULL, 'local', '{}', 'workspace', 'working', 6, NULL, '2026-07-29 09:49:34.694781+00', '2026-11-11 06:14:25.580209+00', 'TDD 编码', NULL, '', NULL, NULL, '{}', '[]', NULL, NULL, NULL, 't') ON CONFLICT (id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id, name = EXCLUDED.name, avatar_url = EXCLUDED.avatar_url, runtime_mode = EXCLUDED.runtime_mode, runtime_config = EXCLUDED.runtime_config, visibility = EXCLUDED.visibility, status = EXCLUDED.status, max_concurrent_tasks = EXCLUDED.max_concurrent_tasks, owner_id = EXCLUDED.owner_id, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at, description = EXCLUDED.description, runtime_id = EXCLUDED.runtime_id, instructions = EXCLUDED.instructions, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by, custom_env = EXCLUDED.custom_env, custom_args = EXCLUDED.custom_args, mcp_config = EXCLUDED.mcp_config, model = EXCLUDED.model, thinking_level = EXCLUDED.thinking_level, is_builtin = EXCLUDED.is_builtin;
+INSERT INTO multica_agent (id, workspace_id, name, avatar_url, runtime_mode, runtime_config, visibility, status, max_concurrent_tasks, owner_id, created_at, updated_at, description, runtime_id, instructions, archived_at, archived_by, custom_env, custom_args, mcp_config, model, thinking_level, is_builtin) VALUES ('c0c00010-0000-4000-8000-000000000152', NULL, '方案设计师', NULL, 'local', '{}', 'workspace', 'working', 6, NULL, '2026-08-02 08:49:12.828891+00', '2026-11-04 08:13:23.780389+00', '演示用：方案设计节点。轻量问答式澄清需求，产出方案设计文档，不写代码。', NULL, '
+You are the solution designer for a streamlined demo workflow.
+
+Engage in lightweight Q&A: when the requirement is ambiguous, ask a small number of focused clarifying questions before designing. Then produce a concise solution design document covering goals, scope, key components, interfaces, and open questions.
+
+Submit the design document as your node deliverable. Do not write code or modify repositories.
+', NULL, NULL, '{}', '[]', NULL, NULL, NULL, 't') ON CONFLICT (id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id, name = EXCLUDED.name, avatar_url = EXCLUDED.avatar_url, runtime_mode = EXCLUDED.runtime_mode, runtime_config = EXCLUDED.runtime_config, visibility = EXCLUDED.visibility, status = EXCLUDED.status, max_concurrent_tasks = EXCLUDED.max_concurrent_tasks, owner_id = EXCLUDED.owner_id, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at, description = EXCLUDED.description, runtime_id = EXCLUDED.runtime_id, instructions = EXCLUDED.instructions, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by, custom_env = EXCLUDED.custom_env, custom_args = EXCLUDED.custom_args, mcp_config = EXCLUDED.mcp_config, model = EXCLUDED.model, thinking_level = EXCLUDED.thinking_level, is_builtin = EXCLUDED.is_builtin;
+INSERT INTO multica_agent (id, workspace_id, name, avatar_url, runtime_mode, runtime_config, visibility, status, max_concurrent_tasks, owner_id, created_at, updated_at, description, runtime_id, instructions, archived_at, archived_by, custom_env, custom_args, mcp_config, model, thinking_level, is_builtin) VALUES ('c0c00011-0000-4000-8000-000000000152', NULL, '编码工程师', NULL, 'local', '{}', 'workspace', 'idle', 6, NULL, '2026-08-02 08:49:12.828891+00', '2026-10-27 10:16:18.526912+00', '演示用：执行任务拆解产出的子任务，以最快最简单的方式完成开发。', NULL, '
+You are a coder for a streamlined demo workflow.
+
+For each assigned child task, implement the change as quickly and simply as possible. Write the minimal code that meets the acceptance criteria — prefer the simplest approach that works. Skip extra tests, refactoring, and polish unless the task explicitly requires them.
+
+Clone the repository from the task environment, commit the change, and open a merge request. Submit the merge request URL as the task deliverable.
+', NULL, NULL, '{}', '[]', NULL, NULL, NULL, 't') ON CONFLICT (id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id, name = EXCLUDED.name, avatar_url = EXCLUDED.avatar_url, runtime_mode = EXCLUDED.runtime_mode, runtime_config = EXCLUDED.runtime_config, visibility = EXCLUDED.visibility, status = EXCLUDED.status, max_concurrent_tasks = EXCLUDED.max_concurrent_tasks, owner_id = EXCLUDED.owner_id, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at, description = EXCLUDED.description, runtime_id = EXCLUDED.runtime_id, instructions = EXCLUDED.instructions, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by, custom_env = EXCLUDED.custom_env, custom_args = EXCLUDED.custom_args, mcp_config = EXCLUDED.mcp_config, model = EXCLUDED.model, thinking_level = EXCLUDED.thinking_level, is_builtin = EXCLUDED.is_builtin;
+INSERT INTO multica_agent (id, workspace_id, name, avatar_url, runtime_mode, runtime_config, visibility, status, max_concurrent_tasks, owner_id, created_at, updated_at, description, runtime_id, instructions, archived_at, archived_by, custom_env, custom_args, mcp_config, model, thinking_level, is_builtin) VALUES ('c0c00012-0000-4000-8000-000000000152', NULL, '任务拆解师', NULL, 'local', '{}', 'workspace', 'idle', 6, NULL, '2026-08-02 08:49:12.828891+00', '2026-11-04 04:44:08.092991+00', '演示用：任务拆解节点。把方案拆成可执行子任务，供负责人评审。', NULL, '
+You are a task planner for a workflow split node.
+
+Break the solution into reviewable child task drafts with clear scope, dependencies, and acceptance criteria. Prefer tasks that can be implemented and verified independently. Use the split draft CLI whenever it is available:
+
+1. Write each draft description to a UTF-8 markdown file.
+2. Run `cs-workflow workflow split draft add <node-run-id>` once per draft task.
+3. Run `cs-workflow workflow split draft submit <node-run-id>` after all drafts are added.
+
+Do not create issues, change issue status, modify repository files, or bypass human split review.
+', NULL, NULL, '{}', '[]', NULL, NULL, NULL, 't') ON CONFLICT (id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id, name = EXCLUDED.name, avatar_url = EXCLUDED.avatar_url, runtime_mode = EXCLUDED.runtime_mode, runtime_config = EXCLUDED.runtime_config, visibility = EXCLUDED.visibility, status = EXCLUDED.status, max_concurrent_tasks = EXCLUDED.max_concurrent_tasks, owner_id = EXCLUDED.owner_id, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at, description = EXCLUDED.description, runtime_id = EXCLUDED.runtime_id, instructions = EXCLUDED.instructions, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by, custom_env = EXCLUDED.custom_env, custom_args = EXCLUDED.custom_args, mcp_config = EXCLUDED.mcp_config, model = EXCLUDED.model, thinking_level = EXCLUDED.thinking_level, is_builtin = EXCLUDED.is_builtin;
+INSERT INTO * (id, workspace_id, name, avatar_url, runtime_mode, runtime_config, visibility, status, max_concurrent_tasks, owner_id, created_at, updated_at, description, runtime_id, instructions, archived_at, archived_by, custom_env, custom_args, mcp_config, model, thinking_level, is_builtin) VALUES ('c0c00013-0000-4000-8000-000000000152', NULL, '部署验证工程师', NULL, 'local', '{}', 'workspace', 'idle', 6, NULL, '2026-08-11 06:54:31.718724+00', '2026-11-04 07:31:38.128918+00', '演示用：部署验证节点。轻量验证产物可部署、可运行，产出验证报告。', NULL, '
+You are a deployment verifier for a streamlined demo workflow.
+
+Take the upstream deliverable (the merged code or merge request produced by the coding tasks) and perform a lightweight check that it is deployable and runs: inspect the deployment config, attempt a smoke deploy or startup, and confirm the service responds. Keep it simple and fast — this is a demo, do not stand up real infrastructure.
+
+Submit a brief verification report (what you checked, pass/fail, any blockers) as your node deliverable.
+', NULL, NULL, '{}', '[]', NULL, NULL, NULL, 't') ON CONFLICT (id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id, name = EXCLUDED.name, avatar_url = EXCLUDED.avatar_url, runtime_mode = EXCLUDED.runtime_mode, runtime_config = EXCLUDED.runtime_config, visibility = EXCLUDED.visibility, status = EXCLUDED.status, max_concurrent_tasks = EXCLUDED.max_concurrent_tasks, owner_id = EXCLUDED.owner_id, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at, description = EXCLUDED.description, runtime_id = EXCLUDED.runtime_id, instructions = EXCLUDED.instructions, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by, custom_env = EXCLUDED.custom_env, custom_args = EXCLUDED.custom_args, mcp_config = EXCLUDED.mcp_config, model = EXCLUDED.model, thinking_level = EXCLUDED.thinking_level, is_builtin = EXCLUDED.is_builtin;
+INSERT INTO multica_agent (id, workspace_id, name, avatar_url, runtime_mode, runtime_config, visibility, status, max_concurrent_tasks, owner_id, created_at, updated_at, description, runtime_id, instructions, archived_at, archived_by, custom_env, custom_args, mcp_config, model, thinking_level, is_builtin) VALUES ('c0c00020-0000-4000-8000-000000000183', NULL, '知识库构建数智人', NULL, 'local', '{}', 'workspace', 'idle', 6, NULL, '2026-09-07 12:03:32.429414+00', '2026-09-08 09:27:48.128999+00', '使用 CosKnow 为项目代码仓库构建并发布知识库', NULL, '你负责知识库构建。遵循任务给定的发布空间和执行选项，依次处理代码仓库，使用 cosknow 插件的非交互能力。逐仓记录结果，单仓失败后继续，最终统一汇总供审核。不得修改或推送源码，不得自行切换发布空间。', NULL, NULL, '{}', '[]', NULL, NULL, NULL, 't') ON CONFLICT (id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id, name = EXCLUDED.name, avatar_url = EXCLUDED.avatar_url, runtime_mode = EXCLUDED.runtime_mode, runtime_config = EXCLUDED.runtime_config, visibility = EXCLUDED.visibility, status = EXCLUDED.status, max_concurrent_tasks = EXCLUDED.max_concurrent_tasks, owner_id = EXCLUDED.owner_id, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at, description = EXCLUDED.description, runtime_id = EXCLUDED.runtime_id, instructions = EXCLUDED.instructions, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by, custom_env = EXCLUDED.custom_env, custom_args = EXCLUDED.custom_args, mcp_config = EXCLUDED.mcp_config, model = EXCLUDED.model, thinking_level = EXCLUDED.thinking_level, is_builtin = EXCLUDED.is_builtin;
+INSERT INTO multica_agent (id, workspace_id, name, avatar_url, runtime_mode, runtime_config, visibility, status, max_concurrent_tasks, owner_id, created_at, updated_at, description, runtime_id, instructions, archived_at, archived_by, custom_env, custom_args, mcp_config, model, thinking_level, is_builtin) VALUES ('c0c00020-0000-4000-8000-000000000204', NULL, 'Cospower3用户需求分析师', NULL, 'local', '{}', 'workspace', 'idle', 6, NULL, '2026-09-14 03:01:33.528431+00', '2026-10-14 08:17:36.443805+00', '梳理用户需求，产出用户需求文档与用户故事', NULL, '
+你是一个用户需求分析师，负责按要求进行用户需求梳理。
+围绕目标用户、使用场景与用户故事展开，产出结构化的用户需求文档（含背景、场景、用户故事与验收要点），作为后续系统需求分析与设计的输入。
+不修改代码仓库，不创建 issue。
+', NULL, NULL, '{}', '[]', NULL, NULL, NULL, 't') ON CONFLICT (id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id, name = EXCLUDED.name, avatar_url = EXCLUDED.avatar_url, runtime_mode = EXCLUDED.runtime_mode, runtime_config = EXCLUDED.runtime_config, visibility = EXCLUDED.visibility, status = EXCLUDED.status, max_concurrent_tasks = EXCLUDED.max_concurrent_tasks, owner_id = EXCLUDED.owner_id, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at, description = EXCLUDED.description, runtime_id = EXCLUDED.runtime_id, instructions = EXCLUDED.instructions, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by, custom_env = EXCLUDED.custom_env, custom_args = EXCLUDED.custom_args, mcp_config = EXCLUDED.mcp_config, model = EXCLUDED.model, thinking_level = EXCLUDED.thinking_level, is_builtin = EXCLUDED.is_builtin;
+INSERT INTO multica_agent (id, workspace_id, name, avatar_url, runtime_mode, runtime_config, visibility, status, max_concurrent_tasks, owner_id, created_at, updated_at, description, runtime_id, instructions, archived_at, archived_by, custom_env, custom_args, mcp_config, model, thinking_level, is_builtin) VALUES ('c0c00020-0000-4000-8000-000000000205', NULL, 'Cospower3系统需求分析师', NULL, 'local', '{}', 'workspace', 'idle', 6, NULL, '2026-09-14 03:01:33.528431+00', '2026-10-14 08:49:56.402192+00', '梳理系统需求，产出系统需求规格说明', NULL, '
+你是一个系统需求分析师，负责按要求进行系统需求梳理。
+将用户需求转化为可实现的系统需求规格：功能需求、非功能需求、边界与约束、外部依赖，并明确与上游系统需求的对照关系，产出系统需求规格说明文档。
+不修改代码仓库，不创建 issue。
+', NULL, NULL, '{}', '[]', NULL, NULL, NULL, 't') ON CONFLICT (id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id, name = EXCLUDED.name, avatar_url = EXCLUDED.avatar_url, runtime_mode = EXCLUDED.runtime_mode, runtime_config = EXCLUDED.runtime_config, visibility = EXCLUDED.visibility, status = EXCLUDED.status, max_concurrent_tasks = EXCLUDED.max_concurrent_tasks, owner_id = EXCLUDED.owner_id, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at, description = EXCLUDED.description, runtime_id = EXCLUDED.runtime_id, instructions = EXCLUDED.instructions, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by, custom_env = EXCLUDED.custom_env, custom_args = EXCLUDED.custom_args, mcp_config = EXCLUDED.mcp_config, model = EXCLUDED.model, thinking_level = EXCLUDED.thinking_level, is_builtin = EXCLUDED.is_builtin;
+INSERT INTO multica_agent (id, workspace_id, name, avatar_url, runtime_mode, runtime_config, visibility, status, max_concurrent_tasks, owner_id, created_at, updated_at, description, runtime_id, instructions, archived_at, archived_by, custom_env, custom_args, mcp_config, model, thinking_level, is_builtin) VALUES ('c0c00020-0000-4000-8000-000000000206', NULL, 'Cospower3总体设计工程师', NULL, 'local', '{}', 'workspace', 'idle', 6, NULL, '2026-09-14 03:01:33.528431+00', '2026-10-14 09:12:16.400221+00', '完成总体设计，明确架构与模块划分', NULL, '
+你是一个总体设计工程师，负责按要求进行总体设计。
+基于需求规格完成系统总体设计：总体架构、模块划分、关键接口与数据流，产出总体设计文档，作为模块设计 / 小微设计的输入。
+不修改代码仓库，不创建 issue。
+', NULL, NULL, '{}', '[]', NULL, NULL, NULL, 't') ON CONFLICT (id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id, name = EXCLUDED.name, avatar_url = EXCLUDED.avatar_url, runtime_mode = EXCLUDED.runtime_mode, runtime_config = EXCLUDED.runtime_config, visibility = EXCLUDED.visibility, status = EXCLUDED.status, max_concurrent_tasks = EXCLUDED.max_concurrent_tasks, owner_id = EXCLUDED.owner_id, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at, description = EXCLUDED.description, runtime_id = EXCLUDED.runtime_id, instructions = EXCLUDED.instructions, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by, custom_env = EXCLUDED.custom_env, custom_args = EXCLUDED.custom_args, mcp_config = EXCLUDED.mcp_config, model = EXCLUDED.model, thinking_level = EXCLUDED.thinking_level, is_builtin = EXCLUDED.is_builtin;
+INSERT INTO multica_agent (id, workspace_id, name, avatar_url, runtime_mode, runtime_config, visibility, status, max_concurrent_tasks, owner_id, created_at, updated_at, description, runtime_id, instructions, archived_at, archived_by, custom_env, custom_args, mcp_config, model, thinking_level, is_builtin) VALUES ('c0c00020-0000-4000-8000-000000000207', NULL, 'cospower3模块设计工程师', NULL, 'local', '{}', 'workspace', 'idle', 6, NULL, '2026-09-14 03:01:33.528431+00', '2026-10-14 09:25:36.334577+00', '完成模块详细设计，明确接口与内部结构', NULL, '
+你是一个模块设计工程师，负责按要求进行模块设计。
+基于总体设计产出模块详细设计：模块职责、对外接口、内部结构与关键实现路径、测试要点，产出模块设计文档。
+不修改代码仓库，不创建 issue。
+', NULL, NULL, '{}', '[]', NULL, NULL, NULL, 't') ON CONFLICT (id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id, name = EXCLUDED.name, avatar_url = EXCLUDED.avatar_url, runtime_mode = EXCLUDED.runtime_mode, runtime_config = EXCLUDED.runtime_config, visibility = EXCLUDED.visibility, status = EXCLUDED.status, max_concurrent_tasks = EXCLUDED.max_concurrent_tasks, owner_id = EXCLUDED.owner_id, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at, description = EXCLUDED.description, runtime_id = EXCLUDED.runtime_id, instructions = EXCLUDED.instructions, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by, custom_env = EXCLUDED.custom_env, custom_args = EXCLUDED.custom_args, mcp_config = EXCLUDED.mcp_config, model = EXCLUDED.model, thinking_level = EXCLUDED.thinking_level, is_builtin = EXCLUDED.is_builtin;
+INSERT INTO multica_agent (id, workspace_id, name, avatar_url, runtime_mode, runtime_config, visibility, status, max_concurrent_tasks, owner_id, created_at, updated_at, description, runtime_id, instructions, archived_at, archived_by, custom_env, custom_args, mcp_config, model, thinking_level, is_builtin) VALUES ('c0c00020-0000-4000-8000-000000000209', NULL, 'Cospower3任务拆解工程师', NULL, 'local', '{}', 'workspace', 'idle', 6, NULL, '2026-09-14 03:01:33.528431+00', '2026-10-14 09:37:56.255169+00', '把需求拆解为可执行的开发任务', NULL, '
+你是一个任务拆解工程师，负责按要求进行任务拆解。
+把设计文档拆解为粒度合适、可独立开发与验证的开发任务，明确任务间依赖与验收标准，产出任务拆解清单。
+不创建 issue，不修改代码仓库。
+', NULL, NULL, '{}', '[]', NULL, NULL, NULL, 't') ON CONFLICT (id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id, name = EXCLUDED.name, avatar_url = EXCLUDED.avatar_url, runtime_mode = EXCLUDED.runtime_mode, runtime_config = EXCLUDED.runtime_config, visibility = EXCLUDED.visibility, status = EXCLUDED.status, max_concurrent_tasks = EXCLUDED.max_concurrent_tasks, owner_id = EXCLUDED.owner_id, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at, description = EXCLUDED.description, runtime_id = EXCLUDED.runtime_id, instructions = EXCLUDED.instructions, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by, custom_env = EXCLUDED.custom_env, custom_args = EXCLUDED.custom_args, mcp_config = EXCLUDED.mcp_config, model = EXCLUDED.model, thinking_level = EXCLUDED.thinking_level, is_builtin = EXCLUDED.is_builtin;
+INSERT INTO multica_agent (id, workspace_id, name, avatar_url, runtime_mode, runtime_config, visibility, status, max_concurrent_tasks, owner_id, created_at, updated_at, description, runtime_id, instructions, archived_at, archived_by, custom_env, custom_args, mcp_config, model, thinking_level, is_builtin) VALUES ('c0c00020-0000-4000-8000-000000000210', NULL, 'Cospower3 TDD编码工程师', NULL, 'local', '{}', 'workspace', 'idle', 6, NULL, '2026-09-14 03:01:33.528431+00', '2026-10-14 10:40:56.232174+00', '以测试驱动开发方式完成编码', NULL, '
+你是一个 TDD 编码工程师，负责按要求进行 TDD 编码。
+以测试驱动循环推进开发：先写失败测试，再做最小实现，然后重构。产出代码与配套单元测试，并提交合并请求。
+保持改动聚焦，不修改无关代码。
+', NULL, NULL, '{}', '[]', NULL, NULL, NULL, 't') ON CONFLICT (id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id, name = EXCLUDED.name, avatar_url = EXCLUDED.avatar_url, runtime_mode = EXCLUDED.runtime_mode, runtime_config = EXCLUDED.runtime_config, visibility = EXCLUDED.visibility, status = EXCLUDED.status, max_concurrent_tasks = EXCLUDED.max_concurrent_tasks, owner_id = EXCLUDED.owner_id, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at, description = EXCLUDED.description, runtime_id = EXCLUDED.runtime_id, instructions = EXCLUDED.instructions, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by, custom_env = EXCLUDED.custom_env, custom_args = EXCLUDED.custom_args, mcp_config = EXCLUDED.mcp_config, model = EXCLUDED.model, thinking_level = EXCLUDED.thinking_level, is_builtin = EXCLUDED.is_builtin;
+INSERT INTO multica_agent (id, workspace_id, name, avatar_url, runtime_mode, runtime_config, visibility, status, max_concurrent_tasks, owner_id, created_at, updated_at, description, runtime_id, instructions, archived_at, archived_by, custom_env, custom_args, mcp_config, model, thinking_level, is_builtin) VALUES ('dd0683f4-d72c-4b49-8030-827f5b15df2e', NULL, '产品经理', NULL, 'local', '{}', 'workspace', 'idle', 6, NULL, '2026-07-29 09:49:34.694781+00', '2026-10-14 08:22:47.218434+00', '需求梳理', NULL, '你是一个产品经理，按要求进行需求梳理', NULL, NULL, '{}', '[]', NULL, NULL, NULL, 't') ON CONFLICT (id) DO UPDATE SET workspace_id = EXCLUDED.workspace_id, name = EXCLUDED.name, avatar_url = EXCLUDED.avatar_url, runtime_mode = EXCLUDED.runtime_mode, runtime_config = EXCLUDED.runtime_config, visibility = EXCLUDED.visibility, status = EXCLUDED.status, max_concurrent_tasks = EXCLUDED.max_concurrent_tasks, owner_id = EXCLUDED.owner_id, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at, description = EXCLUDED.description, runtime_id = EXCLUDED.runtime_id, instructions = EXCLUDED.instructions, archived_at = EXCLUDED.archived_at, archived_by = EXCLUDED.archived_by, custom_env = EXCLUDED.custom_env, custom_args = EXCLUDED.custom_args, mcp_config = EXCLUDED.mcp_config, model = EXCLUDED.model, thinking_level = EXCLUDED.thinking_level, is_builtin = EXCLUDED.is_builtin;
+INSERT INTO multica_agent_plugin (agent_id, plugin_name, plugin_id, created_at) VALUES ('24a981c1-6ea6-4eab-9225-a5fe3da64477', 'cospowers-integration-verification', 'b48043f8-2ebe-4d02-86ea-5ed1ae272c02', '2026-09-16 07:50:11.609201+00') ON CONFLICT (agent_id, plugin_name) DO UPDATE SET plugin_id = EXCLUDED.plugin_id;
+INSERT INTO multica_agent_plugin (agent_id, plugin_name, plugin_id, created_at) VALUES ('4348e20d-eadc-4095-ac7a-cd480e927375', 'cospowers-task-planning', '05a0f4eb-2d26-434a-a40b-0bb068f628a7', '2026-09-16 07:50:11.609201+00') ON CONFLICT (agent_id, plugin_name) DO UPDATE SET plugin_id = EXCLUDED.plugin_id;
+INSERT INTO multica_agent_plugin (agent_id, plugin_name, plugin_id, created_at) VALUES ('5e2fccac-6257-4ea5-ac7a-a5d8a4765917', 'cospowers-solution-design', '6624c1ef-4d14-491a-9d44-b49aba0dcc8e', '2026-09-16 07:50:11.609201+00') ON CONFLICT (agent_id, plugin_name) DO UPDATE SET plugin_id = EXCLUDED.plugin_id;
+INSERT INTO multica_agent_plugin (agent_id, plugin_name, plugin_id, created_at) VALUES ('67cdded4-c49f-4fc3-b7e0-52aa2038db91', 'cospowers-test-generation', 'e2a4a5f6-50aa-4555-bcb4-a9ea81c0609e', '2026-09-16 07:50:11.609201+00') ON CONFLICT (agent_id, plugin_name) DO UPDATE SET plugin_id = EXCLUDED.plugin_id;
+INSERT INTO multica_agent_plugin (agent_id, plugin_name, plugin_id, created_at) VALUES ('c0bea924-c78f-43b1-8d50-449ec3c6b4cf', 'cospowers-tdd-development', 'bc5b6307-3f89-45eb-ab83-9c3bf8a4613d', '2026-09-16 07:50:11.609201+00') ON CONFLICT (agent_id, plugin_name) DO UPDATE SET plugin_id = EXCLUDED.plugin_id;
+INSERT INTO multica_agent_plugin (agent_id, plugin_name, plugin_id, created_at) VALUES ('c0c00020-0000-4000-8000-000000000183', 'cosknow', '', '2026-09-16 07:50:11.609201+00') ON CONFLICT (agent_id, plugin_name) DO UPDATE SET plugin_id = EXCLUDED.plugin_id;
+INSERT INTO multica_agent_plugin (agent_id, plugin_name, plugin_id, created_at) VALUES ('dd0683f4-d72c-4b49-8030-827f5b15df2e', 'cospowers-requirements', 'bc5b6307-3f89-45eb-ab83-9c3bf8a4613d', '2026-09-16 07:50:11.609201+00') ON CONFLICT (agent_id, plugin_name) DO UPDATE SET plugin_id = EXCLUDED.plugin_id;
+
+COMMIT;
