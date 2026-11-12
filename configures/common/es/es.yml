@@ -15,8 +15,8 @@ services:
       memlock:
         soft: -1
         hard: -1
-    ports:
-      - "${PORT_ES}:9200"
+    ports: []
+      # - "${PORT_ES}:9200"
     volumes:
       - ${COSTRICT_DATA_DIR}/backend/es/data:/usr/share/elasticsearch/data
     networks:

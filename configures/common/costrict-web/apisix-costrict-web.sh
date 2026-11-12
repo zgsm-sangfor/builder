@@ -40,18 +40,6 @@ curl -i http://$APISIX_ADDR/apisix/admin/routes -H "$AUTH" -H "$TYPE" -X PUT -d 
   "uri": "/cloud-api/*",
   "name": "costrict-web-api",
   "id": "costrict-web-api",
-  "methods": [
-    "GET",
-    "POST",
-    "PUT",
-    "DELETE",
-    "PATCH",
-    "HEAD",
-    "OPTIONS",
-    "CONNECT",
-    "TRACE",
-    "PURGE"
-  ],
   "plugins": {
     "proxy-rewrite": {
       "regex_uri": [
@@ -137,18 +125,6 @@ curl -i http://$APISIX_ADDR/apisix/admin/routes -H "$AUTH" -H "$TYPE" -X PUT -d 
   "uris": ["/cloud/*","/cloud"],
   "name": "costrict-web-portal",
   "id": "costrict-web-portal",
-  "methods": [
-    "GET",
-    "POST",
-    "PUT",
-    "DELETE",
-    "PATCH",
-    "HEAD",
-    "OPTIONS",
-    "CONNECT",
-    "TRACE",
-    "PURGE"
-  ],
   "plugins": {
     "proxy-rewrite": {
       "headers": {
@@ -217,13 +193,6 @@ curl -i http://$APISIX_ADDR/apisix/admin/routes -H "$AUTH" -H "$TYPE" -X PUT -d 
   "uri": "/cloud-gateway/*",
   "name": "costrict-web-gateway",
   "id": "costrict-web-gateway",
-  "methods": [
-    "GET",
-    "POST",
-    "PUT",
-    "DELETE",
-    "OPTIONS"
-  ],
   "plugins": {
     "proxy-rewrite": {
       "regex_uri": [
@@ -286,18 +255,6 @@ curl -i http://$APISIX_ADDR/apisix/admin/routes -H "$AUTH" -H "$TYPE" -X PUT -d 
   "uri": "/cloud-dashboard/*",
   "name": "cloud-dashboard",
   "id": "cloud-dashboard",
-  "methods": [
-    "GET",
-    "POST",
-    "PUT",
-    "DELETE",
-    "PATCH",
-    "HEAD",
-    "OPTIONS",
-    "CONNECT",
-    "TRACE",
-    "PURGE"
-  ],
   "plugins": {
     "proxy-rewrite": {
       "regex_uri": [
@@ -409,18 +366,6 @@ curl -i http://$APISIX_ADDR/apisix/admin/routes -H "$AUTH" -H "$TYPE" -X PUT -d 
   "uri": "/workflow-backend/*",
   "name": "workflow-backend",
   "id": "workflow-backend",
-  "methods": [
-    "GET",
-    "POST",
-    "PUT",
-    "DELETE",
-    "PATCH",
-    "HEAD",
-    "OPTIONS",
-    "CONNECT",
-    "TRACE",
-    "PURGE"
-  ],
   "plugins": {
     "limit-count": {
       "_meta": {
@@ -487,18 +432,6 @@ curl -i http://$APISIX_ADDR/apisix/admin/routes -H "$AUTH" -H "$TYPE" -X PUT -d 
   "uri": "/workflow-web*",
   "name": "workflow-web",
   "id": "workflow-web",
-  "methods": [
-    "GET",
-    "POST",
-    "PUT",
-    "DELETE",
-    "PATCH",
-    "HEAD",
-    "OPTIONS",
-    "CONNECT",
-    "TRACE",
-    "PURGE"
-  ],
   "plugins": {
     "limit-count": {
       "_meta": {

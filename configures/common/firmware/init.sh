@@ -383,7 +383,7 @@ show_guide_help() {
     log "INFO" "安装位置: ${COSTRICT_BACKEND_DIR}"
     log "INFO" "后续步骤："
     log "INFO" "  1. 启动服务: costrict-admin start"
-    log "INFO" "  2. 访问管理界面: ${COSTRICT_BASEURL}/costrict-admin/ (默认账号: admin, 密码: admin)"
+    log "INFO" "  2. 管理界面: ${COSTRICT_BASEURL}/costrict-admin/ (默认账号: admin, 密码: admin, 可忽略,根据文档进行下一步)"
 }
 # -------------------------- Main Logic --------------------------
 main() {
